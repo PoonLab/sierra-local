@@ -22,6 +22,6 @@ class HIVdb():
             elif element.tag == 'DRUGCLASS':
                 drugclass = element.find('NAME').text
                 druglist = element.find('DRUGLIST').text.split(',')
-                self.definitions['drugclass'].update({drugclass: druglistoijaeoijaweo;ijaeoij;})
+                self.definitions['drugclass'].update({drugclass: druglist})
 
 
