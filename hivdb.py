@@ -23,5 +23,12 @@ class HIVdb():
                 drugclass = element.find('NAME').text
                 druglist = element.find('DRUGLIST').text.split(',')
                 self.definitions['drugclass'].update({drugclass: druglist})
-
+            elif element.tag == 'GLOBALRANGE':
+                globalrange = element.find('NAME').text
+                self.definitions['globalrange'].update({globalrange})
+            elif element.tag == 'LEVEL_DEFINTIION':
+                level = element.find('NAME').text
+                order = element.find('ORDER').text.split(',')  # TODO: check level parameter structures
+                original = element.find('ORIGINAL').text.split(',')
+                sir = element.find('SIR').text.split(',')
 
