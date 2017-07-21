@@ -1,4 +1,5 @@
 import xml.etree.ElementTree as xml
+import re
 
 class HIVdb():
     def __init__(self, path):
@@ -24,11 +25,15 @@ class HIVdb():
                 druglist = element.find('DRUGLIST').text.split(',')
                 self.definitions['drugclass'].update({drugclass: druglist})
             elif element.tag == 'GLOBALRANGE':
-                globalrange = element.find('NAME').text
-                self.definitions['globalrange'].update({globalrange})
+                globalrange = element.find('GLOBALRANGE').text.split(',')
+                for item in globalrange:
+                    order = re.split('=>', item)[1].strip('() ')
+                    range = re.split('=>', item)[0].strip('() ')
+                    self.definitions['globalrange'].update({order: range})  # TODO: check if ranges should be numerical
             elif element.tag == 'LEVEL_DEFINTIION':
-                level = element.find('NAME').text
-                order = element.find('ORDER').text.split(',')  # TODO: check level parameter structures
-                original = element.find('ORIGINAL').text.split(',')
-                sir = element.find('SIR').text.split(',')
+                order = element.find('ORDER').text
+                original = element.find('ORIGINAL').text
+                sir = element.find('SIR').text
+                self.definitions['level'].update({order: [original, sir]})  # TODO: check if using a list is correct
+
 
