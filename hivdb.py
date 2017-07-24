@@ -32,3 +32,18 @@ class HIVdb():
                 original = element.find('ORIGINAL').text.split(',')
                 sir = element.find('SIR').text.split(',')
 
+    def parse_drugs(self, root):
+        self.drugs = {
+            'name': {},
+            'fullname': {},
+            'rule': {
+                'condition': {},
+                'actions': {
+                    'scorerange': False
+                }
+            }
+        }
+        for element in root.getchildren():
+
+
+
