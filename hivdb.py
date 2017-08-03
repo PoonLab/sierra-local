@@ -15,7 +15,7 @@ class HIVdb():
             'drugclass': {},  # maps drug class to drugs
             'globalrange': {},  # maps from score to level
             'level': {},  # maps from level to S/I/R symbols
-            'comment': {} # maps comments to id string
+            'comment': {}  # maps comments to id string
         }
 
         for element in root.getchildren():
@@ -56,6 +56,6 @@ class HIVdb():
 
             elif element.tag == 'COMMENT_DEFINITIONS':
                 id = element.find('COMMENT_STRING').text
-                text = element.find('TEXT').text
-                #sort_tag = element.find('SORT_TAG').text # TODO: is this necessary?? (it is always 1)
+                comment = element.find('TEXT').text
+                #sort_tag = element.find('SORT_TAG').text  # TODO: is this necessary?? (it is always 1)
                 self.definitions['comment'].update({id: comment})
