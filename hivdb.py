@@ -34,10 +34,8 @@ class HIVdb():
                 for item in globalrange:
                     order = int(re.split('=>', item)[1].strip('() '))  # str containing order number: '1'
                     range = re.split('=>', item)[0].strip('() ')  # str containing the range: '-INF TO 9'
-
                     min = re.split('TO', range)[0].strip()  # str containing min val in range: '-INF'
                     max = re.split('TO', range)[1].strip()  # str containing max val in range: '9'
-
                     # convert_to_num converts a string to integer, and also 'INF' and '-INF' to infinite representations
                     def convert_to_num(s):
                         if s == '-INF':
@@ -46,10 +44,8 @@ class HIVdb():
                             return float('inf')
                         else:
                             return int(s)
-
                     min = convert_to_num(min)
                     max = convert_to_num(max)
-
                     self.definitions['globalrange'].update({order: [min, max]})  # TODO: convert to numerical
 
             elif element.tag == 'LEVEL_DEFINTIION':
@@ -63,7 +59,3 @@ class HIVdb():
                 text = element.find('TEXT').text
                 #sort_tag = element.find('SORT_TAG').text # TODO: is this necessary?? (it is always 1)
                 self.definitions['comment'].update({id: comment})
-
-alg = HIVdb('/Users/Mathias/git/sierra-local/HIVDB_8.4.ed14c4d3.xml')
-alg.parse_definitions(alg.root)
-print(alg.definitions)
