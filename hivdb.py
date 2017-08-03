@@ -9,13 +9,14 @@ class HIVdb():
         self.version = self.root.find('ALGVERSION').text
         self.version_date = self.root.find('ALGDATE').text
 
+
     def parse_definitions(self, root):
         self.definitions = {
             'gene': {},  # gene target names and drug classes
             'drugclass': {},  # maps drug class to drugs
             'globalrange': {},  # maps from score to level
             'level': {},  # maps from level to S/I/R symbols
-            'comment': {} # maps comments to id string
+            'comment': {}  # maps comments to id string
         }
 
         for element in root.getchildren():
@@ -56,9 +57,10 @@ class HIVdb():
 
             elif element.tag == 'COMMENT_DEFINITIONS':
                 id = element.find('COMMENT_STRING').text
-                text = element.find('TEXT').text
-                # sort_tag = element.find('SORT_TAG').text # TODO: is this necessary?? (it is always 1)
+                comment = element.find('TEXT').text
+                # sort_tag = element.find('SORT_TAG').text  # TODO: is this necessary?? (it is always 1)
                 self.definitions['comment'].update({id: comment})
+
 
     def parse_drugs(self, root):
         self.drugs = {}
@@ -70,6 +72,7 @@ class HIVdb():
                 condition = rule.find('CONDITION').text
                 condition = self._partition_scores(condition)
                 self.drugs[drug] = self.drugs[fullname] = condition
+
 
     def _partition_scores(self, condition):
         # drug resistant mutation (DRM)
@@ -125,5 +128,4 @@ def main():
 
 
 main()
-
 
