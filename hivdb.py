@@ -38,17 +38,20 @@ class HIVdb():
 
 
     def parse_drugs(self, root):
-        self.drugs = {
-            'name': {},
-            'fullname': {},
-            'rule': {
-                'condition': {},
-                'actions': {
-                    'scorerange': False
-                }
-            }
-        }
+        self.drugs = {}
         for element in root.getchildren():
+            if element.tag == 'DRUG':
+                drug = element.find('NAME').text
+                fname = element.find('FULLNAME').text
+                rules = element.find('CONDITION').text
+                self.drugs[drug] = [fname, rules]
 
 
+def main():
+    alg = HIVdb("/home/tng92/git/sierra-local/HIVDB.xml")
+    alg.parse_definitions(alg.root)
+    alg.parse_drugs(alg.root)
+    print(alg.definitions)
+    print(alg.drugs)
 
+main()
