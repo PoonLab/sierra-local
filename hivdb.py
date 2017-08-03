@@ -65,17 +65,64 @@ class HIVdb():
         for element in root.getchildren():
             if element.tag == 'DRUG':
                 drug = element.find('NAME').text
-                fname = element.find('FULLNAME').text
-                rules = element.find('CONDITION').text
-                self.drugs[drug] = [fname, rules]
+                fullname = element.find('FULLNAME').text
+                rule = element.find('RULE')
+                condition = rule.find('CONDITION').text
+                condition = self._partition_scores(condition)
+                self.drugs[drug] = self.drugs[fullname] = condition
+
+    def _partition_scores(self, condition):
+        # drug resistant mutation (DRM)
+        mutation_list = condition.lstrip('SCORE FROM(').rstrip(')').split('\n')
+        self.drm_scores = {
+            'single_drm_dict': {},
+            'max_dict': {},
+            'combo_dict': {}
+        }
+        for drm in mutation_list:
+            single_drm = drm.strip().rstrip(',')
+            if single_drm.startswith('MAX'):
+                possibilities = re.findall(r'[\S]+[\s]*[=][>][\s][\d]+', single_drm)
+                # TODO: deal with the case when they incorporate boolean 'AND' into the 'MAX' scorelist of scoreitems
+                for aa in possibilities:
+                    mutation = aa.split('=>')
+                    drm = mutation[0].strip()
+                    score = int(mutation[1].strip())
+                    self.drm_scores['max_dict'].update({drm: score})
+            elif single_drm.find('AND') != -1:
+                combinations = re.split('(| AND |) => ', single_drm)
+                for aa in combinations[:-1]:
+                    drm = aa
+                    score = int(combinations[len(combinations) - 1])
+                    self.drm_scores['combo_dict'].update({drm: score})
+            else:
+                score_cond = single_drm.split()
+                drm = score_cond[0].strip()
+                score = int(score_cond[2].strip())
+                self.drm_scores['single_drm_dict'].update({drm: score})
+        return self.drm_scores
+
+
+    def score_drugs(self, drugname):
+        FOUND = False
+        if drugname not in self.drugs.keys():
+            print("Drugname: " +  drugname + " not found.")
+        else:
+            #calculating score
+            FOUND = True
+
 
 
 def main():
     alg = HIVdb("/home/tng92/git/sierra-local/HIVDB.xml")
     alg.parse_definitions(alg.root)
     alg.parse_drugs(alg.root)
-    print(alg.definitions)
-    print(alg.drugs)
+    #print(alg.definitions)
+    #print(alg.drugs.keys())
+    #print(alg.drugs[('ETR', 'etravirine')])
+    alg.score_drugs("ETR")
+    alg.score_drugs("etravirine")
+
 
 main()
 
