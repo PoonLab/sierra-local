@@ -70,40 +70,81 @@ class HIVdb():
                 fullname = element.find('FULLNAME').text
                 rule = element.find('RULE')
                 condition = rule.find('CONDITION').text
-                condition = self._partition_scores(condition)
+                condition = self.partition_scores(condition)
+                print(condition, '\n\n')
                 self.drugs[drug] = self.drugs[fullname] = condition
 
 
-    def _partition_scores(self, condition):
+    def partition_scores(self, condition):
         # drug resistant mutation (DRM)
         mutation_list = condition.lstrip('SCORE FROM(').rstrip(')').split('\n')
-        self.drm_scores = {
+        drm_scores = {
             'single_drm_dict': {},
             'max_dict': {},
-            'combo_dict': {}
+            'combo_dict': {},
+            'mixed_dict': {}
         }
         for drm in mutation_list:
-            single_drm = drm.strip().rstrip(',')
-            if single_drm.startswith('MAX'):
-                possibilities = re.findall(r'[\S]+[\s]*[=][>][\s][\d]+', single_drm)
-                # TODO: deal with the case when they incorporate boolean 'AND' into the 'MAX' scorelist of scoreitems
-                for aa in possibilities:
+            drm_group = drm.strip().rstrip(',')
+            if drm_group.startswith('MAX') and drm_group.find('AND') != -1:
+                mixed_drms = self.parse_mixed_condition(drm_group)
+                for aa in mixed_drms:
+                    mixed_group = {}
+                    mutation = aa.split('=>')
+                    score = int(mutation[1].strip())
+                    drm = str(mutation[0].strip())
+                    if drm.find('AND') != -1:
+                        combinations = self.parse_combo_condition(drm)
+                        for choice in combinations:
+                            drm = choice
+                            mixed_group.update({drm: score})
+                    else:
+                        drm = mutation[0].strip()
+                        mixed_group.update({drm:score})
+                    drm_scores['mixed_dict'].update({drm_group: mixed_group})
+
+
+            elif drm_group.startswith('MAX'):
+                max_group = {}
+                max_drms = self.parse_max_condition(drm_group)
+                for aa in max_drms:
                     mutation = aa.split('=>')
                     drm = mutation[0].strip()
                     score = int(mutation[1].strip())
-                    self.drm_scores['max_dict'].update({drm: score})
-            elif single_drm.find('AND') != -1:
-                combinations = re.split('(| AND |) => ', single_drm)
-                for aa in combinations[:-1]:
+                    max_group.update({drm: score})
+                drm_scores['max_dict'].update({drm_group: max_group})
+
+            elif drm_group.find('AND') != -1:
+                mutation = drm_group.split('=>')
+                score = int(mutation[1].strip())
+                combo_drms = self.parse_combo_condition(drm_group)
+                combo_group = {}
+                for aa in combo_drms[:-1]:
                     drm = aa
-                    score = int(combinations[len(combinations) - 1])
-                    self.drm_scores['combo_dict'].update({drm: score})
-            else:
-                score_cond = single_drm.split()
+                    combo_group.update({drm: score})
+                drm_scores['combo_dict'].update({drm_group: combo_group})
+
+            else:    # parsing for a single drm condition
+                score_cond = drm_group.split()
                 drm = score_cond[0].strip()
                 score = int(score_cond[2].strip())
-                self.drm_scores['single_drm_dict'].update({drm: score})
-        return self.drm_scores
+                drm_scores['single_drm_dict'].update({drm: score})
+        return drm_scores
+
+
+    def parse_max_condition(self, drm_group):
+        regex = '[\S]+[\s]*=>[\s]*[\d]+'
+        max_drms = re.findall(regex, drm_group)
+        return(max_drms)
+
+    def parse_combo_condition(self, drm_group):
+        combinations = re.split('[(]|[\s]*AND[\s]*|[)][\s]*', drm_group)
+        return combinations
+
+    def parse_mixed_condition(self, drm_group):
+        regex = '[\S]+[\s]*=>[\s]*[\d]+ | [(]{1}[\d]+[\S]+[\s]*AND[\s]*[\S]+[\s]*=>[\s]*[\d]+'
+        mixed_drms = re.findall(regex, drm_group)
+        return(mixed_drms)
 
 
     def score_drugs(self, drugname):
