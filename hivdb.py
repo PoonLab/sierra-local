@@ -100,7 +100,9 @@ class HIVdb():
 
             # if this is strictly and 'AND' condition, store individual DRMs into nested dictionary within combo_dict
             elif drm_group.find('AND') != -1:
-                combo_drms = self.parse_combo_condition(drm_group)
+                mutation = drm_group.split('=>')
+                score = int(mutation[1].strip())
+                combo_drms = self.parse_combo_condition(drm_group, score)
                 drm_scores['combo_dict'].update({drm_group: combo_drms})
 
             # parsing for a single drm condition, no helper function necessary
@@ -130,10 +132,8 @@ class HIVdb():
 
     # example condition: '(40F AND 41L AND 210W AND 215FY) => 5'
     # @return {'40F': 5, '41L': 5, '210W': 5, '215FY': 5}
-    def parse_combo_condition(self, drm_group):
+    def parse_combo_condition(self, drm_group, score):
         combo_group = {}
-        mutation = drm_group.split('=>')
-        score = int(mutation[1].strip())
         regex = '[\d]+[A-Za-z]+'
         combinations = re.findall(regex, drm_group)
 
@@ -156,12 +156,11 @@ class HIVdb():
             drm = str(mutation[0].strip())
             # parse each combination condition within the mixed condition and update nested dictionary
             if drm.find('AND') != -1:
-                combinations = self.parse_combo_condition(aa)
-                mixed_group.update({drm: combinations})
+                combinations = self.parse_combo_condition(aa, score)
+                mixed_group.update({aa: combinations})
             # for the possibility that there may be a single DRM mixed with the 'AND' conditionals
             else:
-                drm = mutation[0].strip()
-                mixed_group.update({drm: score})
+                mixed_group.update({aa: score})
 
         return(mixed_group)
 
@@ -179,8 +178,10 @@ class HIVdb():
             combo_score = self.score_combo(drugname, sequence)
             mixed_score = self.score_mixed(drugname, sequence)
 
+            print(max_score)
+            print(mixed_score)
             total = single_score + max_score + combo_score + mixed_score
-        return total
+            return total
 
 
     def score_single(self, drugname, sequence):
@@ -190,8 +191,8 @@ class HIVdb():
         # single_drm_scores = {'15Q': 10, '7G': 10, '5Y': 15}
         for drm in single_drm_scores.keys():
             residue = int(re.findall('[\d]+', drm)[0])
-            aa = re.findall('[A-Za-z]', drm)
-            if sequence[residue - 1] in aa:              # TODO: check and throw IndexOutofRange Error (apply to all score functions)
+            aa = re.findall('[0-9]+([A-Za-z])', drm)
+            if sequence[residue - 1] in aa:              # TODO: check and throw IndexOutofRange Error (then apply to all score functions)
                 score += single_drm_scores[drm]
         return score
 
@@ -205,9 +206,10 @@ class HIVdb():
             key_val_pairs = self.parse_max_condition(drm)
             for key in key_val_pairs.keys():
                 residue = int(re.findall('[\d]+', key)[0])
-                aa = re.findall('[A-Za-z]', key)
+                aa = re.findall('[0-9]+([A-Za-z]+)', key)
                 if sequence[residue - 1] in aa:
                     scores.append(key_val_pairs[key])
+
         return(max(scores))
 
 
@@ -218,10 +220,12 @@ class HIVdb():
         # combo_drm_scores = {'(10E AND 18C AND 20Q) => 15': {'10E': 15, '18C': 15, '20Q': 15}}
         for drm in combo_drm_scores.keys():
             count = 0
-            key_val_pairs = self.parse_combo_condition(drm)
+            mutation = drm.split('=>')
+            score = int(mutation[1].strip())
+            key_val_pairs = self.parse_combo_condition(drm, score)
             for key in key_val_pairs.keys():
                 residue = int(re.findall('[\d]+', key)[0])
-                aa = re.findall('[A-Za-z]', key)
+                aa = re.findall('[0-9]+([A-Za-z]+)', key)
                 if sequence[residue - 1] not in aa:
                     # print(sequence[residue -1], " is not in ", key_val_pairs.keys())
                     continue
@@ -232,25 +236,38 @@ class HIVdb():
 
     def score_mixed(self, drugname, sequence):
         mixed_drm_scores = self.drugs[drugname]['mixed_dict']
-        score = [0]
-        #mixed_drm_scores =
-
-        for drm in mixed_drm_scores.keys():
-            print(drm)
-            reformat_str = re.findall('[\s]*=>[\s]*\d+', drm)
-            print(reformat_str)
+        total_scores = [0]
+        # preliminary testing
+        # mixed_drm_scores= {'MAX ((17T AND 18C) => 5, (19F AND 18C) => 15)': {'(17T AND 18C) => 5': {'17T': 5, '18C': 5},'(19F AND 18C) => 15': {'19F': 15, '18C': 15}}}
+        for drm in  mixed_drm_scores.keys():
             key_val_pairs = self.parse_mixed_condition(drm)
-            print(key_val_pairs)
-            for key in key_val_pairs:
-                print(key)
-                print(key_val_pairs[key])
-                if key.find('AND') != -1:
-                    reformat_key = key + reformat_str
-                    combinations = self.parse_combo_condition(reformat_key)
-                    print(combinations)
-                # '(40F AND 41L AND 210W AND 215FY) => 5'
-                # {'(210W AND 215ACDEILNSV)': {'210W': 5, '215ACDEILNSV': 5}
 
+            for key in key_val_pairs:
+                count = 0
+                mutation = key.split('=>')
+                score = int(mutation[1].strip())
+
+                if key.find('AND') != -1:
+                    split_keys = re.findall('[0-9]+[A-Za-z]+', key)
+
+                    for i in split_keys:
+                        residue = int(re.findall('[\d]+(?!\d)(?=\w)', i)[0])
+                        aa = re.findall('[0-9]+([A-Za-z]+)', i)
+
+                        if sequence[residue - 1] not in aa:
+                            # print(sequence[residue -1], " is not present in sequence.")
+                            continue
+                        count += 1
+
+                        if count == len(split_keys):
+                            total_scores.append(score)
+                else:
+                    aa = re.findall('[0-9]+([A-Za-z]+)', key)
+                    residue = int(re.findall('[\d]+', key)[0])
+                    if sequence[residue - 1] in aa:
+                        total_scores.append(score)
+
+        return(max(total_scores))
 
 
 
@@ -264,8 +281,7 @@ def main():
     alg.parse_drugs(alg.root)
     #print(alg.definitions)
     #print(alg.drugs.keys())
-    alg.score_mixed("ETR", 'DAAAAAAAAELGAAAAACFQAAA')
-    #alg.score_drugs("etravirine")
+    print(alg.score_drugs("etravirine", 'DAAAAAGAAELGAAAATCTQAAA'))
 
 
 main()
