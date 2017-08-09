@@ -63,70 +63,62 @@ class HIVdb():
 
 
     def parse_drugs(self, root):
-        self.drugs = {}
+        self.drugs = {}                                                     # can this be eliminated? May not need it
         for element in root.getchildren():
             if element.tag == 'DRUG':
-                drug = element.find('NAME').text
-                fullname = element.find('FULLNAME').text
-                rule = element.find('RULE')
-                condition = rule.find('CONDITION').text
-                condition = self.partition_scores(condition)
+                drug = element.find('NAME').text                            # name of the drug
+                fullname = element.find('FULLNAME').text                    # full name of the drug
+                condition = element.find('RULE').find('CONDITION').text     # drug conditions
+                cond_dict = self.parse_condition(condition)                 # dictionary of parsed drug conditions
                 #print(condition, '\n\n')
-                self.drugs[drug] = self.drugs[fullname] = condition
+                self.drugs[drug] = self.drugs[fullname] = cond_dict         # is this needed? if self.drugs = {} isn't needed then scrap this
 
 
-    def partition_scores(self, condition):
+    def parse_condition(self, condition):
         # drug resistant mutation (DRM)
-        mutation_list = condition.lstrip('SCORE FROM(').rstrip(')').split('\n')
-        drm_scores = {
-            'single_drm_dict': {},
-            'max_dict': {},
-            'combo_dict': {},
-            'mixed_dict': {}
-        }
+        mutation_list = condition.split('(',1)[1].rstrip(')').split('\n')       # NOTE: \n may not be stable/transferable on other platforms
+        drms= []                            # list of DRM groups of 1 or more DRM tuples indicating residue and aa(s), as well as corresponding value
         for drm in mutation_list:
             drm_group = drm.strip().rstrip(',')
 
             # if this is a mixed condition with both conditional 'AND' as well as an overall 'MAX'
-            # storing each drug resistant mutation group as a nested dictionary within the mixed dictionary
+            # storing each drug resistant mutation group as a nested dictionary within the drm list
             if drm_group.startswith('MAX') and drm_group.find('AND') != -1:
                 mixed_drms = self.parse_mixed_condition(drm_group)
-                drm_scores['mixed_dict'].update({drm_group: mixed_drms})
+
 
             # if this is a 'MAX' condition, store each DRM group as a nested dictionary within max_dict
             elif drm_group.startswith('MAX'):
                 max_drms = self.parse_max_condition(drm_group)
-                drm_scores['max_dict'].update({drm_group: max_drms})
+
 
             # if this is strictly and 'AND' condition, store individual DRMs into nested dictionary within combo_dict
             elif drm_group.find('AND') != -1:
                 mutation = drm_group.split('=>')
                 score = int(mutation[1].strip())
                 combo_drms = self.parse_combo_condition(drm_group, score)
-                drm_scores['combo_dict'].update({drm_group: combo_drms})
 
             # parsing for a single drm condition, no helper function necessary
             else:
                 score_cond = drm_group.split()
                 drm = score_cond[0].strip()
                 score = int(score_cond[2].strip())
-                drm_scores['single_drm_dict'].update({drm: score})
 
-        return drm_scores
+        return drms
 
 
     # example condition: 'MAX ( 65E => 10, 65N => 30, 65R => 45 )'
     # @return {'65E': 10, '65N': 30, '65R': 45}
     def parse_max_condition(self, drm_group):
-        max_group = {}
+        max_group = []
         regex = '[\S]+[\s]*=>[\s]*[\d]+'
         max_drms = re.findall(regex, drm_group)
 
-        for aa in max_drms:
-            mutation = aa.split('=>')
-            drm = mutation[0].strip()
-            score = int(mutation[1].strip())
-            max_group.update({drm: score})
+        for mutation in max_drms:
+            residue = re.findall('[\d]+(?!\d)(?=\w)', mutation)
+            aa = re.findall('[0-9]+([A-Za-z]+)', mutation)
+            score = int(mutation.split('=>')[1].strip())
+            max_group.append({'group': [(residue, aa)], 'value':score})
         return(max_group)
 
 
