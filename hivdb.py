@@ -79,38 +79,55 @@ class HIVdb():
         mutation_list = condition.split('(',1)[1].rstrip(')').split('\n')       # NOTE: \n may not be stable/transferable on other platforms
         drms= []                            # list of DRM groups of 1 or more DRM tuples indicating residue and aa(s), as well as corresponding value
         for drm in mutation_list:
+            drm_tuples = []
             drm_group = drm.strip().rstrip(',')
 
             # if this is a mixed condition with both conditional 'AND' as well as an overall 'MAX'
             # storing each drug resistant mutation group as a nested dictionary within the drm list
             if drm_group.startswith('MAX') and drm_group.find('AND') != -1:
-                mixed_drms = self.parse_mixed_condition(drm_group)
+                mixed_drms = self.parse_mixed_condition(drms, drm_group)
 
 
-            # if this is a 'MAX' condition, store each DRM group as a nested dictionary within max_dict
+            # for a 'MAX' condition only; separating (residue, aa) tuples from corresponding scores
             elif drm_group.startswith('MAX'):
-                max_drms = self.parse_max_condition(drm_group)
+                residueAA = re.findall('[0-9]+[A-Za-z]+', drm_group)                # TODO: this section has been refactored but needs testing
+                for mutation in residueAA:
+                    residue = re.findall('[\d]+', mutation)
+                    aa = re.findall('[0-9]+', mutation)
+                    drm_tuples.append((residue, aa))
+                scores = re.findall('[0-9]+(?=\W)', drm_group)
+                self.parse_maxand(drms, drm_tuples, scores)
 
 
-            # if this is strictly and 'AND' condition, store individual DRMs into nested dictionary within combo_dict
+            # if this is strictly an 'AND' condition, store individual DRMs into nested dictionary within combo_dict
             elif drm_group.find('AND') != -1:
                 mutation = drm_group.split('=>')
                 score = int(mutation[1].strip())
-                combo_drms = self.parse_combo_condition(drm_group, score)
+                combo_drms = self.parse_combo_condition(drms, drm_group, score)
 
             # parsing for a single drm condition, no helper function necessary
             else:
-                score_cond = drm_group.split()
-                drm = score_cond[0].strip()
-                score = int(score_cond[2].strip())
+                residue = re.findall('[\d]+(?!\d)(?=\w)', drm_group)            # TODO: note that this is all duplicated code from 'MAX' only condition : condense down
+                aa = re.findall('[0-9]+([A-Za-z]+)', drm_group)
+                drm_tuples.append((residue, aa))
+                scores = re.findall('[0-9]+(?=\W)', drm_group)
+                self.parse_maxand(drms, drm_tuples, scores)
 
         return drms
 
+    # drms = list library we are populating with each sub-condition
+    # drm_tuples = given set of one or more separated (residue, aa) tuples
+    # scores = score associated with each tuple/ combination of tuples
+    def parse_maxand(self, drms, drm_tuples, score):                            # TODO: new function is created here, can possibly scrap the rest: needs testing
+        iter = 0
+        for mutation in drm_tuples:
+            drms.append({'group': mutation, 'value': score[iter]})
+            iter += 1
 
     # example condition: 'MAX ( 65E => 10, 65N => 30, 65R => 45 )'
     # @return {'65E': 10, '65N': 30, '65R': 45}
-    def parse_max_condition(self, drm_group):
-        max_group = []
+    def parse_max_condition(self, drms, drm_group):
+        drm_list = []
         regex = '[\S]+[\s]*=>[\s]*[\d]+'
         max_drms = re.findall(regex, drm_group)
 
@@ -118,13 +135,14 @@ class HIVdb():
             residue = re.findall('[\d]+(?!\d)(?=\w)', mutation)
             aa = re.findall('[0-9]+([A-Za-z]+)', mutation)
             score = int(mutation.split('=>')[1].strip())
-            max_group.append({'group': [(residue, aa)], 'value':score})
-        return(max_group)
+            drm_list.append((residue, aa))
+        drms.append({'group': drm_list, 'value':score})
+        return drms
 
 
     # example condition: '(40F AND 41L AND 210W AND 215FY) => 5'
     # @return {'40F': 5, '41L': 5, '210W': 5, '215FY': 5}
-    def parse_combo_condition(self, drm_group, score):
+    def parse_combo_condition(self, drms, drm_group, score):
         combo_group = {}
         regex = '[\d]+[A-Za-z]+'
         combinations = re.findall(regex, drm_group)
@@ -137,7 +155,7 @@ class HIVdb():
 
     # example condition: 'MAX ((210W AND 215ACDEILNSV) => 5, (210W AND 215FY) => 10)'
     # @return {'(210W AND 215ACDEILNSV)': {'210W': 5, '215ACDEILNSV': 5}
-    def parse_mixed_condition(self, drm_group):
+    def parse_mixed_condition(self, drms, drm_group):
         mixed_group = {}  # nested dictionary
         regex = '[\S]+[\s]*=>[\s]*[\d]+|[(]{1}[\d]+[\S]+[\s]*AND[\s]*[\S]+[\s]*=>[\s]*[\d]+'
         mixed_drms = re.findall(regex, drm_group)
@@ -148,7 +166,7 @@ class HIVdb():
             drm = str(mutation[0].strip())
             # parse each combination condition within the mixed condition and update nested dictionary
             if drm.find('AND') != -1:
-                combinations = self.parse_combo_condition(aa, score)
+                combinations = self.parse_combo_condition(drms, aa, score)
                 mixed_group.update({aa: combinations})
             # for the possibility that there may be a single DRM mixed with the 'AND' conditionals
             else:
