@@ -76,208 +76,60 @@ class HIVdb():
 
     def parse_condition(self, condition):
         # drug resistant mutation (DRM)
-        mutation_list = condition.split('(',1)[1].rstrip(')').split('\n')       # NOTE: \n may not be stable/transferable on other platforms
-        drms= []                            # list of DRM groups of 1 or more DRM tuples indicating residue and aa(s), as well as corresponding value
+        mutation_list = condition.split('(',1)[1].rstrip(')').split('\n')       # NOTE: \n may not be stable or transferable on other platforms
+        self.drms= []                            # list of DRM groups of 1 or more DRM tuples indicating residue and aa(s), as well as corresponding value
         for drm in mutation_list:
             drm_tuples = []
             drm_group = drm.strip().rstrip(',')
 
-            # if this is a mixed condition with both conditional 'AND' as well as an overall 'MAX'
-            # storing each drug resistant mutation group as a nested dictionary within the drm list
-            if drm_group.startswith('MAX') and drm_group.find('AND') != -1:
-                mixed_drms = self.parse_mixed_condition(drms, drm_group)
-
-
-            # for a 'MAX' condition only; separating (residue, aa) tuples from corresponding scores
-            elif drm_group.startswith('MAX'):
-                residueAA = re.findall('[0-9]+[A-Za-z]+', drm_group)                # TODO: this section has been refactored but needs testing
+            # will apply to all max conditions and mixed conditions b/c when we score we're going to 'take the max' of every condition regardless
+            # applies to 'AND' condition now too! yay
+            # applies to a 'MAX'-only condition or a single drm condition
+            # in a 'MAX' condition, creates a dictionary of a list of drm_group tuples and a list of score values
+            # if a single drm condition, creates a dictionary of one drm_group tuple and one score value
+            rANDr = re.findall('([0-9]+[A-z]+(\s?AND\s?[0-9]+[A-z]+)*)', drm_group)     # match one or more residueAA in combination(s) with a single associated score
+            for combo_group in rANDr:
+                residueAA = re.findall('[0-9]+[A-z]+', combo_group)             # TODO: this section has been refactored but needs testing
                 for mutation in residueAA:
-                    residue = re.findall('[\d]+', mutation)
-                    aa = re.findall('[0-9]+', mutation)
+                    residue = re.findall('[\d]+(?!\d)(?=\w)', mutation)
+                    aa = re.findall('[0-9]+([A-z]+)', mutation)
                     drm_tuples.append((residue, aa))
-                scores = re.findall('[0-9]+(?=\W)', drm_group)
-                self.parse_maxand(drms, drm_tuples, scores)
 
+            scores = re.findall('[0-9]+(?=\W)', drm_group)            # extracts scores in same order as grouped drm tuples; stored in an (indexable) list
+            self.parse_indiv_cond(self.drms, drm_tuples, scores)
 
-            # if this is strictly an 'AND' condition, store individual DRMs into nested dictionary within combo_dict
-            elif drm_group.find('AND') != -1:
-                mutation = drm_group.split('=>')
-                score = int(mutation[1].strip())
-                combo_drms = self.parse_combo_condition(drms, drm_group, score)
+        return self.drms
 
-            # parsing for a single drm condition, no helper function necessary
-            else:
-                residue = re.findall('[\d]+(?!\d)(?=\w)', drm_group)            # TODO: note that this is all duplicated code from 'MAX' only condition : condense down
-                aa = re.findall('[0-9]+([A-Za-z]+)', drm_group)
-                drm_tuples.append((residue, aa))
-                scores = re.findall('[0-9]+(?=\W)', drm_group)
-                self.parse_maxand(drms, drm_tuples, scores)
-
-        return drms
-
-    # drms = list library we are populating with each sub-condition
-    # drm_tuples = given set of one or more separated (residue, aa) tuples
-    # scores = score associated with each tuple/ combination of tuples
-    def parse_maxand(self, drms, drm_tuples, score):                            # TODO: new function is created here, can possibly scrap the rest: needs testing
+    ###
+        # parse_indiv_cond function takes the list associated with the algorithm
+        # populates the library with a given drug resistant mutation condition
+        # @param self.drms; list library we are populating with each sub-condition
+        # @param drm_tuples; given set of one or more separated (residue, aa) tuples
+        # @params scores; score associated with each tuple/ combination of tuples
+    ###
+    def parse_indiv_cond(self, drms_lib, drm_tuples, score):                            # TODO: new function is created here, can possibly scrap the rest of the parse functions; needs testing
         iter = 0
         for mutation in drm_tuples:
-            drms.append({'group': mutation, 'value': score[iter]})
+            drms_lib.append({'group': mutation, 'value': score[iter]})
             iter += 1
 
-    # example condition: 'MAX ( 65E => 10, 65N => 30, 65R => 45 )'
-    # @return {'65E': 10, '65N': 30, '65R': 45}
-    def parse_max_condition(self, drms, drm_group):
-        drm_list = []
-        regex = '[\S]+[\s]*=>[\s]*[\d]+'
-        max_drms = re.findall(regex, drm_group)
 
-        for mutation in max_drms:
-            residue = re.findall('[\d]+(?!\d)(?=\w)', mutation)
-            aa = re.findall('[0-9]+([A-Za-z]+)', mutation)
-            score = int(mutation.split('=>')[1].strip())
-            drm_list.append((residue, aa))
-        drms.append({'group': drm_list, 'value':score})
-        return drms
-
-
-    # example condition: '(40F AND 41L AND 210W AND 215FY) => 5'
-    # @return {'40F': 5, '41L': 5, '210W': 5, '215FY': 5}
-    def parse_combo_condition(self, drms, drm_group, score):
-        combo_group = {}
-        regex = '[\d]+[A-Za-z]+'
-        combinations = re.findall(regex, drm_group)
-
-        for aa in combinations:
-            drm = aa
-            combo_group.update({drm: score})
-        return combo_group
-
-
-    # example condition: 'MAX ((210W AND 215ACDEILNSV) => 5, (210W AND 215FY) => 10)'
-    # @return {'(210W AND 215ACDEILNSV)': {'210W': 5, '215ACDEILNSV': 5}
-    def parse_mixed_condition(self, drms, drm_group):
-        mixed_group = {}  # nested dictionary
-        regex = '[\S]+[\s]*=>[\s]*[\d]+|[(]{1}[\d]+[\S]+[\s]*AND[\s]*[\S]+[\s]*=>[\s]*[\d]+'
-        mixed_drms = re.findall(regex, drm_group)
-
-        for aa in mixed_drms:
-            mutation = aa.split('=>')
-            score = int(mutation[1].strip())
-            drm = str(mutation[0].strip())
-            # parse each combination condition within the mixed condition and update nested dictionary
-            if drm.find('AND') != -1:
-                combinations = self.parse_combo_condition(drms, aa, score)
-                mixed_group.update({aa: combinations})
-            # for the possibility that there may be a single DRM mixed with the 'AND' conditionals
-            else:
-                mixed_group.update({aa: score})
-
-        return(mixed_group)
-
-
-    # every dictionary one-level deep within self.drugs will be run through, checking with the user-given sequence
-    # stores 4 individuals scores, which are then summed and returned
+    ###
+    # score_drugs function first checks if the drug is in the HIVdb
+    # if found, calculates score with a given drug and sequence according to Stanford algorithm
+    # @param drugname; name of the drug you want the score for
+    # @param sequence; user provided sequence of type str (tolerates whitespace on either side, will strip it out later)
+    # @return score; calculated drm mutation score
+    ###
     def score_drugs(self, drugname, sequence):
         FOUND = False
         if drugname not in self.drugs.keys(): print("Drugname: " +  drugname + " not found.")
         else: FOUND = True
         if FOUND:
             #calculate scores
-            single_score = self.score_single(drugname, sequence)
-            max_score = self.score_max(drugname, sequence)
-            combo_score = self.score_combo(drugname, sequence)
-            mixed_score = self.score_mixed(drugname, sequence)
-
-            print(max_score)
-            print(mixed_score)
-            total = single_score + max_score + combo_score + mixed_score
-            return total
-
-
-    def score_single(self, drugname, sequence):
-        single_drm_scores = self.drugs[drugname]['single_drm_dict']
-        score = 0
-        # preliminary testing
-        # single_drm_scores = {'15Q': 10, '7G': 10, '5Y': 15}
-        for drm in single_drm_scores.keys():
-            residue = int(re.findall('[\d]+', drm)[0])
-            aa = re.findall('[0-9]+([A-Za-z])', drm)
-            if sequence[residue - 1] in aa:              # TODO: check and throw IndexOutofRange Error (then apply to all score functions)
-                score += single_drm_scores[drm]
-        return score
-
-
-    def score_max(self, drugname, sequence):
-        max_drm_scores = self.drugs[drugname]['max_dict']
-        scores = [0]
-        # preliminary testing
-        # max_drm_scores = {'MAX ( 1D => 10, 17E => 10, 19F => 15)': {'1D': 10, '17E': 10, '19F': 15}}
-        for drm in max_drm_scores.keys():
-            key_val_pairs = self.parse_max_condition(drm)
-            for key in key_val_pairs.keys():
-                residue = int(re.findall('[\d]+', key)[0])
-                aa = re.findall('[0-9]+([A-Za-z]+)', key)
-                if sequence[residue - 1] in aa:
-                    scores.append(key_val_pairs[key])
-
-        return(max(scores))
-
-
-    def score_combo(self, drugname, sequence):
-        combo_drm_scores = self.drugs[drugname]['combo_dict']
-        score = 0
-        # preliminary testing
-        # combo_drm_scores = {'(10E AND 18C AND 20Q) => 15': {'10E': 15, '18C': 15, '20Q': 15}}
-        for drm in combo_drm_scores.keys():
-            count = 0
-            mutation = drm.split('=>')
-            score = int(mutation[1].strip())
-            key_val_pairs = self.parse_combo_condition(drm, score)
-            for key in key_val_pairs.keys():
-                residue = int(re.findall('[\d]+', key)[0])
-                aa = re.findall('[0-9]+([A-Za-z]+)', key)
-                if sequence[residue - 1] not in aa:
-                    # print(sequence[residue -1], " is not in ", key_val_pairs.keys())
-                    continue
-                count += 1
-                if count == len(key_val_pairs.keys()):
-                    score += (key_val_pairs[key])
-        return(score)
-
-    def score_mixed(self, drugname, sequence):
-        mixed_drm_scores = self.drugs[drugname]['mixed_dict']
-        total_scores = [0]
-        # preliminary testing
-        # mixed_drm_scores= {'MAX ((17T AND 18C) => 5, (19F AND 18C) => 15)': {'(17T AND 18C) => 5': {'17T': 5, '18C': 5},'(19F AND 18C) => 15': {'19F': 15, '18C': 15}}}
-        for drm in  mixed_drm_scores.keys():
-            key_val_pairs = self.parse_mixed_condition(drm)
-
-            for key in key_val_pairs:
-                count = 0
-                mutation = key.split('=>')
-                score = int(mutation[1].strip())
-
-                if key.find('AND') != -1:
-                    split_keys = re.findall('[0-9]+[A-Za-z]+', key)
-
-                    for i in split_keys:
-                        residue = int(re.findall('[\d]+(?!\d)(?=\w)', i)[0])
-                        aa = re.findall('[0-9]+([A-Za-z]+)', i)
-
-                        if sequence[residue - 1] not in aa:
-                            # print(sequence[residue -1], " is not present in sequence.")
-                            continue
-                        count += 1
-
-                        if count == len(split_keys):
-                            total_scores.append(score)
-                else:
-                    aa = re.findall('[0-9]+([A-Za-z]+)', key)
-                    residue = int(re.findall('[\d]+', key)[0])
-                    if sequence[residue - 1] in aa:
-                        total_scores.append(score)
-
-        return(max(total_scores))
+            for i in self.drms:
+                
+                #don't forget to take the max of everything every time; doesn't matter for the single drm or combination condition because they only have one associated value anyways
 
 
 
