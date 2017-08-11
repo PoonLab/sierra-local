@@ -62,74 +62,128 @@ class HIVdb():
                 self.definitions['comment'].update({id: comment})
 
 
+    """ parse_drugs iterates through each drug in HIVDB, 
+        parses condition for a specific drug, 
+        and assigns a library of the drug resistant mutation conditions to the dictionary of drugs
+        
+        @param root: algorithm root
+    """
     def parse_drugs(self, root):
-        self.drugs = {}                                                     # can this be eliminated? May not need it
+        self.drugs = {}
+        #count =0
+        # can this be eliminated? May not need it
         for element in root.getchildren():
             if element.tag == 'DRUG':
                 drug = element.find('NAME').text                            # name of the drug
                 fullname = element.find('FULLNAME').text                    # full name of the drug
                 condition = element.find('RULE').find('CONDITION').text     # drug conditions
                 cond_dict = self.parse_condition(condition)                 # dictionary of parsed drug conditions
-                #print(condition, '\n\n')
+                #count += 1
+                #if count == 10:
+                    #print(drug, self.drms)
                 self.drugs[drug] = self.drugs[fullname] = cond_dict         # is this needed? if self.drugs = {} isn't needed then scrap this
 
 
+    """parse_condition function takes a given condition (one of four types)
+        'MAXAND' condition: MAX ((41L AND 215ACDEILNSV) => 5, (41L AND 215FY) => 15)
+        'MAX' condition: MAX ( 219E => 5, 219N => 5, 219Q => 5, 219R => 5 )
+        'AND' condition: (67EGN AND 215FY AND 219ENQR) => 5
+        'single-drm' condition: 62V => 5
+        
+    @param condition: given drug condition to parse
+    """
     def parse_condition(self, condition):
         # drug resistant mutation (DRM)
-        mutation_list = condition.split('(',1)[1].rstrip(')').split('\n')       # NOTE: \n may not be stable or transferable on other platforms
-        self.drms= []                            # list of DRM groups of 1 or more DRM tuples indicating residue and aa(s), as well as corresponding value
+        mutation_list = ((condition.split('(',1)[1].rstrip(')')) + ',').split('\n')    # NOTE: \n may not be stable or transferable on other platforms
+        self.drms= []                            # library of drms for the drug of the given condition
+
         for drm in mutation_list:
-            drm_tuples = []
-            drm_group = drm.strip().rstrip(',')
+            if drm.strip().startswith('MAX'):
+                max_lib = []
+                max_chunks = re.findall('\(?\d+[A-z]+[\s?AND\s?\d+\w]+\)?\s?=>\s?\d+', drm)
+                iter = 0
+                for chunk in max_chunks:
+                    # for both MAX conditions, need to create a mini-library that will keep all of the individual DRMs together
+                    self._parse_scores(max_lib, drm, chunk, iter)
+                    iter += 1               # iter is created to keep track of which DRM associated with which index in the list of scores in _parse_scores function
+                self.drms.append(max_lib)   # finally append this mini-library to the DRMs library
 
-            # will apply to all max conditions and mixed conditions b/c when we score we're going to 'take the max' of every condition regardless
-            # applies to 'AND' condition now too! yay
-            # applies to a 'MAX'-only condition or a single drm condition
-            # in a 'MAX' condition, creates a dictionary of a list of drm_group tuples and a list of score values
-            # if a single drm condition, creates a dictionary of one drm_group tuple and one score value
-            rANDr = re.findall('([0-9]+[A-z]+(\s?AND\s?[0-9]+[A-z]+)*)', drm_group)     # match one or more residueAA in combination(s) with a single associated score
-            for combo_group in rANDr:
-                residueAA = re.findall('[0-9]+[A-z]+', combo_group)             # TODO: this section has been refactored but needs testing
-                for mutation in residueAA:
-                    residue = re.findall('[\d]+(?!\d)(?=\w)', mutation)
-                    aa = re.findall('[0-9]+([A-z]+)', mutation)
-                    drm_tuples.append((residue, aa))
-
-            scores = re.findall('[0-9]+(?=\W)', drm_group)            # extracts scores in same order as grouped drm tuples; stored in an (indexable) list
-            self.parse_indiv_cond(self.drms, drm_tuples, scores)
+            else:
+                iter = 0
+                self._parse_scores(self.drms, drm, drm, iter)
 
         return self.drms
 
-    ###
-        # parse_indiv_cond function takes the list associated with the algorithm
-        # populates the library with a given drug resistant mutation condition
-        # @param self.drms; list library we are populating with each sub-condition
-        # @param drm_tuples; given set of one or more separated (residue, aa) tuples
-        # @params scores; score associated with each tuple/ combination of tuples
-    ###
-    def parse_indiv_cond(self, drms_lib, drm_tuples, score):                            # TODO: new function is created here, can possibly scrap the rest of the parse functions; needs testing
-        iter = 0
-        for mutation in drm_tuples:
-            drms_lib.append({'group': mutation, 'value': score[iter]})
-            iter += 1
+
+    """ _parse_scores function is a helper function to parse_condition.
+        Parses the residues, amino acids, and scores associated with a particular DRM,
+        then updates the specified dictionary library 
+        
+        @param drm_lib: given library to be updated with DRMs
+        @param drm: full name of original drug resistant mutation                           
+        @param chunk: drm_group of one of the condition types   (kinda vague...will fix)
+        @param iter: index to keep track of which DRM is associated with respective index in the extracted list of scores
+    """                                                                                                                     #TODO: combine drm and iter so less params
+    def _parse_scores(self, drm_lib, drm, chunk, iter):
+        scores = re.findall('[0-9]+(?=\W)', drm.strip())   # extract scores in same order as grouped drm tuples; stored in (indexable) list
+        rANDr = re.findall('\d+[A-z]+[\s?AND\s?\d+\w]+', chunk)
+
+        for combo_group in rANDr:
+            mut_list = []
+            residueAA = re.findall('[0-9]+[A-z]+', combo_group.strip())  # TODO: needs testing
+            for mutation in residueAA:
+                residue = int(re.findall('[\d]+(?!\d)(?=\w)', mutation)[0])
+                aa = str(re.findall('[0-9]+([A-z]+)', mutation)[0])
+                mut_list.append(tuple((residue, aa)))
+
+            # populate the drms library with the new drm condition
+            drm_lib.append({'group': mut_list, 'value': int(scores[iter])})
+            # wipe out scores stored in variable scores for next batch
+            scores[:] = []
 
 
-    ###
-    # score_drugs function first checks if the drug is in the HIVdb
-    # if found, calculates score with a given drug and sequence according to Stanford algorithm
-    # @param drugname; name of the drug you want the score for
-    # @param sequence; user provided sequence of type str (tolerates whitespace on either side, will strip it out later)
-    # @return score; calculated drm mutation score
-    ###
+    """
+    score_drugs function first checks if the drug is in the HIVdb
+    if found, calculates score with a given drug and sequence according to Stanford algorithm
+    
+    @param drugname: name of the drug you want the score for
+    @param sequence: user provided sequence of type str (tolerates whitespace on either side, will strip it out later)
+    @return score: calculated drm mutation score
+    """
     def score_drugs(self, drugname, sequence):
         FOUND = False
         if drugname not in self.drugs.keys(): print("Drugname: " +  drugname + " not found.")
         else: FOUND = True
         if FOUND:
-            #calculate scores
-            for i in self.drms:
-                
-                #don't forget to take the max of everything every time; doesn't matter for the single drm or combination condition because they only have one associated value anyways
+            score = 0
+
+            for condition in self.drugs[drugname]:
+                #print(condition)
+                # list of potential scores
+                candidates = [0]
+
+                # if every item in condition['group'] is satisfied
+                    # append to list of potential scores
+                value = condition['value']
+                #print(value)
+                residueAAtuples = condition['group']
+                                                                 # TODO: Currently works only for single drm and combo, not the MAX conditions yet (deal with the mini-libraries)
+                #print(len(residueAAtuples))
+                count = 0
+                for i in residueAAtuples:
+                    residue = i[0]
+                    aa = i[1]
+                    if sequence[residue-1] != aa: continue
+                    else: count += 1
+                    if count == len(residueAAtuples):
+                        candidates.append(value)
+
+                # take the max of what's in the list of potential scores and update total score
+                # doesn't matter for the single drm or combo condition because they only have one associated value anyways
+                score += max(candidates)
+
+            return score
+
 
 
 
@@ -143,7 +197,9 @@ def main():
     alg.parse_drugs(alg.root)
     #print(alg.definitions)
     #print(alg.drugs.keys())
-    print(alg.score_drugs("etravirine", 'DAAAAAGAAELGAAAATCTQAAA'))
+    alg.score_drugs("etravirine", 'DAAAAAGAAELGAAAATCTQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
+
+
 
 
 main()
