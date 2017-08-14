@@ -199,51 +199,39 @@ class HIVdb():
                             else: residueAAtuples.append(gv_pairs[item])
 
 
-
                 ## alternative method?
                 #cond_dict = dict(zip(residueAAtuples, values))           # maintains associations between group-value pairs   --> may not work b/c problem of differentiating between keys
 
 
 
-                # we know that if values list only has 1 value, must be a 'single-drm' or 'AND' condition
-                # if every item in 'group' is satisfied, append to list of potential scores
-                if len(values) == 1:
-                    count = 0
-                    for residueAA in residueAAtuples:
-                        print(residueAA[count][0], residueAA[count][1])
-                        if not sequence[residueAA[count][0]-1].substring(residueAA[count][1]): continue         # TODO: if IndexError, continue as well (don't throw error just because sequence isn't that long)
+                ## for the MAX and MAXAND condition, not all of the 'group' conditions need to be satisfied to be appended to the candidates list
+
+                # 'MAX' condition 'residueAAtuples' setup
+                # [
+                #   [(138, 'A')],           # if true, assign 10
+                #   [(138, 'G')],           # if true, assign 30
+                #   [(138, 'K')]            # if true, assign 10
+                # ]
+                # 'MAX' condition 'values' setup
+                # [10, 30, 10]
+
+                # 'MAXAND' condition 'residueAAtuples' setup
+                # [
+                #   [(179, 'F'), (181, 'C')],       # if true, assign 15
+                #   [(179, 'T'), (181, 'C')]        # if true, assign 5
+                # ]
+                # 'MAXAND' condition 'values' setup
+                # [15, 5]
+
+                iter = 0                                # iter is to keep track of the associated index in the values list
+                for residueAA in residueAAtuples:
+                    count = 0                           # count is to make sure all the tuples conditions within a residueAAtuples group is satisfied
+                    for tuple in residueAA:
+                        if not sequence[tuple[0]-1].substring(tuple[1]): continue
                         else: count += 1
-                        if count == len(residueAAtuples):
-                            candidates.append(values)
-
-
-
-                # for the MAX and MAXAND condition, not all of the 'group' conditions need to be satisfied to be appended to the candidates list
-
-                # 'MAX' condition 'group' setup
-                # [
-                #   [(138, 'A')],
-                #   [(138, 'G')],
-                #   [(138, 'K')]
-                # ]
-
-                # 'MAXAND' condition 'group' setup
-                # [
-                #   [(179, 'F'), (181, 'C')],
-                #   [(179, 'T'), (181, 'C')]
-                # ]
-
-                ## this could be a more generalizable form of the section above
-                else:
-                    iter = 0
-                    for residueAA in residueAAtuples:
-                        count = 0
-                        for tuple in residueAA:
-                            if not sequence[tuple[0]-1].substring(tuple[1]): continue    # BUG: which is fine for 'MAX' condition, but not 'MAXAND' condition
-                            else: count += 1
-                            if count == len(residueAA):
-                                candidates.append(values[iter])
-                        iter += 1
+                        if count == len(residueAA):                                      # TODO: if IndexError, continue as well (don't throw error just because sequence isn't that long)
+                            candidates.append(values[iter])
+                    iter += 1
 
                 # take the max of what's in the list of potential scores and update total score
                 # doesn't matter for the single drm or combo condition because they only have one associated value anyways
