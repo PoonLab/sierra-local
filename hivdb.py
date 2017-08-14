@@ -84,13 +84,14 @@ class HIVdb():
                 self.drugs[drug] = self.drugs[fullname] = cond_dict         # is this needed? if self.drugs = {} isn't needed then scrap this
 
 
-    """parse_condition function takes a given condition (one of four types)
+    """ parse_condition function takes a given condition (one of four types)
         'MAXAND' condition: MAX ((41L AND 215ACDEILNSV) => 5, (41L AND 215FY) => 15)
         'MAX' condition: MAX ( 219E => 5, 219N => 5, 219Q => 5, 219R => 5 )
         'AND' condition: (67EGN AND 215FY AND 219ENQR) => 5
         'single-drm' condition: 62V => 5
         
-    @param condition: given drug condition to parse
+        @param condition: given drug condition to parse
+        @return self.drms: list library updated with all the DRM conditions associated with given drug condition
     """
     def parse_condition(self, condition):
         # drug resistant mutation (DRM)
@@ -117,7 +118,7 @@ class HIVdb():
 
     """ _parse_scores function is a helper function to parse_condition.
         Parses the residues, amino acids, and scores associated with a particular DRM,
-        then updates the specified dictionary library 
+        then updates the specified list library 
         
         @param drm_lib: given library to be updated with DRMs
         @param drm: full name of original drug resistant mutation                           
@@ -142,13 +143,12 @@ class HIVdb():
             scores[:] = []
 
 
-    """
-    score_drugs function first checks if the drug is in the HIVdb
-    if found, calculates score with a given drug and sequence according to Stanford algorithm
+    """ score_drugs function first checks if the drug is in the HIVdb
+        if found, calculates score with a given drug and sequence according to Stanford algorithm
     
-    @param drugname: name of the drug you want the score for
-    @param sequence: user provided sequence of type str (tolerates whitespace on either side, will strip it out later)
-    @return score: calculated drm mutation score
+        @param drugname: name of the drug you want the score for
+        @param sequence: user provided sequence of type str (tolerates whitespace on either side, will strip it out later)
+        @return score: calculated drm mutation score
     """
     def score_drugs(self, drugname, sequence):
         FOUND = False
@@ -157,26 +157,93 @@ class HIVdb():
         if FOUND:
             score = 0
 
+            # example of an 'AND' condition structure
+            # {'group': [
+            #     (98, 'G'),
+            #     (41, 'K')
+            #     ],
+            #  'value': 10
+            # }
+                                                                # TODO: Currently works only for single drm and combo, not the MAX conditions yet (deal with the mini-libraries)
+            # example of a 'MAXAND' condition structure
+            # [
+            #   {'value': '5',
+            #    'group': [
+            #       (41, 'L'),
+            #       (215, 'ACDEILNSV')
+            #       ]
+            #   },
+            #   {'value': '15',
+            #    'group': [
+            #       (41, 'L'),
+            #       (215, 'FY')
+            #       ]
+            #   }
+            # ]
             for condition in self.drugs[drugname]:
-                #print(condition)
+                print(condition)
                 # list of potential scores
                 candidates = [0]
+                values = []
+                residueAAtuples = []
 
-                # if every item in condition['group'] is satisfied
-                    # append to list of potential scores
-                value = condition['value']
-                #print(value)
-                residueAAtuples = condition['group']
-                                                                 # TODO: Currently works only for single drm and combo, not the MAX conditions yet (deal with the mini-libraries)
-                #print(len(residueAAtuples))
-                count = 0
-                for i in residueAAtuples:
-                    residue = i[0]
-                    aa = i[1]
-                    if sequence[residue-1] != aa: continue
-                    else: count += 1
-                    if count == len(residueAAtuples):
-                        candidates.append(value)
+                for gv_pairs in condition:
+                    # 'AND' or 'single-drm' condition
+                    if isinstance(gv_pairs, str):
+                        if gv_pairs == 'value': values.append(condition[gv_pairs])
+                        else: residueAAtuples.append(condition[gv_pairs])
+                    # 'MAX' or 'MAXAND' condition
+                    else:
+                        for item in gv_pairs:
+                            if item == 'value': values.append(gv_pairs[item])
+                            else: residueAAtuples.append(gv_pairs[item])
+
+
+
+                ## alternative method?
+                #cond_dict = dict(zip(residueAAtuples, values))           # maintains associations between group-value pairs   --> may not work b/c problem of differentiating between keys
+
+
+
+                # we know that if values list only has 1 value, must be a 'single-drm' or 'AND' condition
+                # if every item in 'group' is satisfied, append to list of potential scores
+                if len(values) == 1:
+                    count = 0
+                    for residueAA in residueAAtuples:
+                        print(residueAA[count][0], residueAA[count][1])
+                        if not sequence[residueAA[count][0]-1].substring(residueAA[count][1]): continue         # TODO: if IndexError, continue as well (don't throw error just because sequence isn't that long)
+                        else: count += 1
+                        if count == len(residueAAtuples):
+                            candidates.append(values)
+
+
+
+                # for the MAX and MAXAND condition, not all of the 'group' conditions need to be satisfied to be appended to the candidates list
+
+                # 'MAX' condition 'group' setup
+                # [
+                #   [(138, 'A')],
+                #   [(138, 'G')],
+                #   [(138, 'K')]
+                # ]
+
+                # 'MAXAND' condition 'group' setup
+                # [
+                #   [(179, 'F'), (181, 'C')],
+                #   [(179, 'T'), (181, 'C')]
+                # ]
+
+                ## this could be a more generalizable form of the section above
+                else:
+                    iter = 0
+                    for residueAA in residueAAtuples:
+                        count = 0
+                        for tuple in residueAA:
+                            if not sequence[tuple[0]-1].substring(tuple[1]): continue    # BUG: which is fine for 'MAX' condition, but not 'MAXAND' condition
+                            else: count += 1
+                            if count == len(residueAA):
+                                candidates.append(values[iter])
+                        iter += 1
 
                 # take the max of what's in the list of potential scores and update total score
                 # doesn't matter for the single drm or combo condition because they only have one associated value anyways
@@ -190,14 +257,13 @@ class HIVdb():
 
 
 
-
 def main():
     alg = HIVdb("/home/tng92/git/sierra-local/HIVDB.xml")
     alg.parse_definitions(alg.root)
     alg.parse_drugs(alg.root)
     #print(alg.definitions)
     #print(alg.drugs.keys())
-    alg.score_drugs("etravirine", 'DAAAAAGAAELGAAAATCTQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
+    alg.score_drugs("etravirine", 'DAAAAAGAAELGAAAATCTQAAAAAAAAAA')
 
 
 
