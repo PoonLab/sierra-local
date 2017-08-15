@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as xml
 import re
-import os
+
 
 class HIVdb():
     def __init__(self, path):
@@ -74,14 +74,15 @@ class HIVdb():
         # can this be eliminated? May not need it
         for element in root.getchildren():
             if element.tag == 'DRUG':
-                drug = element.find('NAME').text                            # name of the drug
-                fullname = element.find('FULLNAME').text                    # full name of the drug
+                drug = element.find('NAME').text                            # drug name
+                fullname = element.find('FULLNAME').text                    # drug full name
                 condition = element.find('RULE').find('CONDITION').text     # drug conditions
                 cond_dict = self.parse_condition(condition)                 # dictionary of parsed drug conditions
                 #count += 1
                 #if count == 10:
                     #print(drug, self.drms)
                 self.drugs[drug] = self.drugs[fullname] = cond_dict         # is this needed? if self.drugs = {} isn't needed then scrap this
+        return self.drugs
 
 
     """ parse_condition function takes a given condition (one of four types)
@@ -141,120 +142,3 @@ class HIVdb():
             drm_lib.append({'group': mut_list, 'value': int(scores[iter])})
             # wipe out scores stored in variable scores for next batch
             scores[:] = []
-
-
-    """ score_drugs function first checks if the drug is in the HIVdb
-        if found, calculates score with a given drug and sequence according to Stanford algorithm
-    
-        @param drugname: name of the drug you want the score for
-        @param sequence: user provided sequence of type str (tolerates whitespace on either side, will strip it out later)
-        @return score: calculated drm mutation score
-    """
-    def score_drugs(self, drugname, sequence):
-        FOUND = False
-        if drugname not in self.drugs.keys(): print("Drugname: " +  drugname + " not found.")
-        else: FOUND = True
-        if FOUND:
-            score = 0
-
-            # example of an 'AND' condition structure
-            # {'group': [
-            #     (98, 'G'),
-            #     (41, 'K')
-            #     ],
-            #  'value': 10
-            # }
-                                                                # TODO: Currently works only for single drm and combo, not the MAX conditions yet (deal with the mini-libraries)
-            # example of a 'MAXAND' condition structure
-            # [
-            #   {'value': '5',
-            #    'group': [
-            #       (41, 'L'),
-            #       (215, 'ACDEILNSV')
-            #       ]
-            #   },
-            #   {'value': '15',
-            #    'group': [
-            #       (41, 'L'),
-            #       (215, 'FY')
-            #       ]
-            #   }
-            # ]
-            for condition in self.drugs[drugname]:
-                print(condition)
-                # list of potential scores
-                candidates = [0]
-                values = []
-                residueAAtuples = []
-
-                for gv_pairs in condition:
-                    # 'AND' or 'single-drm' condition
-                    if isinstance(gv_pairs, str):
-                        if gv_pairs == 'value': values.append(condition[gv_pairs])
-                        else: residueAAtuples.append(condition[gv_pairs])
-                    # 'MAX' or 'MAXAND' condition
-                    else:
-                        for item in gv_pairs:
-                            if item == 'value': values.append(gv_pairs[item])
-                            else: residueAAtuples.append(gv_pairs[item])
-
-
-                ## alternative method?
-                #cond_dict = dict(zip(residueAAtuples, values))           # maintains associations between group-value pairs   --> may not work b/c problem of differentiating between keys
-
-
-
-                ## for the MAX and MAXAND condition, not all of the 'group' conditions need to be satisfied to be appended to the candidates list
-
-                # 'MAX' condition 'residueAAtuples' setup
-                # [
-                #   [(138, 'A')],           # if true, assign 10
-                #   [(138, 'G')],           # if true, assign 30
-                #   [(138, 'K')]            # if true, assign 10
-                # ]
-                # 'MAX' condition 'values' setup
-                # [10, 30, 10]
-
-                # 'MAXAND' condition 'residueAAtuples' setup
-                # [
-                #   [(179, 'F'), (181, 'C')],       # if true, assign 15
-                #   [(179, 'T'), (181, 'C')]        # if true, assign 5
-                # ]
-                # 'MAXAND' condition 'values' setup
-                # [15, 5]
-
-                iter = 0                                # iter is to keep track of the associated index in the values list
-                for residueAA in residueAAtuples:
-                    count = 0                           # count is to make sure all the tuples conditions within a residueAAtuples group is satisfied
-                    for tuple in residueAA:
-                        if not sequence[tuple[0]-1].substring(tuple[1]): continue
-                        else: count += 1
-                        if count == len(residueAA):                                      # TODO: if IndexError, continue as well (don't throw error just because sequence isn't that long)
-                            candidates.append(values[iter])
-                    iter += 1
-
-                # take the max of what's in the list of potential scores and update total score
-                # doesn't matter for the single drm or combo condition because they only have one associated value anyways
-                score += max(candidates)
-
-            return score
-
-
-
-
-
-
-
-def main():
-    alg = HIVdb("/home/tng92/git/sierra-local/HIVDB.xml")
-    alg.parse_definitions(alg.root)
-    alg.parse_drugs(alg.root)
-    #print(alg.definitions)
-    #print(alg.drugs.keys())
-    alg.score_drugs("etravirine", 'DAAAAAGAAELGAAAATCTQAAAAAAAAAA')
-
-
-
-
-main()
-
