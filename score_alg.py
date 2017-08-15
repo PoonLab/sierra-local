@@ -27,7 +27,7 @@ def score_drugs(HIVdb, sequence):
 """
 def score_single(HIVdb, drugname, sequence):
     assert drugname in HIVdb.keys(), "Drugname: %s not found." % drugname
-    print(drugname)
+
     score = 0
     for condition in HIVdb[drugname]:
 
