@@ -19,16 +19,16 @@ class HIVdb():
             'comment': {}  # maps comments to id string
         }
 
-        for element in root.getchildren():
+        for element in root.getchildren()[3].getchildren():
             if element.tag == 'GENE_DEFINITION':
                 gene = element.find('NAME').text
-                drug_classes = element.find('DRUGCLASSLIST').text.split(', ')
+                drug_classes = element.find('DRUGCLASSLIST').text.split(',')
                 self.definitions['gene'].update({gene: drug_classes})
 
             elif element.tag == 'DRUGCLASS':
-                drugclass = element.find('NAME').text
+                name = element.find('NAME').text
                 druglist = element.find('DRUGLIST').text.split(',')
-                self.definitions['drugclass'].update({drugclass: druglist})
+                self.definitions['drugclass'].update({name: druglist})
 
             elif element.tag == 'GLOBALRANGE':
                 globalrange = element.find('GLOBALRANGE').text.split(',')
@@ -37,7 +37,9 @@ class HIVdb():
                     range = re.split('=>', item)[0].strip('() ')  # str containing the range: '-INF TO 9'
                     min = re.split('TO', range)[0].strip()  # str containing min val in range: '-INF'
                     max = re.split('TO', range)[1].strip()  # str containing max val in range: '9'
-                    # convert_to_num converts a string to integer, and also 'INF' and '-INF' to infinite representations
+                    # convert_to_num converts strings to integers, and also 'INF' and '-INF' to their
+                    # numerical representations
+
                     def convert_to_num(s):
                         if s == '-INF':
                             return float('-inf')
@@ -47,7 +49,7 @@ class HIVdb():
                             return int(s)
                     min = convert_to_num(min)
                     max = convert_to_num(max)
-                    self.definitions['globalrange'].update({order: [min, max]})  # TODO: convert to numerical
+                    self.definitions['globalrange'].update({order: {'min': min, 'max': max}})
 
             elif element.tag == 'LEVEL_DEFINTIION':
                 order = element.find('ORDER').text
@@ -58,8 +60,8 @@ class HIVdb():
             elif element.tag == 'COMMENT_DEFINITIONS':
                 id = element.find('COMMENT_STRING').text
                 comment = element.find('TEXT').text
-                # sort_tag = element.find('SORT_TAG').text  # TODO: is this necessary?? (it is always 1)
-                self.definitions['comment'].update({id: comment})
+                sort_tag = element.find('SORT_TAG').text
+                self.definitions['comment'].update({id: {sort_tag: comment}})
 
 
     """ parse_drugs iterates through each drug in HIVDB, 
