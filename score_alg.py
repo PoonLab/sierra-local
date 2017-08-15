@@ -30,11 +30,12 @@ def score_single(HIVdb, drugname, sequence):
     print(drugname)
     score = 0
     for condition in HIVdb[drugname]:
-        # list of potential scores
-        candidates = [0]
+
+        candidates = [0]        # list of potential scores
         values = []
         residueAAtuples = []
 
+        # separating values from groups of tuples in each condition, both appended to lists
         for gv_pairs in condition:
             # 'AND' or 'single-drm' condition
             if isinstance(gv_pairs, str):
@@ -50,34 +51,27 @@ def score_single(HIVdb, drugname, sequence):
                     else:
                         residueAAtuples.append(gv_pairs[item])
 
-        ## alternative method? Maintains associations between group-value pairs   --> may not work b/c problem of differentiating between keys
-        # cond_dict = dict(zip(residueAAtuples, values))
-
-
-        iter = 0  # iter is to keep track of the associated index in the values list
+        iter = 0  # iter keeps track of the associated index in the values list
         for residueAA in residueAAtuples:
-            count = 0  # count is to make sure all the tuples conditions within a residueAAtuples group is satisfied
+            count = 0  # count makes sure all the tuples conditions within a residueAAtuples group is satisfied
             for tuple in residueAA:
+                # TODO: if IndexError, continue as well (don't throw error just because sequence isn't that long)
                 if not sequence[tuple[0] - 1] in tuple[1]:
-                    print(sequence[tuple[0] - 1], 'is not in', tuple[1], 'at residue', tuple[0])
                     continue
                 else:
-                    print(sequence[tuple[0] -1] , 'present in', tuple[1], tuple[0])
                     count += 1
-                if count == len(
-                        residueAA):  # TODO: if IndexError, continue as well (don't throw error just because sequence isn't that long)
+                if count == len(residueAA):
                     candidates.append(values[iter])
-                    print(candidates)
             iter += 1
 
-        # take the max of what's in the list of potential scores and update total score
+        # take the max of what's in the list of potential scores (candidates) and update total score
         # doesn't matter for the single drm or combo condition because they only have one associated value anyways
         score += max(candidates)
 
     return score
 
 
-""" test-harness """
+""" testing """
 def main():
     path = os.getcwd() + '/HIVDB.xml'
     algorithm = HIVdb(path)
