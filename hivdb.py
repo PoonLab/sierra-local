@@ -9,59 +9,75 @@ class HIVdb():
         self.version = self.root.find('ALGVERSION').text
         self.version_date = self.root.find('ALGDATE').text
 
-
     def parse_definitions(self, root):
         self.definitions = {
             'gene': {},  # gene target names and drug classes
+            'level': {},  # maps from level to S/I/R symbols
             'drugclass': {},  # maps drug class to drugs
             'globalrange': {},  # maps from score to level
-            'level': {},  # maps from level to S/I/R symbols
             'comment': {}  # maps comments to id string
         }
+        # Convert list of elements from class 'xml.etree.ElementTree.Element' to type 'str'
+        element_list = list(map(lambda x: xml.tostring(x).strip().decode("utf-8"), root.getchildren()))
+        # Find the index of element 'DEFINITIONS' so that it's children may be iterated over to parse definitions
+        def_index = [i for i, item in enumerate(element_list) if re.search('<DEFINITIONS>', item)]
+        def_ind = def_index[0]  # un-list the index of 'DEFINITIONS' element
 
-        for element in root.getchildren()[3].getchildren():
+        definitions = root.getchildren()[def_ind]
+        comment_definitions = definitions.getchildren()[-1]  # TODO: swap out hard-coded index with variable
+
+        globalrange = definitions.find('GLOBALRANGE').text.split(',')
+        for item in globalrange:
+            order = int(re.split('=>', item)[1].strip('() '))  # str containing order number: '1'
+            range = re.split('=>', item)[0].strip('() ')  # str containing the range: '-INF TO 9'
+            min = re.split('TO', range)[0].strip()  # str containing min val in range: '-INF'
+            max = re.split('TO', range)[1].strip()  # str containing max val in range: '9'
+
+            # convert_to_num converts strings to integers, and also 'INF' and '-INF' to their
+            # numerical representations
+            def convert_to_num(s):
+               if s == '-INF':
+                   return float('-inf')
+               elif s == 'INF':
+                   return float('inf')
+               else:
+                   return int(s)
+            min = convert_to_num(min)
+            max = convert_to_num(max)
+            self.definitions['globalrange'].update({order: {'min': min, 'max': max}})
+
+        for element in definitions.getchildren():
             if element.tag == 'GENE_DEFINITION':
+                print('gene: ', element.find('NAME'))
                 gene = element.find('NAME').text
+                print(element.find('DRUGCLASSLIST'))
                 drug_classes = element.find('DRUGCLASSLIST').text.split(',')
                 self.definitions['gene'].update({gene: drug_classes})
 
+            elif element.tag == 'LEVEL_DEFINITION':
+                print(element.find('ORDER'))
+                order = element.find('ORDER').text
+                print(element.find('ORIGINAL'))
+                original = element.find('ORIGINAL').text
+                print(element.find('SIR'))
+                sir = element.find('SIR').text
+                self.definitions['level'].update({order: {sir: original}})
+
             elif element.tag == 'DRUGCLASS':
+                print('drugclass: ', element.find('NAME'))
                 name = element.find('NAME').text
+                print(element.find('DRUGLIST'))
                 druglist = element.find('DRUGLIST').text.split(',')
                 self.definitions['drugclass'].update({name: druglist})
 
-            elif element.tag == 'GLOBALRANGE':
-                globalrange = element.find('GLOBALRANGE').text.split(',')
-                for item in globalrange:
-                    order = int(re.split('=>', item)[1].strip('() '))  # str containing order number: '1'
-                    range = re.split('=>', item)[0].strip('() ')  # str containing the range: '-INF TO 9'
-                    min = re.split('TO', range)[0].strip()  # str containing min val in range: '-INF'
-                    max = re.split('TO', range)[1].strip()  # str containing max val in range: '9'
-                    # convert_to_num converts strings to integers, and also 'INF' and '-INF' to their
-                    # numerical representations
-
-                    def convert_to_num(s):
-                        if s == '-INF':
-                            return float('-inf')
-                        elif s == 'INF':
-                            return float('inf')
-                        else:
-                            return int(s)
-                    min = convert_to_num(min)
-                    max = convert_to_num(max)
-                    self.definitions['globalrange'].update({order: {'min': min, 'max': max}})
-
-            elif element.tag == 'LEVEL_DEFINTIION':
-                order = element.find('ORDER').text
-                original = element.find('ORIGINAL').text
-                sir = element.find('SIR').text
-                self.definitions['level'].update({order: {original: sir}})
-
             elif element.tag == 'COMMENT_DEFINITIONS':
-                id = element.find('COMMENT_STRING').text
-                comment = element.find('TEXT').text
-                sort_tag = element.find('SORT_TAG').text
-                self.definitions['comment'].update({id: {sort_tag: comment}})
+
+                for comment_str in comment_definitions.getchildren():
+                    id = comment_str.attrib['id']
+                    comment = comment_str.find('TEXT').text
+                    print(comment_str.find('SORT_TAG'))
+                    sort_tag = comment_str.find('SORT_TAG').text
+                    self.definitions['comment'].update({id: {sort_tag: comment}})
 
 
     """ parse_drugs iterates through each drug in HIVDB, 
@@ -144,3 +160,6 @@ class HIVdb():
             drm_lib.append({'group': mut_list, 'value': int(scores[iter])})
             # wipe out scores stored in variable scores for next batch
             scores[:] = []
+
+    def parse_comments(self, root):
+        pass
