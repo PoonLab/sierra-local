@@ -26,8 +26,7 @@ def score_drugs(HIVdb, sequence):
     @return score: calculated drm mutation score
 """
 def score_single(HIVdb, drugname, sequence):
-    assert drugname in HIVdb.keys(), "Drugname: %s not found." % drugname
-
+    # assert drugname in HIVdb.keys(), "Drugname: %s not found." % drugname
     score = 0
     for condition in HIVdb[drugname]:
 
@@ -56,6 +55,7 @@ def score_single(HIVdb, drugname, sequence):
             count = 0  # count makes sure all the tuples conditions within a residueAAtuples group is satisfied
             for tuple in residueAA:
                 # TODO: if IndexError, continue as well (don't throw error just because sequence isn't that long)
+                # TODO: also might qualify for a FAIL status for this particular sequence (update data structure for a PASS/FAIL)
                 if not sequence[tuple[0] - 1] in tuple[1]:
                     continue
                 else:
@@ -77,8 +77,8 @@ def main():
     algorithm = HIVdb(path)
     algorithm.parse_definitions(algorithm.root)
     database = algorithm.parse_drugs(algorithm.root)
-    x = score_drugs(database, 'DAAAAAGAAEFHKJDLSHJDFKSLDHJFKSLAFLAHSJDKFLAHKDFLAHSASDFKASDFLASDJFKALSDFRETORJTIETGOENRTIEROTNOERNTIENTIERTERTERJDKFLASKDJFHAKSIEKRJRNNFMFMMMFJHAKDHJFKHJFKHDKJSHLFKJHSKFHDSHFJDHSFFMMFMFMFMDFLAKJSDHFALKSDJHFASKDJHFALSDKJFHAJSDKFLAKSDJFHJSDKFLAKSJDFHALSKDJFHAKSDJFHALKSDJFHLKSDJHFLAKSDJHFLAKDJFHALKSJDHFALKSJDHFKAJSDHFJSKLAFKSJDHFJAKSLFJDHSFLKAJHFALSKDJFHSLADKJFAHSJDFKAJDHFKSLGAAAATCTQAAAAAAAAAA')
-    print(x)
+    scores = score_drugs(database, 'DAAAAAGAAEFHKJDLSHJDFKSLDHJFKSLAFLAHSJDKFLAHKDFLAHSASDFKASDFLASDJFKALSDFRETORJTIETGOENRTIEROTNOERNTIENTIERTERTERJDKFLASKDJFHAKSIEKRJRNNFMFMMMFJHAKDHJFKHJFKHDKJSHLFKJHSKFHDSHFJDHSFFMMFMFMFMDFLAKJSDHFALKSDJHFASKDJHFALSDKJFHAJSDKFLAKSDJFHJSDKFLAKSJDFHALSKDJFHAKSDJFHALKSDJFHLKSDJHFLAKSDJHFLAKDJFHALKSJDHFALKSJDHFKAJSDHFJSKLAFKSJDHFJAKSLFJDHSFLKAJHFALSKDJFHSLADKJFAHSJDFKAJDHFKSLGAAAATCTQAAAAAAAAAA')
+    print(scores)
 
 main()
 
