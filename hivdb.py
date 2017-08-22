@@ -72,18 +72,16 @@ class HIVdb():
     """
     def parse_drugs(self, root):
         self.drugs = {}
-        #count =0
-        # can this be eliminated? May not need it
+
         for element in root.getchildren():
             if element.tag == 'DRUG':
                 drug = element.find('NAME').text                            # drug name
                 fullname = element.find('FULLNAME').text                    # drug full name
                 condition = element.find('RULE').find('CONDITION').text     # drug conditions
                 cond_dict = self.parse_condition(condition)                 # dictionary of parsed drug conditions
-                #count += 1
-                #if count == 10:
-                    #print(drug, self.drms)
-                self.drugs[drug] = self.drugs[fullname] = cond_dict         # is this needed? if self.drugs = {} isn't needed then scrap this
+                self.drugs[drug] = self.drugs[fullname] = cond_dict
+                #if element.find('RULE').find('ACTIONS').text != None:
+                    #actions = element.find('RULE').find('ACTIONS').text
         return self.drugs
 
 
