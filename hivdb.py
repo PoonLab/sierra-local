@@ -48,36 +48,29 @@ class HIVdb():
 
         for element in definitions.getchildren():
             if element.tag == 'GENE_DEFINITION':
-                #print('gene: ', element.find('NAME'))
                 gene = element.find('NAME').text
-                #print(element.find('DRUGCLASSLIST'))
                 drug_classes = element.find('DRUGCLASSLIST').text.split(',')
                 self.definitions['gene'].update({gene: drug_classes})
 
             elif element.tag == 'LEVEL_DEFINITION':
-                #print(element.find('ORDER'))
                 order = element.find('ORDER').text
-                #print(element.find('ORIGINAL'))
                 original = element.find('ORIGINAL').text
-                #print(element.find('SIR'))
                 sir = element.find('SIR').text
-                self.definitions['level'].update({order: {sir: original}})
+                self.definitions['level'].update({order: {original: sir}})
 
             elif element.tag == 'DRUGCLASS':
-                #print('drugclass: ', element.find('NAME'))
                 name = element.find('NAME').text
-                #print(element.find('DRUGLIST'))
                 druglist = element.find('DRUGLIST').text.split(',')
                 self.definitions['drugclass'].update({name: druglist})
 
             elif element.tag == 'COMMENT_DEFINITIONS':
-
                 for comment_str in comment_definitions.getchildren():
                     id = comment_str.attrib['id']
                     comment = comment_str.find('TEXT').text
-                    #print(comment_str.find('SORT_TAG'))
                     sort_tag = comment_str.find('SORT_TAG').text
                     self.definitions['comment'].update({id: {sort_tag: comment}})
+
+        return(self.definitions)
 
 
     """ parse_drugs iterates through each drug in HIVDB, 
@@ -165,7 +158,7 @@ class HIVdb():
         Dictionary is further separated into protease (PR), integrase (IN), and reverse transcriptase (RT) dictionaries
         
         @param root: algorithm root
-        @return self.comments: a dictionary with key = mutation and value = mutation comment reference
+        @return self.comments: a dictionary with key = mutation and value = mutation comment reference for PR, IN, RT
     """
     def parse_comments(self, root):
         self.comments = {}

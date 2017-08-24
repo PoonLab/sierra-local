@@ -71,14 +71,23 @@ def score_single(HIVdb, drugname, sequence):
     return score
 
 
+
+
 """ testing """
 def main():
     path = os.getcwd() + '/HIVDB.xml'
     algorithm = HIVdb(path)
-    algorithm.parse_definitions(algorithm.root)
+    definitions = algorithm.parse_definitions(algorithm.root)
+    #print(definitions['gene'])
+    #print(definitions['level'])
+    #print(definitions['drugclass'])
+    #print(definitions['globalrange'])
+    #print(definitions['comment'])
     database = algorithm.parse_drugs(algorithm.root)
     scores = score_drugs(database, 'DAAAAAGAAEFHKJDLSHJDFKSLDHJFKSLAFLAHSJDKFLAHKDFLAHSASDFKASDFLASDJFKALSDFRETORJTIETGOENRTIEROTNOERNTIENTIERTERTERJDKFLASKDJFHAKSIEKRJRNNFMFMMMFJHAKDHJFKHJFKHDKJSHLFKJHSKFHDSHFJDHSFFMMFMFMFMDFLAKJSDHFALKSDJHFASKDJHFALSDKJFHAJSDKFLAKSDJFHJSDKFLAKSJDFHALSKDJFHAKSDJFHALKSDJFHLKSDJHFLAKSDJHFLAKDJFHALKSJDHFALKSJDHFKAJSDHFJSKLAFKSJDHFJAKSLFJDHSFLKAJHFALSKDJFHSLADKJFAHSJDFKAJDHFKSLGAAAATCTQAAAAAAAAAA')
-    algorithm.parse_comments(algorithm.root)
+    #print(scores)
+    comments = algorithm.parse_comments(algorithm.root)
+    #print(comments)
 
 main()
 
