@@ -48,25 +48,25 @@ class HIVdb():
 
         for element in definitions.getchildren():
             if element.tag == 'GENE_DEFINITION':
-                print('gene: ', element.find('NAME'))
+                #print('gene: ', element.find('NAME'))
                 gene = element.find('NAME').text
-                print(element.find('DRUGCLASSLIST'))
+                #print(element.find('DRUGCLASSLIST'))
                 drug_classes = element.find('DRUGCLASSLIST').text.split(',')
                 self.definitions['gene'].update({gene: drug_classes})
 
             elif element.tag == 'LEVEL_DEFINITION':
-                print(element.find('ORDER'))
+                #print(element.find('ORDER'))
                 order = element.find('ORDER').text
-                print(element.find('ORIGINAL'))
+                #print(element.find('ORIGINAL'))
                 original = element.find('ORIGINAL').text
-                print(element.find('SIR'))
+                #print(element.find('SIR'))
                 sir = element.find('SIR').text
                 self.definitions['level'].update({order: {sir: original}})
 
             elif element.tag == 'DRUGCLASS':
-                print('drugclass: ', element.find('NAME'))
+                #print('drugclass: ', element.find('NAME'))
                 name = element.find('NAME').text
-                print(element.find('DRUGLIST'))
+                #print(element.find('DRUGLIST'))
                 druglist = element.find('DRUGLIST').text.split(',')
                 self.definitions['drugclass'].update({name: druglist})
 
@@ -75,7 +75,7 @@ class HIVdb():
                 for comment_str in comment_definitions.getchildren():
                     id = comment_str.attrib['id']
                     comment = comment_str.find('TEXT').text
-                    print(comment_str.find('SORT_TAG'))
+                    #print(comment_str.find('SORT_TAG'))
                     sort_tag = comment_str.find('SORT_TAG').text
                     self.definitions['comment'].update({id: {sort_tag: comment}})
 
@@ -160,6 +160,35 @@ class HIVdb():
             scores[:] = []
 
 
+
+    """ parse_comments function retrieves all mutation comments and stores in a dictionary
+        Dictionary is further separated into protease (PR), integrase (IN), and reverse transcriptase (RT) dictionaries
+        
+        @param root: algorithm root
+        @return self.comments: a dictionary with key = mutation and value = mutation comment reference
+    """
     def parse_comments(self, root):
-        pass
+        self.comments = {}
+
+        for element in root.getchildren():
+            if element.tag == 'MUTATION_COMMENTS':
+
+                for gene in element.getchildren():
+                    name = gene.find('NAME').text
+                    gene_dict = {}
+
+                    for rule in gene.findall('RULE'):
+                        condition = rule.find('CONDITION').text
+                        reference = rule.find('ACTIONS').find('COMMENT').get('ref')
+                        gene_dict.update({condition: reference})
+
+                    self.comments.update({name: gene_dict})
+
+        return(self.comments)
+
+
+    #def retrieve_comment(self, genetype, condition, reference):
+        #if condition.contains('i') or condition.contains('d'):
+            # condition can include an insertion or deletion
+
 
