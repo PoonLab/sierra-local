@@ -28,7 +28,7 @@ def score_drugs(HIVdb, sequence):
 def score_single(HIVdb, drugname, sequence):
     # assert drugname in HIVdb.keys(), "Drugname: %s not found." % drugname
     score = 0
-    for condition in HIVdb[drugname]:
+    for condition in HIVdb[drugname][0]:
 
         candidates = [0]        # list of potential scores
         values = []
@@ -84,6 +84,7 @@ def main():
     #print(definitions['globalrange'])
     #print(definitions['comment'])
     database = algorithm.parse_drugs(algorithm.root)
+    #print(database)
     scores = score_drugs(database, 'DAAAAAGAAEFHKJDLSHJDFKSLDHJFKSLAFLAHSJDKFLAHKDFLAHSASDFKASDFLASDJFKALSDFRETORJTIETGOENRTIEROTNOERNTIENTIERTERTERJDKFLASKDJFHAKSIEKRJRNNFMFMMMFJHAKDHJFKHJFKHDKJSHLFKJHSKFHDSHFJDHSFFMMFMFMFMDFLAKJSDHFALKSDJHFASKDJHFALSDKJFHAJSDKFLAKSDJFHJSDKFLAKSJDFHALSKDJFHAKSDJFHALKSDJFHLKSDJHFLAKSDJHFLAKDJFHALKSJDHFALKSJDHFKAJSDHFJSKLAFKSJDHFJAKSLFJDHSFLKAJHFALSKDJFHSLADKJFAHSJDFKAJDHFKSLGAAAATCTQAAAAAAAAAA')
     #print(scores)
     comments = algorithm.parse_comments(algorithm.root)

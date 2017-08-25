@@ -27,24 +27,7 @@ class HIVdb():
         comment_definitions = definitions.getchildren()[-1]  # TODO: swap out hard-coded index with variable
 
         globalrange = definitions.find('GLOBALRANGE').text.split(',')
-        for item in globalrange:
-            order = int(re.split('=>', item)[1].strip('() '))  # str containing order number: '1'
-            range = re.split('=>', item)[0].strip('() ')  # str containing the range: '-INF TO 9'
-            min = re.split('TO', range)[0].strip()  # str containing min val in range: '-INF'
-            max = re.split('TO', range)[1].strip()  # str containing max val in range: '9'
-
-            # convert_to_num converts strings to integers, and also 'INF' and '-INF' to their
-            # numerical representations
-            def convert_to_num(s):
-               if s == '-INF':
-                   return float('-inf')
-               elif s == 'INF':
-                   return float('inf')
-               else:
-                   return int(s)
-            min = convert_to_num(min)
-            max = convert_to_num(max)
-            self.definitions['globalrange'].update({order: {'min': min, 'max': max}})
+        default_grange = self.parse_globalrange(self.definitions['globalrange'], globalrange)
 
         for element in definitions.getchildren():
             if element.tag == 'GENE_DEFINITION':
@@ -73,11 +56,37 @@ class HIVdb():
         return(self.definitions)
 
 
+    def parse_globalrange(self, grange_dict, scorerange):
+        for item in scorerange:
+            order = int(re.split('=>', item)[1].strip('() '))  # str containing order number: '1'
+            range = re.split('=>', item)[0].strip('() ')  # str containing the range: '-INF TO 9'
+            min = re.split('TO', range)[0].strip()  # str containing min val in range: '-INF'
+            max = re.split('TO', range)[1].strip()  # str containing max val in range: '9'
+
+            # convert_to_num converts strings to integers, and also 'INF' and '-INF' to their
+            # numerical representations
+            def convert_to_num(s):
+                if s == '-INF':
+                    return float('-inf')
+                elif s == 'INF':
+                    return float('inf')
+                else:
+                    return int(s)
+
+            min = convert_to_num(min)
+            max = convert_to_num(max)
+            grange_dict.update({order: {'min': min, 'max': max}})
+        return grange_dict
+
+
+
     """ parse_drugs iterates through each drug in HIVDB, 
         parses condition for a specific drug, 
         and assigns a library of the drug resistant mutation conditions to the dictionary of drugs
+        Also includes score ranges associated with the drug, (which is most often the default globalrange)
         
         @param root: algorithm root
+        @return self.drugs: populated dictionary of drugs, associated with their (global) score ranges
     """
     def parse_drugs(self, root):
         self.drugs = {}
@@ -88,9 +97,15 @@ class HIVdb():
                 fullname = element.find('FULLNAME').text                    # drug full name
                 condition = element.find('RULE').find('CONDITION').text     # drug conditions
                 cond_dict = self.parse_condition(condition)                 # dictionary of parsed drug conditions
-                self.drugs[drug] = self.drugs[fullname] = cond_dict
-                #if element.find('RULE').find('ACTIONS').text != None:
-                    #actions = element.find('RULE').find('ACTIONS').text
+
+                scorerange = list(element.find('RULE').find('ACTIONS').find('SCORERANGE'))[0]
+                if scorerange.find('USE_GLOBALRANGE') == None:
+                    self.drugs[drug] = self.drugs[fullname] = (cond_dict, self.definitions['globalrange'])    #default
+                else:
+                    sep_dict = {}
+                    globalrange = self.parse_globalrange(sep_dict, scorerange)
+                    self.drugs[drug] = self.drugs[fullname] = (cond_dict, globalrange)
+
         return self.drugs
 
 
