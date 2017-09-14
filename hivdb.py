@@ -56,6 +56,13 @@ class HIVdb():
         return(self.definitions)
 
 
+
+    """ parse_globalrange function meant to assemble a scorerange into a dictionary and return
+    
+        @param grange_dict: dictionary for storing the scoring range specifications on
+        @param scorerange: text to parse out the scorerange for
+        @return grange_dict: dictionary for storing scorerange of the parsed range
+    """
     def parse_globalrange(self, grange_dict, scorerange):
         for item in scorerange:
             order = int(re.split('=>', item)[1].strip('() '))  # str containing order number: '1'
