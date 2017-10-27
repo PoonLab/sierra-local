@@ -13,6 +13,7 @@ def align(reference, query):
     nucleotides = 'ACGT'
 
     #Use gotoh2 to align the query to reference sequence
+    query = query.strip()
     assert type(query) is str, 'Query must be a string.'
     g2 = Aligner()
     g2_results = g2.align(query, reference)
@@ -20,6 +21,10 @@ def align(reference, query):
     aligned_reference = g2_results[1]
     aligned_query = g2_results[0]
     fitted_query = ''
+
+    ''' TODO:   flag indels not in sets of three
+                exceptions for indels in proximity summing to 3n
+    '''
 
     #Remove insertions in the sequence relative to reference sequence
     for idx,char in enumerate(aligned_reference):
@@ -43,7 +48,6 @@ class TestAlignments(unittest.TestCase):
 
     def test_insertions(self):
         self.assertEqual(align('AGTACTAGCAT', 'ACTACGCTCGTAGCAT'),'ACTACTAGCAT')
-
 
 if __name__ == '__main__':
     unittest.main()
