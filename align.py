@@ -16,10 +16,7 @@ def align(reference, query):
     query = query.strip()
     assert type(query) is str, 'Query must be a string.'
     g2 = Aligner()
-    g2_results = g2.align(query, reference)
-
-    aligned_reference = g2_results[1]
-    aligned_query = g2_results[0]
+    aligned_query, aligned_reference, aligned_score = g2.align(query, reference)
     fitted_query = ''
 
     ''' TODO:   flag indels not in sets of three
@@ -30,7 +27,7 @@ def align(reference, query):
     for idx,char in enumerate(aligned_reference):
         #Iff the query does not have insertion relative to reference, add
         #the nucleotide/relative deletion to the output string
-        if char in nucleotides:
+        if char != '-':
             fitted_query += aligned_query[idx]
 
     return fitted_query
