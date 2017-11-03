@@ -1,6 +1,8 @@
 from gotoh2.aligner import Aligner
 import unittest
 
+g2 = Aligner()
+
 def align(reference, query):
     """
     'Procrustean' alignment of query nucleotide sequence to reference sequence
@@ -15,7 +17,6 @@ def align(reference, query):
     #Use gotoh2 to align the query to reference sequence
     query = query.strip()
     assert type(query) is str, 'Query must be a string.'
-    g2 = Aligner()
     aligned_query, aligned_reference, aligned_score = g2.align(query, reference)
     fitted_query = ''
 
