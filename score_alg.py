@@ -49,7 +49,6 @@ def score_single(HIVdb, drugname, sequence):
                         values.append(gv_pairs[item])
                     else:
                         residueAAtuples.append(gv_pairs[item])
-        #print residueAAtuples
         iter = 0  # iter keeps track of the associated index in the values list
         for residueAA in residueAAtuples:
             count = 0  # count makes sure all the tuples conditions within a residueAAtuples group is satisfied
