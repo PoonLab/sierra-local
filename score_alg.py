@@ -49,17 +49,19 @@ def score_single(HIVdb, drugname, sequence):
                         values.append(gv_pairs[item])
                     else:
                         residueAAtuples.append(gv_pairs[item])
-
+        #print residueAAtuples
         iter = 0  # iter keeps track of the associated index in the values list
         for residueAA in residueAAtuples:
             count = 0  # count makes sure all the tuples conditions within a residueAAtuples group is satisfied
             for tuple in residueAA:
-                # TODO: if IndexError, continue as well (don't throw error just because sequence isn't that long)
                 # TODO: also might qualify for a FAIL status for this particular sequence (update data structure for a PASS/FAIL)
-                if not sequence[tuple[0] - 1] in tuple[1]:
+                try:
+                    if not sequence[tuple[0] - 1] in tuple[1]:
+                        continue
+                    else:
+                        count += 1
+                except IndexError:
                     continue
-                else:
-                    count += 1
                 if count == len(residueAA):
                     candidates.append(values[iter])
             iter += 1
@@ -90,5 +92,6 @@ def main():
     comments = algorithm.parse_comments(algorithm.root)
     #print(comments)
 
-main()
+if __name__ == '__main__':
+    main()
 
