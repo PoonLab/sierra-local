@@ -10,8 +10,8 @@ import sys
 g2 = Aligner()
 
 #argv parsing
-parser = argparse.ArgumentParser(description='Score a sequence.')
-parser.add_argument('-i', nargs='+', dest='inputfiles', type=str, help='List of input files.')
+parser = argparse.ArgumentParser(description='Use the HIVdb algorithm for mutation-based resistance scoring of sequences.')
+parser.add_argument('-i', '--i', nargs='+', dest='inputfiles', type=str, help='List of input files.')
 #parser.add_argument('-o', nargs='?', type=argparse.FileType('w'), help='List of output files. Defaults to same names as input files.', required=False)
 args = parser.parse_args()
 
@@ -76,30 +76,33 @@ def main():
     path = os.getcwd() + '/HIVDB.xml'
     algorithm = HIVdb(path)
     definitions = algorithm.parse_definitions(algorithm.root)
-    # print(definitions['gene'])
-    # print(definitions['level'])
-    # print(definitions['drugclass'])
-    # print(definitions['globalrange'])
+    #print(definitions['gene'])
+    #print(definitions['level'])
+    #print(definitions['drugclass'])
+    #print(definitions['globalrange'])
     # print(definitions['comment'])
     database = algorithm.parse_drugs(algorithm.root)
-    # print(database)
+    #print(database)
     comments = algorithm.parse_comments(algorithm.root)
-    # print(comments)
+    #print(comments)
 
     # Parsing and processing the nucleotide sequence file
     # Scoring each sequence
-    # Output to a JSON
     for file in args.inputfiles:
         fasta = import_fasta(file)
         nuc_seq = fasta.values()[0]
-        reference = nuc_seq #placeholder reference
+        reference = nuc_seq #placeholder reference--not sure which reference to actually use
         aligned_nuc_seq = align(reference, nuc_seq)
+        #print aligned_nuc_seq
         aa_seq = translate(aligned_nuc_seq)
+        # print aa_seq
         scores = score_alg.score_drugs(database, aa_seq)
         print(scores)
 
-        with open(file.split('.fasta')[0]+'.out','w') as outfile:
-            outfile.write(str(scores))
+        #TODO: output to a formatted JSON consistent with the sierra-client JSON output
+
+        #with open(file.split('.fasta')[0]+'.out','w') as outfile:
+        #    outfile.write(str(scores))
 
 
 class TestAlignments(unittest.TestCase):
