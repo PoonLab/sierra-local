@@ -133,7 +133,7 @@ class HIVdb():
         for drm in mutation_list:
             if drm.strip().startswith('MAX'):
                 max_lib = []
-                max_chunks = re.findall('\(?\d+[A-z]+[\s?AND\s?\d+\w]+\)?\s?=>\s?\d+', drm)
+                max_chunks = re.findall('(\(?\d+[A-z]+[\s?AND\s?\d+\w]+\)?\s?=>\s?\d+|\(?\d+[A-z]+[\s?AND\s?\d+\w]+\)?\s?=>\s?-\d+)', drm)
                 iter = 0
                 for chunk in max_chunks:
                     # for both MAX conditions, need to create a mini-library that will keep all of the individual DRMs together
@@ -158,9 +158,9 @@ class HIVdb():
         @param iter: index to keep track of which DRM is associated with respective index in the extracted list of scores
     """                                                                                                                     #TODO: combine drm and iter so less params
     def _parse_scores(self, drm_lib, drm, chunk, iter):
-        scores = re.findall('[0-9]+(?=\W)', drm.strip())   # extract scores in same order as grouped drm tuples; stored in (indexable) list
+        scores = re.findall('([0-9]+(?=\W)|-[0-9]+(?=\W))', drm.strip())   # extract scores in same order as grouped drm tuples; stored in (indexable) list
         rANDr = re.findall('\d+[A-z]+[\s?AND\s?\d+\w]+', chunk)
-
+        #print rANDr
         for combo_group in rANDr:
             mut_list = []
             residueAA = re.findall('[0-9]+[A-z]+', combo_group.strip())  # TODO: needs testing
