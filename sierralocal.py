@@ -9,15 +9,6 @@ import sys
 
 g2 = Aligner()
 
-#argv parsing
-parser = argparse.ArgumentParser(
-    description='Use the HIVdb algorithm for mutation-based resistance scoring of sequences.'
-)
-parser.add_argument('-i', '--i', nargs='+', dest='inputfiles', type=str, help='List of input files.')
-#parser.add_argument('-o', nargs='?', type=argparse.FileType('w'),
-# help='List of output files. Defaults to same names as input files.', required=False)
-args = parser.parse_args()
-
 def align(reference, query):
     """
     'Procrustean' alignment of query nucleotide sequence to reference sequence
@@ -75,6 +66,14 @@ def import_fasta(filename):
     return fasta
 
 def main():
+    # CLI arg parsing
+    parser = argparse.ArgumentParser(
+        description='Use the HIVdb algorithm for mutation-based resistance scoring of sequences.'
+    )
+    parser.add_argument('-i', '--i', nargs='+', dest='inputfiles', type=str, help='List of input files.')
+    #parser.add_argument('-o', nargs='?', type=argparse.FileType('w'),
+    # help='List of output files. Defaults to same names as input files.', required=False)
+    args = parser.parse_args()
     #Some of Tammy's code
     path = os.getcwd() + '/HIVDB.xml'
     algorithm = HIVdb(path)
@@ -107,25 +106,5 @@ def main():
         #with open(file.split('.fasta')[0]+'.out','w') as outfile:
         #    outfile.write(str(scores))
 
-
-class TestAlignments(unittest.TestCase):
-    def test(self):
-        self.assertEqual(align('TAGACTTACCAC', 'ACTTAGCAT'), '-A--CTTAGCAT')
-        self.assertEqual(align('ACTTAGCAT', 'TAGACTTACCAC'), 'ACTTACCAC')
-
-    # Check out this error later
-    # def test_empty(self):
-    #    self.assertEqual(align('-----------','ACGTACGTACGT'),'')
-
-    def test_deletions(self):
-        self.assertEqual(
-            align('AGTACGCTCGTAGCAT', 'AGTACTAGCAT'), 'AGTAC-----TAGCAT')
-
-    def test_insertions(self):
-        self.assertEqual(
-            align('AGTACTAGCAT', 'ACTACGCTCGTAGCAT'), 'ACTACTAGCAT')
-
-
 if __name__ == '__main__':
-    # unittest.main()
     main()
