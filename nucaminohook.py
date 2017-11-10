@@ -2,15 +2,19 @@ import subprocess
 import os
 import csv
 import re
-cwd = os.getcwd()
+cwd = os.getcwd()+'/'
+nucamino_dir = '/'.join(cwd.split('/')[:-2]+['NucAmino','build'])+'/'
+print nucamino_dir
 
 def nucamino_align(file): 
-    filename = cwd+"/"+str(file.split('.fasta')[0])
-    args = (cwd+"/nucamino-linux-amd64 hiv1b -i {}.fasta -g=POL -o {}.tsv".format(filename,filename)).split()
+    filename = cwd+str(file.split('.fasta')[0])
+    print filename
+    args = (nucamino_dir+"nucamino hiv1b -i {}.fasta -g=POL -o {}.tsv".format(filename,filename)).split()
     popen = subprocess.Popen(args, stdout=subprocess.PIPE)
     popen.wait()
 
 def parse_nucamino_results(filename):
+    filename = cwd + filename
     outdict = {}
     with open(filename,'r') as tsvin:
         tsvin = csv.reader(tsvin,delimiter='\t')
@@ -25,4 +29,4 @@ def parse_nucamino_results(filename):
 
 if __name__ == '__main__':
     nucamino_align('AY030621.fasta')
-    print parse_nucamino_results(cwd+'/AY030621.tsv')
+    print parse_nucamino_results('AY030621.tsv')
