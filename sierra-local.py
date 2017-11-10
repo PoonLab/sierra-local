@@ -10,9 +10,12 @@ import sys
 g2 = Aligner()
 
 #argv parsing
-parser = argparse.ArgumentParser(description='Use the HIVdb algorithm for mutation-based resistance scoring of sequences.')
+parser = argparse.ArgumentParser(
+    description='Use the HIVdb algorithm for mutation-based resistance scoring of sequences.'
+)
 parser.add_argument('-i', '--i', nargs='+', dest='inputfiles', type=str, help='List of input files.')
-#parser.add_argument('-o', nargs='?', type=argparse.FileType('w'), help='List of output files. Defaults to same names as input files.', required=False)
+#parser.add_argument('-o', nargs='?', type=argparse.FileType('w'),
+# help='List of output files. Defaults to same names as input files.', required=False)
 args = parser.parse_args()
 
 def align(reference, query):
