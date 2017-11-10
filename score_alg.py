@@ -26,10 +26,9 @@ def score_drugs(HIVdb, sequence):
     @return score: calculated drm mutation score
 """
 def score_single(HIVdb, drugname, sequence):
-    # assert drugname in HIVdb.keys(), "Drugname: %s not found." % drugname
+    assert drugname in HIVdb.keys(), "Drugname: %s not found." % drugname
     score = 0
     for condition in HIVdb[drugname][0]:
-
         candidates = [0]        # list of potential scores
         values = []
         residueAAtuples = []
@@ -50,6 +49,7 @@ def score_single(HIVdb, drugname, sequence):
                     else:
                         residueAAtuples.append(gv_pairs[item])
         iter = 0  # iter keeps track of the associated index in the values list
+        #print residueAAtuples
         for residueAA in residueAAtuples:
             count = 0  # count makes sure all the tuples conditions within a residueAAtuples group is satisfied
             for tuple in residueAA:

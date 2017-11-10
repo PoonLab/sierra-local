@@ -6,12 +6,14 @@ from hivdb import HIVdb
 import os
 import argparse
 import sys
+import reference
+import hxb2
 
 g2 = Aligner()
 
 def align(reference, query):
     """
-    'Procrustean' alignment of query nucleotide sequence to reference sequence
+    'Procrustean' alignment of query nucleotide sequence to HXB2 reference sequence
 
     :param query: Nucleotide sequence as a string
     :param reference: Reference sequence as a string
@@ -21,8 +23,15 @@ def align(reference, query):
     # Use gotoh2 to align the query to reference sequence
     query = query.strip()
     assert type(query) is str, 'Query must be a string.'
-    aligned_query, aligned_reference, aligned_score = g2.align(
-        query, reference)
+
+    #Gets the best alignment based on the alignments to three HXB2 genes
+    maxscore = 0
+    for gene in [hxb2.integrase,hxb2.pro,hxb2.rt]:
+        temp = g2.align(query, gene)
+        if temp[2] > maxscore:
+            aligned_query, aligned_reference, aligned_score = temp
+            maxscore = temp[2]
+
     fitted_query = ''
     ''' 
     TODO:   flag indels not in sets of three
@@ -71,9 +80,8 @@ def main():
         description='Use the HIVdb algorithm for mutation-based resistance scoring of sequences.'
     )
     parser.add_argument('-i', '--i', nargs='+', dest='inputfiles', type=str, help='List of input files.')
-    #parser.add_argument('-o', nargs='?', type=argparse.FileType('w'),
-    # help='List of output files. Defaults to same names as input files.', required=False)
-    args = parser.parse_args()
+
+    args = parser.parse_args(['-i','testsequences.fasta'])
     #Some of Tammy's code
     path = os.getcwd() + '/HIVDB.xml'
     algorithm = HIVdb(path)
@@ -91,20 +99,20 @@ def main():
     # Parsing and processing the nucleotide sequence file
     # Scoring each sequence
     for file in args.inputfiles:
-        fasta = import_fasta(file)
-        nuc_seq = fasta.values()[0]
-        reference = nuc_seq #placeholder reference--not sure which reference to actually use
-        aligned_nuc_seq = align(reference, nuc_seq)
-        #print aligned_nuc_seq
-        aa_seq = translate(aligned_nuc_seq)
-        # print aa_seq
-        scores = score_alg.score_drugs(database, aa_seq)
-        print(scores)
+        fastadict = import_fasta(file)
+        for header,fasta in fastadict.items():
+            nuc_seq = fasta
+            aligned_nuc_seq = align(hxb2.integrase, nuc_seq)
+            #print aligned_nuc_seq
+            aa_seq = translate(aligned_nuc_seq)
+            print header,aa_seq
+            scores = score_alg.score_drugs(database, aa_seq)
+            print(scores)
 
-        #TODO: output to a formatted JSON consistent with the sierra-client JSON output
+            #TODO: output to a formatted JSON consistent with the sierra-client JSON output
 
-        #with open(file.split('.fasta')[0]+'.out','w') as outfile:
-        #    outfile.write(str(scores))
+            #with open(file.split('.fasta')[0]+'.out','w') as outfile:
+            #    outfile.write(str(scores))
 
 if __name__ == '__main__':
     main()
