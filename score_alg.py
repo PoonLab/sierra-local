@@ -32,7 +32,6 @@ def score_single(HIVdb, drugname, seq_mutations):
     assert drugname in HIVdb.keys(), "Drugname: %s not found." % drugname
     score = 0
     for condition in HIVdb[drugname][0]:
-        print condition
         candidates = [0]        # list of potential scores
         values = []
         residueAAtuples = []
@@ -58,15 +57,6 @@ def score_single(HIVdb, drugname, seq_mutations):
             count = 0  # count makes sure all the tuples conditions within a residueAAtuples group is satisfied
             for tuple in residueAA:
                 # TODO: also might qualify for a FAIL status for this particular sequence (update data structure for a PASS/FAIL)
-                '''
-                try:
-                    if not tuple[1] in sequence[tuple[0] - 1]:
-                        continue
-                    else:
-                        count += 1
-                except IndexError:
-                    continue
-                    '''
                 if tuple[0] in seq_mutations:
                     for char in seq_mutations[tuple[0]]:
                         if char in tuple[1]:
@@ -77,41 +67,14 @@ def score_single(HIVdb, drugname, seq_mutations):
                     continue
                 if count == len(residueAA):
                     candidates.append(values[iter])
-                    if values[iter] < 0:
-                        print values[iter]
             iter += 1
 
         # take the max of what's in the list of potential scores (candidates) and update total score
-        # doesn't matter for the single drm or combo condition because they only have one associated value anyways
+        # max is determined by absolute value, the negative values take priority over scores of 0
         max_abs = 0
         for s in candidates:
-            print s
             if abs(s) > abs(max_abs):
                 score += s
                 max_abs = s
 
     return score
-
-
-
-
-""" testing """
-def main():
-    path = os.getcwd() + '/HIVDB.xml'
-    algorithm = HIVdb(path)
-    definitions = algorithm.parse_definitions(algorithm.root)
-    #print(definitions['gene'])
-    #print(definitions['level'])
-    #print(definitions['drugclass'])
-    #print(definitions['globalrange'])
-    #print(definitions['comment'])
-    database = algorithm.parse_drugs(algorithm.root)
-    #print(database)
-    scores = score_drugs(database, {73: 'SG', 10: 'I', 77: 'I', 90: 'M', 93: 'L', 63: 'P'})
-    #print(scores)
-    comments = algorithm.parse_comments(algorithm.root)
-    #print(comments)
-
-if __name__ == '__main__':
-    main()
-
