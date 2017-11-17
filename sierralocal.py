@@ -9,12 +9,13 @@ cwd = os.getcwd()
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Use the HIVdb algorithm for mutation-based resistance scoring of sequences.')
-    parser.add_argument('-i', '--i', nargs='+', dest='inputfiles', type=str, help='List of input files.')
-    args = parser.parse_args(['-i','testsequences.fasta'])
+    parser.add_argument('fasta', nargs='+', type=str, help='List of input files.')
+    args = parser.parse_args(['testsequences.fasta'])
     return args
 
 def main():
     args = parse_args()
+    print args
     path = cwd + '/HIVDB.xml'
     algorithm = HIVdb(path)
     definitions = algorithm.parse_definitions(algorithm.root)
@@ -27,15 +28,17 @@ def main():
     #print(database)
     comments = algorithm.parse_comments(algorithm.root)
     #print(comments)
+    scorefile(args, database)
 
+def scorefile(args, database):
     # Scoring each sequence
-    for file in args.inputfiles:
-
+    for file in args.fasta:
         aligner = NucAminoAligner(file)
         aligner.align_file()
         names, res = aligner.get_mutations()
 
         for idx, mutationlist in enumerate(res):
+            print names[idx]
             scores = score_alg.score_drugs(database, mutationlist)
             print(scores)
 
