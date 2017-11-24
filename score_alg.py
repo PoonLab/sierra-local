@@ -30,7 +30,9 @@ def score_drugs(HIVdb, seq_mutations):
 """
 def score_single(HIVdb, drugname, seq_mutations):
     assert drugname in HIVdb.keys(), "Drugname: %s not found." % drugname
-    score = 0
+    totalScore = 0
+    partialScores = []
+    mutations = []
     for condition in HIVdb[drugname][0]:
         candidates = [0]        # list of potential scores
         values = []
@@ -51,30 +53,23 @@ def score_single(HIVdb, drugname, seq_mutations):
                         values.append(gv_pairs[item])
                     else:
                         residueAAtuples.append(gv_pairs[item])
-        iter = 0  # iter keeps track of the associated index in the values list
-        #print residueAAtuples
-        for residueAA in residueAAtuples:
-            count = 0  # count makes sure all the tuples conditions within a residueAAtuples group is satisfied
-            for tuple in residueAA:
-                # TODO: also might qualify for a FAIL status for this particular sequence (update data structure for a PASS/FAIL)
-                if tuple[0] in seq_mutations:
-                    for char in seq_mutations[tuple[0]]:
-                        if char in tuple[1]:
-                            #print "mutation found",tuple[0],seq_mutations[tuple[0]],tuple[1]
-                            #print values[iter]
-                            count += 1
+
+        for index, residueAA in enumerate(residueAAtuples):
+            conditionTrue = True
+            sequence_residues = []
+            for mutationpair in residueAA:
+                residue = mutationpair[0]
+                aminoacidlist = mutationpair[1]
+                if residue in seq_mutations.keys():
+                    for possibility in seq_mutations[residue][1]:
+                        if not possibility in aminoacidlist:
+                            conditionTrue = False
+                        else:
+                            sequence_residues.append(str(seq_mutations[residue][0])+str(residue)+str(aminoacidlist))
                 else:
-                    continue
-                if count == len(residueAA):
-                    candidates.append(values[iter])
-            iter += 1
-
-        # take the max of what's in the list of potential scores (candidates) and update total score
-        # max is determined by absolute value, the negative values take priority over scores of 0
-        max_abs = 0
-        for s in candidates:
-            if abs(s) > abs(max_abs):
-                score += s
-                max_abs = s
-
-    return score
+                    conditionTrue = False
+            if conditionTrue:
+                totalScore += values[index]
+                partialScores.append(values[index])
+                mutations.append(sequence_residues)
+    return totalScore, partialScores, mutations
