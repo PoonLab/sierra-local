@@ -6,11 +6,14 @@ import re
 class NucAminoAligner():
     def __init__(self, filename):
         self.inputname = filename
-        self.outputname = filename.replace('fasta','tsv')
+        self.outputname = filename.replace('.fasta','.tsv')
         self.cwd = os.getcwd()+'/'
         self.nucamino_dir = '/'.join(self.cwd.split('/')[:-2]+['NucAmino','build'])+'/'
 
     def align_file(self): 
+        '''
+        Using subprocess to call NucAmino, generates an output .tsv containing mutation data for each sequence in the FASTA file
+        '''
         args = (self.nucamino_dir+"nucamino hiv1b -i {} -g=POL -o {}".format(self.inputname,self.outputname)).split()
         popen = subprocess.Popen(args, stdout=subprocess.PIPE)
         popen.wait()
@@ -22,18 +25,25 @@ class NucAminoAligner():
         '''
         outdict = {}
         muts = []
+        genes = []
+        notation = []
         names = []
         with open(self.cwd+self.outputname,'r') as tsvin:
             tsvin = csv.reader(tsvin, delimiter='\t')
             next(tsvin)
             for row in tsvin:
+                localgenelist = []
                 names.append(row[0])
                 shift = int(row[1]) - 1
                 mutationpairs = row[5].split(',')
                 pos = [int(re.findall(r'\d+',x.split(':')[0])[0])-shift for x in mutationpairs]
-                res = [re.findall(r'\D+',x.split(':')[0][1:])[0] for x in mutationpairs]
-                muts.append(dict(zip(pos, res)))
-        return names, muts
+                orig_res = [re.findall(r'\D+',x.split(':')[0][:2])[0] for x in mutationpairs]
+                sub_res = [re.findall(r'(?<=\d)\D+(?=:)', x)[0] for x in mutationpairs]
+                muts.append(dict(zip(pos, zip(orig_res,sub_res))))
+                outlist = []
+                for index,p in enumerate(pos):
+                    outlist.append(str(orig_res[index]) + str(p) + str(sub_res[index]))
+        return names, genes, muts
 
 if __name__ == '__main__':
     n = NucAminoAligner('testsequences.fasta')
