@@ -4,6 +4,7 @@ import os
 import re
 import hashlib
 from hivdb import HIVdb
+import csv
 
 names = {}
 names['3TC'] = 'LMV'
@@ -16,10 +17,10 @@ version_date = root.find('ALGDATE').text
 definitions = algorithm.parse_definitions(algorithm.root)
 levels = definitions['level']
 globalrange = definitions['globalrange']
-#print definitions['comment']
 database = algorithm.parse_drugs(algorithm.root)
 comments = algorithm.parse_comments(algorithm.root)
-#print comments
+with open('apobec-drms.5b7e1215.tsv','r') as csvfile:
+    ApobecDRMs = list(csv.reader(csvfile, delimiter='\t'))
 
 def validationresults():
     validationResults = {}
@@ -82,35 +83,69 @@ def drugresistance(scores,genes):
                         drugScore['partialScores'].append(pscoredict)
                 drugScores.append(drugScore)
     drugResistance['drugScores'] = drugScores
+    drugResistance['gene'] = {'name':'RT'}
     return [drugResistance]
 
-def alignedgenesequences():
-    return None
+def alignedgenesequences(ordered_mutation_list):
+    dic = {}
+    dic['prettyPairwise'] = {}
+    mutationline = []
+    prev = 0
+    for tuple in ordered_mutation_list:
+        mutationline = mutationline + [' - ']*(tuple[0]-1-prev) + [str(tuple[1]).center(3)]
+        prev = tuple[0]
+    dic['prettyPairwise']['mutationLine'] = mutationline
+    dic['prettyPairwise']['alignedNAsLine'] = []
+    dic['prettyPairwise']['refAALine'] = []
+    dic['prettyPairwise']['positionLine'] = []
+    dic['lastAA'] = None
+    dic['firstAA'] = None
+    dic['mutations'] = []
+    for a in ordered_mutation_list:
+        mutdict = {}
+        mutdict['isInsertion'] = None
+        mutdict['isDeletion'] = None
+        mutdict['consensus'] = a[2]
+        mutdict['AAs'] = a[1]
+        mutdict['isApobecDRM'] = isApobecDRM('RT', a[2], a[0], a[1])
+        mutdict['position'] = a[0]
+        dic['mutations'].append(mutdict)
+    return [dic]
 
-def inputsequence():
+def inputsequence(name):
     out = {
-        'header' : '',
+        'header' : name,
         'SHA512' : ''
     }
     return out
 
-def write_to_json(scores, genes):
-    data = {}
-    data['subtypeText'] = 'NULL'
-    data['validationResults'] = validationresults()
-    data['drugResistance'] = drugresistance(scores, genes)
-    data['alignedGeneSequences'] = alignedgenesequences()
-    data['inputSequence'] = inputsequence()
+def write_to_json(filename, names, scores, genes, ordered_mutation_list):
+    out = []
+    for index, score in enumerate(scores):
+        print "writing",names[index]
+        data = {}
+        data['subtypeText'] = 'NULL'
+        data['validationResults'] = validationresults()
+        data['drugResistance'] = drugresistance(score, genes)
+        data['alignedGeneSequences'] = alignedgenesequences(ordered_mutation_list[index])
+        data['inputSequence'] = inputsequence(names[index])
+        out.append(data)
 
-    with open('test.json','w') as outfile:
-        json.dump([data], outfile, indent=2)
+    with open('{}_test.json'.format(filename),'w') as outfile:
+        json.dump(out, outfile, indent=2)
 
 def findComment(mutation, comments, details):
     # TODO: use the gene information to make this more accurate
-    trunc_mut = re.findall(r'\d+\D+',mutation)[0]
+    trunc_mut = re.findall(r'\d+\D',mutation)[0]
     for gene, mutationdict in comments.items():
         for item in mutationdict.keys():
             if trunc_mut in item:
                 full_mut = mutationdict[item]
                 if details.has_key(full_mut):
                     return details[full_mut]['1']
+
+def isApobecDRM(gene, consensus, position, AA):
+    for row in ApobecDRMs[1:]:
+        if [gene, consensus, position, AA] == row:
+            return True
+    return False
