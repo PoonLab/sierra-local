@@ -21,6 +21,13 @@ database = algorithm.parse_drugs(algorithm.root)
 comments = algorithm.parse_comments(algorithm.root)
 with open('apobec-drms.5b7e1215.tsv','r') as csvfile:
     ApobecDRMs = list(csv.reader(csvfile, delimiter='\t'))
+with open('INSTI-comments.csv','r') as INSTI_file:
+    INSTI_comments = dict(csv.reader(INSTI_file,delimiter='\t'))
+with open('PI-comments.csv','r') as PI_file:
+    PI_comments = dict(csv.reader(PI_file,delimiter='\t'))
+with open('RT-comments.csv','r') as RT_file:
+    RT_comments = dict(csv.reader(RT_file,delimiter='\t'))
+
 
 def validationresults():
     validationResults = {}
@@ -40,8 +47,8 @@ def drugresistance(scores,genes):
             classlist = definitions['drugclass'][drugclass]
             for drug in classlist:
                 # Only record data if the score is non-zero
-                if float(scores[drug][0]) == 0.0:
-                    continue
+                #if float(scores[drug][0]) == 0.0:
+                #    continue
                 drugScore = {}
 
                 #Infer resistance level text from the score and globalrange
@@ -72,21 +79,41 @@ def drugresistance(scores,genes):
                         pscoredict['score'] = pscore
                         pscoredict['mutations'] = []
                         for combination in scores[drug][2][index]:
+                            # find the mutation classification "type" based on the gene
+                            type_ = drugclass
+                            pos = re.findall(u'([0-9]+)',combination)[0]
+                            muts = re.findall(u'(?<=[0-9])([A-Za-z])+',combination)[0]
+                            if gene == 'IN':
+                                for key in INSTI_comments:
+                                    if pos in key and muts in key:
+                                        type_ = INSTI_comments[key]
+                                        break
+                            elif gene == 'PR':
+                                for key in PI_comments:
+                                    if pos in key and muts in key:
+                                        type_ = PI_comments[key]
+                                        break
+                            elif gene == 'RT':
+                                for key in PI_comments:
+                                    if pos in key and muts in key:
+                                        type_ = RT_comments[key]
+                                        break
+                            # do the other stuff
                             mut = {}
                             mut['text'] = combination
                             mut['comments'] = [{
-                                'text' : findComment(combination, comments, definitions['comment']),
-                                'type' : drugclass
+                                'text' : findComment(gene, combination, comments, definitions['comment']),
+                                'type' : type_
                             }]
-                            mut['primaryType'] = drugclass
+                            mut['primaryType'] = type_
                             pscoredict['mutations'].append(mut)                    
                         drugScore['partialScores'].append(pscoredict)
                 drugScores.append(drugScore)
     drugResistance['drugScores'] = drugScores
-    drugResistance['gene'] = {'name':'RT'}
+    drugResistance['gene'] = {'name':genes[0]}
     return [drugResistance]
 
-def alignedgenesequences(ordered_mutation_list):
+def alignedgenesequences(ordered_mutation_list, genes):
     dic = {}
     dic['prettyPairwise'] = {}
     mutationline = []
@@ -107,7 +134,7 @@ def alignedgenesequences(ordered_mutation_list):
         mutdict['isDeletion'] = None
         mutdict['consensus'] = a[2]
         mutdict['AAs'] = a[1]
-        mutdict['isApobecDRM'] = isApobecDRM('RT', a[2], a[0], a[1])
+        mutdict['isApobecDRM'] = isApobecDRM(genes[0], a[2], a[0], a[1])
         mutdict['position'] = a[0]
         dic['mutations'].append(mutdict)
     return [dic]
@@ -120,29 +147,41 @@ def inputsequence(name):
     return out
 
 def write_to_json(filename, names, scores, genes, ordered_mutation_list):
+    '''
+    The main function to write passed result to a JSON file
+    :param filename: the filename to write the JSON to
+    :param names: list of sequence headers
+    :param scores: list of sequence scores
+    :param genes: list of genes in pol
+    :param ordered_mutation_list: ordered list of mutations in the query sequence relative to reference
+    '''
     out = []
     for index, score in enumerate(scores):
-        print "writing",names[index]
         data = {}
         data['subtypeText'] = 'NULL'
         data['validationResults'] = validationresults()
-        data['drugResistance'] = drugresistance(score, genes)
-        data['alignedGeneSequences'] = alignedgenesequences(ordered_mutation_list[index])
+        data['drugResistance'] = drugresistance(score, genes[index])
+        data['alignedGeneSequences'] = alignedgenesequences(ordered_mutation_list[index], genes[index])
         data['inputSequence'] = inputsequence(names[index])
         out.append(data)
 
-    with open('{}_test.json'.format(filename),'w') as outfile:
+    with open(filename,'w') as outfile:
         json.dump(out, outfile, indent=2)
+        print "Writing JSON to file {}".format(filename)
 
-def findComment(mutation, comments, details):
-    # TODO: use the gene information to make this more accurate
-    trunc_mut = re.findall(r'\d+\D',mutation)[0]
-    for gene, mutationdict in comments.items():
+def findComment(gene, mutation, comments, details):
+    trunc_mut = re.findall(r'\d+\D',mutation)[0] #163K
+    pos = re.findall(u'([0-9]+)',trunc_mut)[0]
+    muts = re.findall(u'(?<=[0-9])([A-Za-z])+',trunc_mut)[0]
+    for g, mutationdict in comments.items():
         for item in mutationdict.keys():
-            if trunc_mut in item:
+            if pos in item and muts in item:
                 full_mut = mutationdict[item]
-                if details.has_key(full_mut):
+                if details.has_key(full_mut) and g == gene:
                     return details[full_mut]['1']
+                else:
+                    print full_mut
+                    print pos, muts, trunc_mut 
 
 def isApobecDRM(gene, consensus, position, AA):
     for row in ApobecDRMs[1:]:
