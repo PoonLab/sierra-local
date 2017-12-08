@@ -21,18 +21,6 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-def gene_map():
-    pol_start = 2085
-    pol_nuc_map = {
-        'PR':(2253,2549),
-        'RT':(2550,3869),
-        'IN':(4230,5096)
-    }
-    convert = lambda x:(x-pol_start)/3
-    pol_aa_map = {}
-    for key, val in pol_nuc_map.items():
-        pol_aa_map[key] = (convert(val[0]), convert(val[1]))
-    return pol_aa_map
 
 def main():
     args = parse_args()
@@ -61,7 +49,7 @@ def scorefile(file, database):
     '''
     aligner = NucAminoAligner(file)
     aligner.align_file()
-    names, genes, muts = aligner.get_mutations(gene_map())
+    names, genes, muts = aligner.get_mutations(aligner.gene_map())
     ordered_mutation_list = []
     scores = []
     for index, query in enumerate(names):
