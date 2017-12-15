@@ -55,11 +55,18 @@ class NucAminoAligner():
                         shift = low
                         break
 
-                mutationpairs = row[5].split(',')
-                pos = [int(re.findall(r'\d+',x.split(':')[0])[0])-shift for x in mutationpairs]
-                orig_res = [re.findall(r'\D+',x.split(':')[0][:2])[0] for x in mutationpairs]
-                sub_res = [re.findall(r'(?<=\d)\D', x)[0] for x in mutationpairs]
-                gene_muts = dict(zip(pos, zip(orig_res,sub_res)))
+                # Edge case of NO mutations
+                if len(row[5]) == 0:
+                    pos = []
+                    orig_res = []
+                    sub_res = []
+                    gene_muts = {}
+                else:
+                    mutationpairs = row[5].split(',')
+                    pos = [int(re.findall(r'\d+',x.split(':')[0])[0])-shift for x in mutationpairs]
+                    orig_res = [re.findall(r'\D+',x.split(':')[0][:2])[0] for x in mutationpairs]
+                    sub_res = [re.findall(r'(?<=\d)\D', x.split(':')[0])[0] for x in mutationpairs]
+                    gene_muts = dict(zip(pos, zip(orig_res,sub_res)))
                 muts.append(gene_muts)
                 genelist = []
                 for p in pos:
@@ -71,12 +78,4 @@ class NucAminoAligner():
                 if len(genelist) == 0:
                     genelist = ['RT', 'PR', 'IN']
                 genes.append(genelist)
-        out = ''
-        for key in gene_muts:
-            out += gene_muts[key][0]+str(key)+gene_muts[key][1]+' '
-        print out
         return names, genes, muts
-
-if __name__ == '__main__':
-    n = NucAminoAligner('file')
-    print n.gene_map()
