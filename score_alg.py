@@ -65,7 +65,8 @@ def score_single(HIVdb, drugname, seq_mutations):
                         if not possibility in aminoacidlist:
                             conditionTrue = False
                         else:
-                            sequence_residues.append(str(seq_mutations[residue][0])+str(residue)+str(aminoacidlist))
+                            #print residue, possibility
+                            sequence_residues.append(str(seq_mutations[residue][0])+str(residue)+str(possibility))
                 else:
                     conditionTrue = False
             if conditionTrue:
