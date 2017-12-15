@@ -2,9 +2,20 @@ import json
 import argparse
 
 parser = argparse.ArgumentParser(description='Compare sierra JSON outputs')
-parser.add_argument('files', nargs=2, type=str, help='sierrapy output first, sierralocal output second')
+parser.add_argument('files', nargs=2, type=str, help='sierrapy output first,sierralocal output second')
 #args = parser.parse_args(['IN-sierra.json', 'IN-local.json'])
 args = parser.parse_args()
+
+'''
+
+This is a testing script for validating sierralocal against sierrapy
+
+Instructions:
+1. Generate sierrapy output
+2. Generate sierralocal output using same data
+3. Run this file using the two output files (in that order) as args
+
+'''
 
 def parse_results(j):
     '''
@@ -13,16 +24,19 @@ def parse_results(j):
     output = {}
     for sequence_results in j:
         sequence_dict = dict(sequence_results)
-        output[sequence_dict['inputSequence']['header']] = []
+        output[sequence_dict['inputSequence']['header']] = {}
         drugResistance = sequence_dict['drugResistance'][0]
         for drugScore in drugResistance['drugScores']:
-            text = drugScore['text']
-            score = drugScore['score']
-            displayAbbr = drugScore['drug']['displayAbbr']
-            partialScores = drugScore['partialScores']
-            mutation = drugScore
-            row = [text, score, displayAbbr, partialScores]
-            output[sequence_dict['inputSequence']['header']].append(row)
+            output[sequence_dict['inputSequence']['header']][drugScore['drug']['name']] = {}
+            output[sequence_dict['inputSequence']['header']][drugScore['drug']['name']]['text'] = drugScore['text']
+            output[sequence_dict['inputSequence']['header']][drugScore['drug']['name']]['score'] = drugScore['score']
+            output[sequence_dict['inputSequence']['header']][drugScore['drug']['name']]['partialScores'] = {}
+            for index, pscore in enumerate(drugScore['partialScores']):
+                output[sequence_dict['inputSequence']['header']][drugScore['drug']['name']]['partialScores'][str(index)] = {}
+                output[sequence_dict['inputSequence']['header']][drugScore['drug']['name']]['partialScores'][str(index)]['score'] = pscore['score']
+                output[sequence_dict['inputSequence']['header']][drugScore['drug']['name']]['partialScores'][str(index)]['mutations'] = {}
+                for mutation in pscore['mutations']:
+                    output[sequence_dict['inputSequence']['header']][drugScore['drug']['name']]['partialScores'][str(index)]['mutations'][mutation['text']] = mutation['comments'][0]['text']
     return output
 
 def main():
@@ -34,60 +48,43 @@ def main():
     with open(args.files[1],'r') as slocal:
         k = json.load(slocal)
 
-    headers = ['text','score','drug']
-
-    #Parse SierraPy results
-    sequence_sierrapy_results = parse_results(j)
+    #Parse SierraPy results into a dictionary
+    dict1 = parse_results(j)
 
     #Parse SierraLocal results
-    sequence_sierralocal_results = parse_results(k)
+    dict2 = parse_results(k)
 
-    perfect = 0
-    for header in sequence_sierrapy_results:
-        # Sort by accession number
-        sierrapy = sorted(sequence_sierrapy_results[header], key=lambda x : x[2])
-        sierralocal = sorted(sequence_sierralocal_results[header], key=lambda x : x[2])
+    errors = 0
 
-        py_to_local_count = 0
-        py_to_local_total = 0
-        local_to_py_count = 0
-        local_to_py_total = 0
+    for header in dict1:
+        perfect = True
+        if not dict2.has_key(header):
+            errors += 1
+            out.write(header+' '+"missing from sierralocal\n")
+            perfect = False
+            continue
+        for drug in dict1[header]:
+            if not dict2[header].has_key(drug):
+                errors += 1
+                out.write(drug+' '+"missing from sierralocal for"+' '+header+'\n')
+                perfect = False
+                continue
+            if dict1[header][drug]['text'] != dict2[header][drug]['text']:
+                perfect = False
+                out.write("level mismatch:"+' '+drug+' '+dict1[header][drug]['text']+' '+ dict2[header][drug]['text']+' '+ header+'\n')
+            if dict1[header][drug]['score'] != dict2[header][drug]['score']:
+                perfect = False
+                out.write("score mismatch:"+' '+drug+' '+str(dict1[header][drug]['score'])+' '+ str(dict2[header][drug]['score'])+' '+ header+'\n')
+            #for pscore in dict1[header][drug]['partialScores']:
+            #    print dict1[header][drug]['partialScores'][pscore]
+        if not perfect:
+            errors += 1
 
-        #Compare sierrapy to sierralocal
-        for index, drugresistance in enumerate(sierrapy):
-            if drugresistance not in sierralocal:
-                out.write(str(header) +' '+ str(drugresistance[2]) +' '+ str(drugresistance[1]) +' '+'not in sierralocal output'+'\n')
-                if drugresistance[1] != sierralocal[index][1]:
-                    out.write("Score mismatch\n")
-                if drugresistance[3] != sierralocal[index][3]:
-                    out.write("partialScore mismatch\n")
-            else:
-                py_to_local_count += 1
-            py_to_local_total += 1
 
-        #compare sierralocal to sierrapy
-        for index, drugresistance in enumerate(sierralocal):
-            if drugresistance not in sierrapy:
-                out.write(str(header) +' '+ str(drugresistance[2]) +' '+ str(drugresistance[1]) +' '+'not in sierrapy output'+'\n')
-                if drugresistance[1] != sierrapy[index][1]:
-                    out.write("Score mismatch\n")
-                if drugresistance[3] != sierrapy[index][3]:
-                    out.write("partialScore mismatch\n")
 
-            else:
-                local_to_py_count += 1
-            local_to_py_total += 1
-        #print str((py_to_local_count+local_to_py_count)/float(py_to_local_total+local_to_py_total)*100)
-        if py_to_local_count == py_to_local_total and local_to_py_count == local_to_py_total:
-            perfect += 1
-        '''
-        print 'py_to_local_count', py_to_local_count
-        print 'py_to_local_total', py_to_local_total
-        print 'local_to_py_count', local_to_py_count
-        print 'local_to_py_total', local_to_py_total
-        '''
-    out.write(str(perfect) + '/' + str(len(sequence_sierrapy_results))+'\n')
-    out.write(str(float(perfect)*100/len(sequence_sierrapy_results))+'%')
+    out.write("Errors: "+str(errors))
+    out.write("\nCount: "+str(len(dict1)))
+    out.write("\n"+str(float(len(dict1)-errors)/len(dict1)))
     out.close()
 if __name__ == '__main__':
     main()

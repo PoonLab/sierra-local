@@ -65,7 +65,13 @@ class NucAminoAligner():
                     mutationpairs = row[5].split(',')
                     pos = [int(re.findall(r'\d+',x.split(':')[0])[0])-shift for x in mutationpairs]
                     orig_res = [re.findall(r'\D+',x.split(':')[0][:2])[0] for x in mutationpairs]
-                    sub_res = [re.findall(r'(?<=\d)\D', x.split(':')[0])[0] for x in mutationpairs]
+                    sub_res = [re.findall(r'(?<=\d)\D+', x.split(':')[0])[0] for x in mutationpairs]
+                    #Filter out polymorphic variants with the same residue as the reference
+                    for index, sub in enumerate(sub_res):
+                        if len(sub) > 1:
+                            print sub
+                            sub_res[index] = sub.replace(orig_res[index],'')[0]
+                            print sub_res[index]
                     gene_muts = dict(zip(pos, zip(orig_res,sub_res)))
                 muts.append(gene_muts)
                 genelist = []
@@ -78,4 +84,5 @@ class NucAminoAligner():
                 if len(genelist) == 0:
                     genelist = ['RT', 'PR', 'IN']
                 genes.append(genelist)
+        print muts
         return names, genes, muts
