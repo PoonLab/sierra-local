@@ -2,39 +2,22 @@ import unittest
 import sys
 sys.path.append("/home/jasper/git/sierra-local")
 import sierralocal
-import reference
-import hxb2
+from nucaminohook import NucAminoAligner
+import os
 
 class DummyTest(unittest.TestCase):
+
     def setUp(self):
-        # add unit test fixtures
-        datum = 123.4
-    def testSimple(self):
-        expected = 'foobar'
-        # do something that should yield expected output
-        result = 'foobar'
-        self.assertEqual(expected, result)
+        self.cwd = os.getcwd()
 
-    def test(self):
-        self.assertEqual(sierralocal.align('TAGACTTACCAC', 'ACTTAGCAT'), '-A--CTTAGCAT')
-        self.assertEqual(sierralocal.align('ACTTAGCAT', 'TAGACTTACCAC'), 'ACTTACCAC')
+    def testSequence(self):
+        self.aligner = NucAminoAligner('/home/jasper/git/sierra-local/AY030621.fasta')
+        self.aligner.align_file()
+        mutations = self.aligner.get_mutations()
+        HIVdb_results = {'ATV/r':45,'DRV/r':0,'LPV/r':20}
+        for res in HIVdb_results:
+            self.assertEqual(mutations[res], HIVdb_results[res])
 
-    # Check out this error later
-    # def test_empty(self):
-    #    self.assertEqual(align('-----------','ACGTACGTACGT'),'')
-
-    def test_deletions(self):
-        self.assertEqual(
-            sierralocal.align('AGTACGCTCGTAGCAT', 'AGTACTAGCAT'), 'AGTAC-----TAGCAT')
-
-    def test_insertions(self):
-        self.assertEqual(
-            sierralocal.align('AGTACTAGCAT', 'ACTACGCTCGTAGCAT'), 'ACTACTAGCAT')
-
-
-    def testTranslate(self):
-        pro = 'PQVTLWQRPLVTIKIGGQLKEALLDTGADDTVLEEMSLPGRWKPKMIGGIGGFIKVRQYDQILIEICGHKAIGTVLVGPTPVNIIGRNLLTQIGCTLNF'
-        self.assertEqual(sierralocal.translate(hxb2.pro),pro)
 
 if __name__ == '__main__':
     unittest.main()

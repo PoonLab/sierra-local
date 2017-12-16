@@ -53,10 +53,9 @@ def scorefile(file, database):
     ordered_mutation_list = []
     scores = []
     for index, query in enumerate(names):
-        print "scoring",query
+        #print "scoring",query
         ordered_mutation_list.append(sorted(zip(muts[index].keys(), [x[1] for x in muts[index].values()], [x[0] for x in muts[index].values()])))
         scores.append(score_alg.score_drugs(database, muts[index]))
-    print ordered_mutation_list
     return names, scores, ordered_mutation_list, genes
 
 
