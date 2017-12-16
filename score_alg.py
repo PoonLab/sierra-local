@@ -61,15 +61,20 @@ def score_single(HIVdb, drugname, seq_mutations):
                 residue = mutationpair[0]
                 aminoacidlist = mutationpair[1]
                 if residue in seq_mutations.keys():
+                    present = False
                     for possibility in seq_mutations[residue][1]:
-                        if not possibility in aminoacidlist:
-                            conditionTrue = False
-                        else:
+                        if possibility in aminoacidlist:
+                            #print aminoacidlist, seq_mutations[residue][1]
+                            #print str(seq_mutations[residue][0])+str(residue)+str(possibility)
                             sequence_residues.append(str(seq_mutations[residue][0])+str(residue)+str(possibility))
+                            present = True
+                    if not present:
+                        conditionTrue = False
                 else:
                     conditionTrue = False
-            if conditionTrue:
+            if conditionTrue and sequence_residues != []:
                 totalScore += values[index]
                 partialScores.append(values[index])
                 mutations.append(sequence_residues)
+    #print mutations
     return totalScore, partialScores, mutations

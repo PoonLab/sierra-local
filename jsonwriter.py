@@ -36,7 +36,6 @@ def validationresults():
     return [validationResults]
 
 def drugresistance(scores,genes):
-    print scores
     drugResistance = {}
     drugResistance['version'] = {}
     drugResistance['version']['text'] = version
@@ -70,7 +69,7 @@ def drugresistance(scores,genes):
                 if names.has_key(drug):
                     drugScore['drug']['name'] = names[drug]
                 else:
-                    drugScore['drug']['name'] = drug
+                    drugScore['drug']['name'] = drug.replace('/r','')
                 drugScore['partialScores'] = []
                 # create partial score, for each mutation, datastructure
                 for index,pscore in enumerate(scores[drug][1]):
@@ -84,6 +83,7 @@ def drugresistance(scores,genes):
                             type_ = drugclass
                             pos = re.findall(u'([0-9]+)',combination)[0]
                             muts = re.findall(u'(?<=[0-9])([A-Za-z])+',combination)[0]
+                            #print pos, muts
                             if gene == 'IN':
                                 for key in INSTI_comments:
                                     if pos in key and muts in key:
@@ -175,7 +175,7 @@ def write_to_json(filename, names, scores, genes, ordered_mutation_list):
 
 def findComment(gene, mutation, comments, details):
     trunc_mut = re.findall(r'\d+\D',mutation)[0] #163K
-    print mutation, trunc_mut
+    #print mutation, trunc_mut
     pos = re.findall(u'([0-9]+)',trunc_mut)[0]
     muts = re.findall(u'(?<=[0-9])([A-Za-z])+',trunc_mut)[0]
     for g, mutationdict in comments.items():

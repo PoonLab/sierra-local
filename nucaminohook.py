@@ -69,9 +69,9 @@ class NucAminoAligner():
                     #Filter out polymorphic variants with the same residue as the reference
                     for index, sub in enumerate(sub_res):
                         if len(sub) > 1:
-                            print sub
-                            sub_res[index] = sub.replace(orig_res[index],'')[0]
-                            print sub_res[index]
+                            #print sub
+                            sub_res[index] = sub.replace(orig_res[index],'')
+                            #print sub_res[index]
                     gene_muts = dict(zip(pos, zip(orig_res,sub_res)))
                 muts.append(gene_muts)
                 genelist = []
@@ -84,5 +84,4 @@ class NucAminoAligner():
                 if len(genelist) == 0:
                     genelist = ['RT', 'PR', 'IN']
                 genes.append(genelist)
-        print muts
         return names, genes, muts

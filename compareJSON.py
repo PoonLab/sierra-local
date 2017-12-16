@@ -53,10 +53,15 @@ def main():
 
     #Parse SierraLocal results
     dict2 = parse_results(k)
+    #print dict1
+    #print dict2
 
     errors = 0
+    totalchecks = 0
+    totalmatches = 0
 
     for header in dict1:
+        drug_errors = 0
         perfect = True
         if not dict2.has_key(header):
             errors += 1
@@ -64,6 +69,7 @@ def main():
             perfect = False
             continue
         for drug in dict1[header]:
+            totalchecks += 1
             if not dict2[header].has_key(drug):
                 errors += 1
                 out.write(drug+' '+"missing from sierralocal for"+' '+header+'\n')
@@ -75,6 +81,8 @@ def main():
             if dict1[header][drug]['score'] != dict2[header][drug]['score']:
                 perfect = False
                 out.write("score mismatch:"+' '+drug+' '+str(dict1[header][drug]['score'])+' '+ str(dict2[header][drug]['score'])+' '+ header+'\n')
+            if perfect:
+                totalmatches += 1
             #for pscore in dict1[header][drug]['partialScores']:
             #    print dict1[header][drug]['partialScores'][pscore]
         if not perfect:
@@ -85,6 +93,8 @@ def main():
     out.write("Errors: "+str(errors))
     out.write("\nCount: "+str(len(dict1)))
     out.write("\n"+str(float(len(dict1)-errors)/len(dict1)))
+    out.write("\n"+str(totalmatches)+'/'+str(totalchecks))
+    out.write("\n"+str(float(totalmatches)/totalchecks))
     out.close()
 if __name__ == '__main__':
     main()
