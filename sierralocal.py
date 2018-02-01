@@ -24,7 +24,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    path = cwd + '/HIVDB.xml'
+    path = cwd + './data/HIVDB.xml'
     algorithm = HIVdb(path)
     definitions = algorithm.parse_definitions(algorithm.root)
     database = algorithm.parse_drugs(algorithm.root)

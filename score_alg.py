@@ -2,8 +2,6 @@ from hivdb import HIVdb
 import os
 import nucaminohook
 
-cwd = os.getcwd()
-
 
 """ score_drugs function iterates through each drug in the HIV database,
     with a given sequence it will calculate a score and store it within a resulting dictionary

@@ -9,7 +9,7 @@ import csv
 names = {}
 names['3TC'] = 'LMV'
 cwd = os.getcwd()
-path = cwd + '/HIVDB.xml'
+path = cwd + './data/HIVDB.xml'
 algorithm = HIVdb(path)
 root = xml.parse(path).getroot()
 version = root.find('ALGVERSION').text
@@ -19,13 +19,13 @@ levels = definitions['level']
 globalrange = definitions['globalrange']
 database = algorithm.parse_drugs(algorithm.root)
 comments = algorithm.parse_comments(algorithm.root)
-with open('apobec-drms.5b7e1215.tsv','r') as csvfile:
+with open('./data/apobec.tsv','r') as csvfile:
     ApobecDRMs = list(csv.reader(csvfile, delimiter='\t'))
-with open('INSTI-comments.csv','r') as INSTI_file:
+with open('./data/INSTI-comments.csv','r') as INSTI_file:
     INSTI_comments = dict(csv.reader(INSTI_file,delimiter='\t'))
-with open('PI-comments.csv','r') as PI_file:
+with open('./data/PI-comments.csv','r') as PI_file:
     PI_comments = dict(csv.reader(PI_file,delimiter='\t'))
-with open('RT-comments.csv','r') as RT_file:
+with open('./data/RT-comments.csv','r') as RT_file:
     RT_comments = dict(csv.reader(RT_file,delimiter='\t'))
 
 
@@ -169,9 +169,9 @@ def write_to_json(filename, names, scores, genes, ordered_mutation_list):
         data['inputSequence'] = inputsequence(names[index])
         out.append(data)
 
-    with open(filename,'w') as outfile:
+    with open('./output/'+filename,'w') as outfile:
         json.dump(out, outfile, indent=2)
-        print "Writing JSON to file {}".format(filename)
+        print "Writing JSON to file {}".format('./output/'+filename)
 
 def findComment(gene, mutation, comments, details):
     trunc_mut = re.findall(r'\d+\D',mutation)[0] #163K
