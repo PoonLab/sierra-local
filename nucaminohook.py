@@ -8,13 +8,12 @@ class NucAminoAligner():
         self.inputname = filename
         self.outputname = filename.replace('.fasta','.tsv')
         self.cwd = os.getcwd()+'/'
-        self.nucamino_dir = '/'.join(self.cwd.split('/')[:-2]+['NucAmino','build'])+'/'
 
     def align_file(self): 
         '''
         Using subprocess to call NucAmino, generates an output .tsv containing mutation data for each sequence in the FASTA file
         '''
-        args = (self.nucamino_dir+"nucamino hiv1b -i {} -g=POL -o {}".format(self.inputname,self.outputname)).split()
+        args = (self.cwd+"./nucamino hiv1b -i {} -g=POL -o {}".format(self.inputname,self.outputname)).split()
         popen = subprocess.Popen(args, stdout=subprocess.PIPE)
         popen.wait()
 
