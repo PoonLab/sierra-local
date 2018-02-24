@@ -1,4 +1,4 @@
-import urllib2
+import urllib.request
 import re
 import requests
 import os
@@ -9,22 +9,24 @@ os.chdir('..')
 os.chdir('./data')
 
 # UPDATE ALGORITHM
-response = urllib2.urlopen(URL)
-html = response.read()
-
-xml_url = base_URL + re.search(u"/assets.*?HIVDB_.*?xml",html).group(0)
-print(xml_url)
-r = requests.get(xml_url, allow_redirects=True)
-
-open('HIVDB.xml', 'wb').write(r.content)
+try:
+    response = urllib.request.urlopen(URL)
+    html = response.read().decode('utf-8')
+    xml_url = base_URL + re.search(u"/assets.*?HIVDB_.*?xml",html).group(0)
+    r = requests.get(xml_url, allow_redirects=True)
+    open('HIVDB.xml', 'wb').write(r.content)
+    print("Updated HIVDB XML from",xml_url,"into {}\HIVDB.xml".format(os.getcwd()))
+except:
+    print("Unable to update HIVDB XML")
 
 # UPDATE APOBEC DRMS
-release_notes = 'https://hivdb.stanford.edu/page/release-notes/'
-response = urllib2.urlopen(release_notes)
-html = response.read()
-
-apobec_url = base_URL + re.search(u"\/assets\/media\/apobec\-drms.*?tsv",html).group(0)
-print(apobec_url)
-r = requests.get(apobec_url, allow_redirects=True)
-
-open('apobec.tsv', 'wb').write(r.content)
+try:
+    release_notes = 'https://hivdb.stanford.edu/page/release-notes/'
+    response = urllib.request.urlopen(release_notes)
+    html = response.read().decode('utf-8')
+    apobec_url = base_URL + re.search(u"\/assets\/media\/apobec\-drms.*?tsv",html).group(0)
+    r = requests.get(apobec_url, allow_redirects=True)
+    open('apobec.tsv', 'wb').write(r.content)
+    print("Updated APOBEC DRMs from", apobec_url, "into {}\\apobec.tsv".format(os.getcwd()))
+except:
+    print("Unable to update APOBEC DRMs")
