@@ -8,22 +8,20 @@ sierra-local is a local implementation of Stanford University's HIVdb web interf
 - [NucAmino](https://github.com/hivdb/nucamino)
 
 ## Installation
-Clone this repository.
-```
-git clone https://github.com/PoonLab/sierra-local.git
-```
-Install NucAmino.
-```
-```
+1. Clone this repository.
+    ```
+    git clone https://github.com/PoonLab/sierra-local.git
+    ```
+2. [Build `NucAmino` binary using Docker](https://github.com/hivdb/nucamino). The NucAmino binary needs to be located in the `sierra-local` root directory.
+3. Pull algorithm and essential data using `update_HIVDB.py`. This needs to be done before first use.
+    ```cmd
+    python ./scripts/update_HIVDB.py
+    ```
 
 ## Using sierra-local
 Example use case:
 ```
 python sierralocal.py SEQUENCES.fasta -o OUTPUT.json
-```
-Updating algorithm and DRM comments:
-```
-python ./scripts/update_HIVDB.py
 ```
 
 ## About Us
