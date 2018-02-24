@@ -14,7 +14,9 @@ def parse_args():
     CLI argument parser. Current options include input FASTA files only
     :return: args object
     '''
-    parser = argparse.ArgumentParser(description='Use the HIVdb algorithm for mutation-based resistance scoring of sequences.')
+    parser = argparse.ArgumentParser(
+        description='Local execution of Stanford HIVdb algorithm for mutation-based resistance scoring of sequences.'
+    )
     parser.add_argument('fasta', nargs='+', type=str, help='List of input files.')
     parser.add_argument('-o', dest='outfile', default=None, type=str, help='Output filename.')
     #args = parser.parse_args(['testsequences.fasta'])
@@ -29,7 +31,7 @@ def main():
     definitions = algorithm.parse_definitions(algorithm.root)
     database = algorithm.parse_drugs(algorithm.root)
     comments = algorithm.parse_comments(algorithm.root)
-    print args.outfile
+    print ('writing output to {}'.format(args.outfile))
 
     for file in args.fasta:
         names, scores, ordered_mutation_list, genes = scorefile(file, database)
