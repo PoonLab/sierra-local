@@ -5,11 +5,13 @@ import re
 import hashlib
 from hivdb import HIVdb
 import csv
+import pathlib
+
 
 names = {}
 names['3TC'] = 'LMV'
 cwd = os.getcwd()
-path = cwd + './data/HIVDB.xml'
+path = cwd + '/data/HIVDB.xml'
 algorithm = HIVdb(path)
 root = xml.parse(path).getroot()
 version = root.find('ALGVERSION').text
@@ -61,12 +63,12 @@ def drugresistance(scores,genes):
                         break
                 resistance_text = levels[resistancelevel]
 
-                drugScore['text'] = resistance_text.keys()[0] #resistance level
+                drugScore['text'] = list(resistance_text)[0] #resistance level
                 drugScore['drugClass'] = {'name':drugclass} #e.g. NRTI
                 drugScore['score'] = float(scores[drug][0]) # score for this paritcular drug
                 drugScore['drug'] = {}
                 drugScore['drug']['displayAbbr'] = drug
-                if names.has_key(drug):
+                if drug in names:
                     drugScore['drug']['name'] = names[drug]
                 else:
                     drugScore['drug']['name'] = drug.replace('/r','')
@@ -117,16 +119,16 @@ def drugresistance(scores,genes):
 
 def alignedgenesequences(ordered_mutation_list, genes):
     dic = {}
-    dic['prettyPairwise'] = {}
-    mutationline = []
-    prev = 0
-    for tuple in ordered_mutation_list:
-        mutationline = mutationline + [' - ']*(tuple[0]-1-prev) + [str(tuple[1]).center(3)]
-        prev = tuple[0]
-    dic['prettyPairwise']['mutationLine'] = mutationline
-    dic['prettyPairwise']['alignedNAsLine'] = []
-    dic['prettyPairwise']['refAALine'] = []
-    dic['prettyPairwise']['positionLine'] = []
+    #dic['prettyPairwise'] = {}
+    #mutationline = []
+    #prev = 0
+    #for tuple in ordered_mutation_list:
+    #    mutationline = mutationline + [' - ']*(tuple[0]-1-prev) + [str(tuple[1]).center(3)]
+    #    prev = tuple[0]
+    #dic['prettyPairwise']['mutationLine'] = mutationline
+    #dic['prettyPairwise']['alignedNAsLine'] = []
+    #dic['prettyPairwise']['refAALine'] = []
+    #dic['prettyPairwise']['positionLine'] = []
     dic['lastAA'] = None
     dic['firstAA'] = None
     dic['mutations'] = []
@@ -169,9 +171,9 @@ def write_to_json(filename, names, scores, genes, ordered_mutation_list):
         data['inputSequence'] = inputsequence(names[index])
         out.append(data)
 
-    with open('./output/'+filename,'w') as outfile:
+    with open('./'+filename,'w+') as outfile:
         json.dump(out, outfile, indent=2)
-        print("Writing JSON to file {}".format('./output/'+filename))
+        print("Writing JSON to file {}".format('./'+filename))
 
 def findComment(gene, mutation, comments, details):
     trunc_mut = re.findall(r'\d+\D',mutation)[0] #163K

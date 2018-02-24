@@ -5,6 +5,7 @@ import re
 class HIVdb():
     def __init__(self, path):
         try:
+            print(path)
             self.root = xml.parse(path).getroot()
         except:
             print("Error: could not retrieve HIVDB XML from path {}.  Try running scripts/update_HIVDB.py".format(path))

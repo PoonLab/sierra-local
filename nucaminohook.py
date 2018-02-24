@@ -20,7 +20,7 @@ class NucAminoAligner():
         '''
         Using subprocess to call NucAmino, generates an output .tsv containing mutation data for each sequence in the FASTA file
         '''
-        args = ("{} hiv1b -i {} -g=POL -o {}".format(
+        args = ("./{} hiv1b -i {} -g=POL -o {}".format(
             self.nucamino_binary, self.inputname, self.outputname)).split()
         print(args)
         popen = subprocess.Popen(args, stdout=subprocess.PIPE)
