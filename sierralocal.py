@@ -19,6 +19,9 @@ def parse_args():
     )
     parser.add_argument('fasta', nargs='+', type=str, help='List of input files.')
     parser.add_argument('-o', dest='outfile', default=None, type=str, help='Output filename.')
+    parser.add_argument('-xml', default='./data/HIVDB.xml', 
+                        help='Path to HIVDB algorithm XML file, which can be downloaded using the 
+                        provided script update_HIVDB.py')
     #args = parser.parse_args(['testsequences.fasta'])
     args = parser.parse_args()
     return args
@@ -26,7 +29,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    path = cwd + './data/HIVDB.xml'
+    path = cwd + args.xml  #'./data/HIVDB.xml'
     algorithm = HIVdb(path)
     definitions = algorithm.parse_definitions(algorithm.root)
     database = algorithm.parse_drugs(algorithm.root)
