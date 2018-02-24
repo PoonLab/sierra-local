@@ -5,7 +5,6 @@ import argparse
 import sys
 from nucaminohook import NucAminoAligner
 import jsonwriter
-from seqUtils import parse_fasta
 
 cwd = os.getcwd()
 
@@ -20,8 +19,7 @@ def parse_args():
     parser.add_argument('fasta', nargs='+', type=str, help='List of input files.')
     parser.add_argument('-o', dest='outfile', default=None, type=str, help='Output filename.')
     parser.add_argument('-xml', default='./data/HIVDB.xml', 
-                        help='Path to HIVDB algorithm XML file, which can be downloaded using the 
-                        provided script update_HIVDB.py')
+                        help='Path to HIVDB algorithm XML file, which can be downloaded using the provided script update_HIVDB.py')
     #args = parser.parse_args(['testsequences.fasta'])
     args = parser.parse_args()
     return args
@@ -34,7 +32,7 @@ def main():
     definitions = algorithm.parse_definitions(algorithm.root)
     database = algorithm.parse_drugs(algorithm.root)
     comments = algorithm.parse_comments(algorithm.root)
-    print ('writing output to {}'.format(args.outfile))
+    print('writing output to {}'.format(args.outfile))
 
     for file in args.fasta:
         names, scores, ordered_mutation_list, genes = scorefile(file, database)
@@ -58,7 +56,7 @@ def scorefile(file, database):
     ordered_mutation_list = []
     scores = []
     for index, query in enumerate(names):
-        #print "scoring",query
+        #print("scoring",query)
         ordered_mutation_list.append(sorted(zip(muts[index].keys(), [x[1] for x in muts[index].values()], [x[0] for x in muts[index].values()])))
         scores.append(score_alg.score_drugs(database, muts[index]))
     return names, scores, ordered_mutation_list, genes

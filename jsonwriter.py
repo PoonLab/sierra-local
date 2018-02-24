@@ -83,7 +83,7 @@ def drugresistance(scores,genes):
                             type_ = drugclass
                             pos = re.findall(u'([0-9]+)',combination)[0]
                             muts = re.findall(u'(?<=[0-9])([A-Za-z])+',combination)[0]
-                            #print pos, muts
+                            #print(pos, muts)
                             if gene == 'IN':
                                 for key in INSTI_comments:
                                     if pos in key and muts in key:
@@ -163,7 +163,7 @@ def write_to_json(filename, names, scores, genes, ordered_mutation_list):
         data['subtypeText'] = 'NULL'
         data['validationResults'] = validationresults()
         if ordered_mutation_list[index] == None:
-            print names[index]
+            print(names[index])
         data['drugResistance'] = drugresistance(score, genes[index])
         data['alignedGeneSequences'] = alignedgenesequences(ordered_mutation_list[index], genes[index])
         data['inputSequence'] = inputsequence(names[index])
@@ -171,11 +171,11 @@ def write_to_json(filename, names, scores, genes, ordered_mutation_list):
 
     with open('./output/'+filename,'w') as outfile:
         json.dump(out, outfile, indent=2)
-        print "Writing JSON to file {}".format('./output/'+filename)
+        print("Writing JSON to file {}".format('./output/'+filename))
 
 def findComment(gene, mutation, comments, details):
     trunc_mut = re.findall(r'\d+\D',mutation)[0] #163K
-    #print mutation, trunc_mut
+    #print(mutation, trunc_mut)
     pos = re.findall(u'([0-9]+)',trunc_mut)[0]
     muts = re.findall(u'(?<=[0-9])([A-Za-z])+',trunc_mut)[0]
     for g, mutationdict in comments.items():

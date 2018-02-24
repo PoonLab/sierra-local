@@ -8,12 +8,21 @@ class NucAminoAligner():
         self.inputname = filename
         self.outputname = filename.replace('.fasta','.tsv')
         self.cwd = os.getcwd()+'/'
+        items = os.listdir(".")
+        self.nucamino_binary = 'nucamino'
+        for name in items:
+            if 'nucamino' in name and not name.endswith('py'):
+                self.nucamino_binary = name
+                break
+        print(self.nucamino_binary)
 
     def align_file(self): 
         '''
         Using subprocess to call NucAmino, generates an output .tsv containing mutation data for each sequence in the FASTA file
         '''
-        args = (self.cwd+"./nucamino hiv1b -i {} -g=POL -o {}".format(self.inputname,self.outputname)).split()
+        args = ("{} hiv1b -i {} -g=POL -o {}".format(
+            self.nucamino_binary, self.inputname, self.outputname)).split()
+        print(args)
         popen = subprocess.Popen(args, stdout=subprocess.PIPE)
         popen.wait()
 
@@ -68,9 +77,9 @@ class NucAminoAligner():
                     #Filter out polymorphic variants with the same residue as the reference
                     for index, sub in enumerate(sub_res):
                         if len(sub) > 1:
-                            #print sub
+                            #print(sub)
                             sub_res[index] = sub.replace(orig_res[index],'')
-                            #print sub_res[index]
+                            #print(sub_res[index])
                     gene_muts = dict(zip(pos, zip(orig_res,sub_res)))
                 muts.append(gene_muts)
                 genelist = []
