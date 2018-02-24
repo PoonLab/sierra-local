@@ -4,7 +4,12 @@ import re
 
 class HIVdb():
     def __init__(self, path):
-        self.root = xml.parse(path).getroot()
+        try:
+            self.root = xml.parse(path).getroot()
+        except:
+            print("Error: could not retrieve HIVDB XML from path {}.  Try running scripts/update_HIVDB.py".format(path))
+            raise
+        
         self.algname = self.root.find('ALGNAME').text
         self.version = self.root.find('ALGVERSION').text
         self.version_date = self.root.find('ALGDATE').text
