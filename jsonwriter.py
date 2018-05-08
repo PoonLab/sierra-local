@@ -184,7 +184,7 @@ def findComment(gene, mutation, comments, details):
         for item in mutationdict.keys():
             if pos in item and muts in item:
                 full_mut = mutationdict[item]
-                if details.has_key(full_mut) and g == gene:
+                if full_mut in details and g == gene:
                     return details[full_mut]['1']
 
 def isApobecDRM(gene, consensus, position, AA):

@@ -5,13 +5,16 @@ import re
 
 class NucAminoAligner():
     def __init__(self, filename):
+        '''
+        Initialize NucAmino for a specific input fasta file
+        '''
         self.inputname = filename
-        self.outputname = filename.replace('.fasta','.tsv')
+        self.outputname = os.path.splitext(filename)[0] + '.tsv'
         self.cwd = os.getcwd()+'/'
         items = os.listdir(".")
         self.nucamino_binary = 'nucamino'
         for name in items:
-            if 'nucamino' in name and not name.endswith('py'):
+            if 'nucamino' in name and not (name.endswith('py') or name.endswith('pyc')):
                 self.nucamino_binary = name
                 break
         print(self.nucamino_binary)
@@ -69,17 +72,18 @@ class NucAminoAligner():
                     orig_res = []
                     sub_res = []
                     gene_muts = {}
+                # most cases fall here... mutations are present
                 else:
-                    mutationpairs = row[5].split(',')
+                    mutationpairs = row[5].split(',') #split list into individual mutations
                     pos = [int(re.findall(r'\d+',x.split(':')[0])[0])-shift for x in mutationpairs]
                     orig_res = [re.findall(r'\D+',x.split(':')[0][:2])[0] for x in mutationpairs]
                     sub_res = [re.findall(r'(?<=\d)\D+', x.split(':')[0])[0] for x in mutationpairs]
                     #Filter out polymorphic variants with the same residue as the reference
-                    for index, sub in enumerate(sub_res):
-                        if len(sub) > 1:
-                            #print(sub)
-                            sub_res[index] = sub.replace(orig_res[index],'')
-                            #print(sub_res[index])
+                    # for index, sub in enumerate(sub_res):
+                    #     if len(sub) > 1:
+                    #         #print(sub)
+                    #         sub_res[index] = sub.replace(orig_res[index],'')
+                    #         #print(sub_res[index])
                     gene_muts = dict(zip(pos, zip(orig_res,sub_res)))
                 muts.append(gene_muts)
                 genelist = []
