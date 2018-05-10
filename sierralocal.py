@@ -77,15 +77,18 @@ def scorefile(file, database):
     names, genes, muts = aligner.get_mutations(aligner.gene_map())
     ordered_mutation_list = []
     scores = []
-    with open(file, 'r') as fastafile:
-        sequence_list = list(parse_fasta(fastafile).values())
-    with open('sequence_out.txt','w') as out:
-        out.write('\n'.join(sequence_list))
+    # with open(file, 'r') as fastafile:
+    #     sequence_list = list(parse_fasta(fastafile).values())
+    # with open('sequence_out.txt','w') as out:
+    #     out.write('\n'.join(sequence_list))
+
+    if len(names) != len(muts):
+        print('help')
 
     for index, query in enumerate(names):
         #print("scoring",query)
         ordered_mutation_list.append(sorted(zip(muts[index].keys(), [x[1] for x in muts[index].values()], [x[0] for x in muts[index].values()])))
-        scores.append(score_alg.score_drugs(database, muts[index], sequence_list[index]))
+        scores.append(score_alg.score_drugs(database, muts[index]))
     return names, scores, ordered_mutation_list, genes
 
 

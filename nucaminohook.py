@@ -17,7 +17,7 @@ class NucAminoAligner():
             if 'nucamino' in name and not (name.endswith('py') or name.endswith('pyc')):
                 self.nucamino_binary = name
                 break
-        print(self.nucamino_binary)
+        print("Found NucAmino binary", self.nucamino_binary)
 
     def align_file(self): 
         '''
@@ -25,7 +25,7 @@ class NucAminoAligner():
         '''
         args = ("./{} hiv1b -i {} -g=POL -o {}".format(
             self.nucamino_binary, self.inputname, self.outputname)).split()
-        print(args)
+        # print(args)
         popen = subprocess.Popen(args, stdout=subprocess.PIPE)
         popen.wait()
 
@@ -77,7 +77,7 @@ class NucAminoAligner():
                     mutationpairs = row[5].split(',') #split list into individual mutations
                     pos = [int(re.findall(r'\d+',x.split(':')[0])[0])-shift for x in mutationpairs]
                     orig_res = [re.findall(r'\D+',x.split(':')[0][:2])[0] for x in mutationpairs]
-                    sub_res = [re.findall(r'(?<=\d)\D+', x.split(':')[0])[0] for x in mutationpairs]
+                    sub_res = [''.join(sorted(re.findall(r'(?<=\d)\D+', x.split(':')[0])[0])) for x in mutationpairs]
                     #Filter out polymorphic variants with the same residue as the reference
                     # for index, sub in enumerate(sub_res):
                     #     if len(sub) > 1:
@@ -96,4 +96,5 @@ class NucAminoAligner():
                 if len(genelist) == 0:
                     genelist = ['RT', 'PR', 'IN']
                 genes.append(genelist)
+        assert len(muts) == len(names), "length of mutations dicts is not the same as length of names"
         return names, genes, muts

@@ -173,7 +173,7 @@ def write_to_json(filename, names, scores, genes, ordered_mutation_list):
 
     with open('./'+filename,'w+') as outfile:
         json.dump(out, outfile, indent=2)
-        print("Writing JSON to file {}".format('./'+filename))
+        print("Writing JSON to file {}".format(filename))
 
 def findComment(gene, mutation, comments, details):
     trunc_mut = re.findall(r'\d+\D',mutation)[0] #163K

@@ -9,10 +9,10 @@ import os
     @param sequence: the given sequence
     @return result_dict: a dictionary holding the score results of each drug for the given sequence
 """
-def score_drugs(HIVdb, seq_mutations, sequence):
+def score_drugs(HIVdb, seq_mutations):
     result_dict = {}
     for index, drug in enumerate(HIVdb):
-        score = score_single(HIVdb, drug, seq_mutations, sequence)
+        score = score_single(HIVdb, drug, seq_mutations)
         result_dict[drug] = score
     return result_dict
 
@@ -25,95 +25,91 @@ def score_drugs(HIVdb, seq_mutations, sequence):
     @param sequence: user provided sequence of type str (tolerates whitespace on either side, will strip it out later)
     @return score: calculated drm mutation score
 """
-def score_single(HIVdb, drugname, seq_mutations, sequence):
-    # print("seq_mutations")
-    # print(seq_mutations)
+def score_single(HIVdb, drugname, seq_mutations):
     assert drugname in HIVdb.keys(), "Drugname: %s not found." % drugname
-    totalScore = 0
-    partialScores = []
-    mutations = []
+    rec = lambda x: sum(map(rec, x)) if isinstance(x, list) else x
+    single_score = 0
+    partial_scores = []
+    sequence_mutations = []
+    residuelist = []
+
     for condition in HIVdb[drugname][0]: # condition = potential DRMs associated with each drug
-        candidates = [0]        # list of potential scores
-        values = []
+        # candidates = [0]        # list of potential scores
+        penalties = []
         residueAAtuples = []
 
-        # separating values from groups of tuples in each condition, both appended to lists
+        # separating penalty values from groups of tuples in each condition, both appended to lists
         for gv_pairs in condition:
             # 'AND' or 'single-drm' condition
             if isinstance(gv_pairs, str):
                 if gv_pairs == 'value':
-                    values.append(condition[gv_pairs])
+                    penalties.append(condition[gv_pairs])
                 else:
                     residueAAtuples.append(condition[gv_pairs])
             # 'MAX' or 'MAXAND' condition
             else:
                 for item in gv_pairs:
                     if item == 'value':
-                        values.append(gv_pairs[item])
+                        penalties.append(gv_pairs[item])
                     else:
                         residueAAtuples.append(gv_pairs[item])
 
-        # print("residueAAtuples")
-        # print(residueAAtuples)
-        residuelist = []
 
-        for index, residueAA in enumerate(residueAAtuples): #iterate thru conditions e.g. ([(41, 'L'), (215, 'FY')])
+        for index, residueAAtuple in enumerate(residueAAtuples): #iterate thru conditions e.g. ([(41, 'L'), (215, 'FY')])
             conditionTrue = True
-            sequence_residues = []
-            partialresidues = []
-            for mutationpair in residueAA: # iterate thru DRM tuples in each condition
-                residue = mutationpair[0]  #e.g. 41
-                aminoacidlist = mutationpair[1] #e.g. 'L'
+            combination_mutations = []
+            combination_positions = []
+            for j, mutationpair in enumerate(residueAAtuple): # iterate thru DRM tuples in each condition
+                position = mutationpair[0]  #e.g. 41
+                aalist = mutationpair[1] #e.g. 'L'
 
-                present = False #assume DRM fulfilled
-                if residue in seq_mutations: #check if the residue in the DRM is present in the sequence mutation list
-                    for possibility in seq_mutations[residue][1]:
-                        if possibility in aminoacidlist:
-                            if not residue in partialresidues and not [residue] in residuelist:
-                                partialresidues.append(residue)
-                                sequence_residues.append(str(seq_mutations[residue][0])+str(residue)+str(possibility))
+                present = False #assume DRM unfulfilled
+                if position in seq_mutations: #check if the position in the DRM is present in the sequence mutation list
+                    for seq_mutation in seq_mutations[position][1]:
+                        if seq_mutation in aalist:
+                            if not position in combination_positions: # and not combination_positions+[residue] in residuelist:
+                                mut = str(seq_mutations[position][0])+str(position)+str(seq_mutation)
+                                combination_positions.append(position)
+                                combination_mutations.append(mut)
                                 present = True
-                                
-                    if residue == 143 and present:
-                        print(mutationpair, seq_mutations[residue], partialresidues)
 
+                                
                 if not present:
                     conditionTrue = False
 
-            if conditionTrue and sequence_residues != []:
-                residuelist.append(partialresidues)
-                totalScore += values[index]
-                partialScores.append(values[index])
-                mutations.append(sequence_residues)
-        # condition = True
-        # sequence_residues = []
-        # for index, residueAAtuple in enumerate(residueAAtuples): #iterate over subconditions within a condition
-        #     # print(residueAAtuple)
-        #     subcondition = True
-        #     for tup in residueAAtuple: #all elements of a subcondition must be true
-        #         pair = False
-        #         residue = tup[0]
-        #         aminoacidlist = tup[1]
-        #         if residue in seq_mutations:
-        #             for possibility in seq_mutations[residue][1]:
-        #                 if possibility in aminoacidlist: #tuple is TRUE
-        #                     sequence_residues.append(str(seq_mutations[residue][0])+str(residue)+str(seq_mutations[residue][1]))
-        #                     pair = True
-        #                     break
-        #         if pair == False:
-        #             subcondition == False
-        #             break
-        #     if subcondition == False:
-        #         condition == False
+            if conditionTrue:
+                residuelist.append(combination_positions)
+                partial_scores.append(penalties[index])
+                sequence_mutations.append(combination_mutations)
 
-        # if condition and sequence_residues != []:
-        #     totalScore += values[index]
-        #     partialScores.append(values[index])
-        #     mutations.append(sequence_residues)
+    if len(residuelist) > 1:
+        max_mask = []
+        for index, combination_positions in enumerate(residuelist):
+            if residuelist.count(combination_positions) == 1: # the only occurrence
+                max_mask.append(True)
+            else: # multiple occurrences
+                indices = [i for i, x in enumerate(residuelist) if x == combination_positions]
+                mx = rec(partial_scores[indices[0]])
+                max_index = indices[0]
+                # print(str(drugname), str(residuelist), str(indices), mx)
+                for j in indices:
+                    if rec(partial_scores[j]) > mx:
+                        mx = rec(partial_scores[j])
+                        max_index = j
+                if max_index == index:
+                    max_mask.append(True)
+                else:
+                    max_mask.append(False)
+        partial_scores = [x for i,x in enumerate(partial_scores) if max_mask[i]]
+        sequence_mutations = [x for i,x in enumerate(sequence_mutations) if max_mask[i]]
 
+    single_score = rec(partial_scores)
+    # if single_score > 0:
+    #     with open('output.txt', 'a') as f:
+    #         f.write(str(drugname)+' '+str(single_score)+'\n')
+    #         f.write(str(residuelist)+'\n')
+    #         f.write(str(partial_scores)+'\n')
+    #         f.write(str(sequence_mutations)+'\n')
+    #         f.write(str('\n')+'\n')
 
-
-
-
-    #print mutations
-    return totalScore, partialScores, mutations
+    return single_score, partial_scores, sequence_mutations
