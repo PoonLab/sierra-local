@@ -17,7 +17,7 @@ class NucAminoAligner():
             if 'nucamino' in name and not (name.endswith('py') or name.endswith('pyc')):
                 self.nucamino_binary = name
                 break
-        print(self.nucamino_binary)
+        print("Found NucAmino binary", self.nucamino_binary)
 
     def align_file(self): 
         '''
@@ -25,7 +25,7 @@ class NucAminoAligner():
         '''
         args = ("./{} hiv1b -i {} -g=POL -o {}".format(
             self.nucamino_binary, self.inputname, self.outputname)).split()
-        print(args)
+        # print(args)
         popen = subprocess.Popen(args, stdout=subprocess.PIPE)
         popen.wait()
 
@@ -42,9 +42,18 @@ class NucAminoAligner():
             pol_aa_map[key] = (convert(val[0]), convert(val[1]))
         return pol_aa_map
 
+    def get_genes(self, firstAA):
+        start = 2085
+        gene_list = ['PR', 'RT', 'IN']
+        firstNA = [int((x - start)/3) for x in [2253, 2550, 4230, 5096]]
+        gene_present = [firstNA[i+1] > firstAA > x for i, x in enumerate(firstNA[:-1:])]
+        if any(gene_present):
+            return [gene_list[gene_present.index(True)]]
+        return []
+
     def get_mutations(self, genemap):
         '''
-        From the tsv output of NucAmino, parses and adjusts indices and returns as two lists.
+        From the tsv output of NucAmino, parses and adjusts indices and returns as lists.
         :return: list of sequence names, list of sequence mutation dictionaries.
         '''
         muts = []
@@ -77,7 +86,7 @@ class NucAminoAligner():
                     mutationpairs = row[5].split(',') #split list into individual mutations
                     pos = [int(re.findall(r'\d+',x.split(':')[0])[0])-shift for x in mutationpairs]
                     orig_res = [re.findall(r'\D+',x.split(':')[0][:2])[0] for x in mutationpairs]
-                    sub_res = [re.findall(r'(?<=\d)\D+', x.split(':')[0])[0] for x in mutationpairs]
+                    sub_res = [''.join(sorted(re.findall(r'(?<=\d)\D+', x.split(':')[0])[0])) for x in mutationpairs]
                     #Filter out polymorphic variants with the same residue as the reference
                     # for index, sub in enumerate(sub_res):
                     #     if len(sub) > 1:
@@ -86,14 +95,14 @@ class NucAminoAligner():
                     #         #print(sub_res[index])
                     gene_muts = dict(zip(pos, zip(orig_res,sub_res)))
                 muts.append(gene_muts)
-                genelist = []
-                for p in pos:
-                    position = p+shift
-                    for key, r in genemap.items():
-                        if r[0] <= position <= r[1]:
-                            if key not in genelist:
-                                genelist.append(key)
-                if len(genelist) == 0:
-                    genelist = ['RT', 'PR', 'IN']
+                genelist = self.get_genes(firstAA)
+                # for p in pos:
+                #     position = p+shift
+                #     for key, r in genemap.items():
+                #         if r[0] <= position <= r[1]:
+                #             if key not in genelist:
+                #                 genelist.append(key)
+                # print(str(genelist))
                 genes.append(genelist)
+        assert len(muts) == len(names), "length of mutations dicts is not the same as length of names"
         return names, genes, muts

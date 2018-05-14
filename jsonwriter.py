@@ -31,9 +31,9 @@ with open('./data/RT-comments.csv','r') as RT_file:
     RT_comments = dict(csv.reader(RT_file,delimiter='\t'))
 
 
-def validationresults():
+def validationresults(validated):
     validationResults = {}
-    validationResults['message'] = None
+    validationResults['message'] = validated
     validationResults['level'] = None
     return [validationResults]
 
@@ -150,7 +150,7 @@ def inputsequence(name):
     }
     return out
 
-def write_to_json(filename, names, scores, genes, ordered_mutation_list):
+def write_to_json(filename, names, scores, genes, ordered_mutation_list, sequence_lengths):
     '''
     The main function to write passed result to a JSON file
     :param filename: the filename to write the JSON to
@@ -163,17 +163,35 @@ def write_to_json(filename, names, scores, genes, ordered_mutation_list):
     for index, score in enumerate(scores):
         data = {}
         data['subtypeText'] = 'NULL'
-        data['validationResults'] = validationresults()
-        if ordered_mutation_list[index] == None:
-            print(names[index])
-        data['drugResistance'] = drugresistance(score, genes[index])
-        data['alignedGeneSequences'] = alignedgenesequences(ordered_mutation_list[index], genes[index])
         data['inputSequence'] = inputsequence(names[index])
+        validationresult = ''
+        if ('RT' in genes[index] and sequence_lengths[index] < 150) or ('PR' in genes[index] and sequence_lengths[index] < 60) or ('IN' in genes[index] and sequence_lengths[index] < 100):
+            validationresult = 'SEVERE WARNING'
+            print(names[index], validationresult)
+            data['validationResults'] = validationresults(validationresult)
+            data['drugResistance'] = drugresistance(score, genes[index])
+            data['alignedGeneSequences'] = alignedgenesequences(ordered_mutation_list[index], genes[index])
+        elif ('RT' in genes[index] and sequence_lengths[index] < 200) or ('PR' in genes[index] and sequence_lengths[index] < 80) or ('IN' in genes[index] and sequence_lengths[index] < 200):
+            validationresult = 'WARNING'
+            print(names[index], validationresult)
+            data['validationResults'] = validationresults(validationresult)
+            data['drugResistance'] = drugresistance(score, genes[index])
+            data['alignedGeneSequences'] = alignedgenesequences(ordered_mutation_list[index], genes[index])
+        elif len(genes[index]) == 0:
+            validationresult = 'CRITICAL'
+            print(names[index], validationresult)
+            data['validationResults'] = validationresults(validationresult)
+            data['drugResistance'] = []
+            data['alignedGeneSequences'] = []
+        else:
+            data['validationResults'] = validationresults(validationresult)
+            data['drugResistance'] = drugresistance(score, genes[index])
+            data['alignedGeneSequences'] = alignedgenesequences(ordered_mutation_list[index], genes[index])
         out.append(data)
 
     with open('./'+filename,'w+') as outfile:
         json.dump(out, outfile, indent=2)
-        print("Writing JSON to file {}".format('./'+filename))
+        print("Writing JSON to file {}".format(filename))
 
 def findComment(gene, mutation, comments, details):
     trunc_mut = re.findall(r'\d+\D',mutation)[0] #163K

@@ -6,6 +6,7 @@ import sys
 from nucaminohook import NucAminoAligner
 import jsonwriter
 import re
+import string
 
 cwd = os.getcwd()
 
@@ -35,34 +36,37 @@ def main():
     print('writing output to {}'.format(args.outfile))
 
     for file in args.fasta:
-        names, scores, ordered_mutation_list, genes = scorefile(file, database)
+        names, scores, ordered_mutation_list, genes, sequence_lengths = scorefile(file, database)
         if args.outfile == None:
             outputname = os.path.splitext(file)[0] + '-local.json'
         else:
             outputname = args.outfile
-        jsonwriter.write_to_json(outputname, names, scores, genes, ordered_mutation_list)
+        jsonwriter.write_to_json(outputname, names, scores, genes, ordered_mutation_list, sequence_lengths)
 
-def parse_fasta (handle):
+def parse_fasta(handle):
     """
-    Parse open file as FASTA, return dictionary of 
+    Parse open file as FASTA, return dictionary of
     headers and sequences as key-value pairs.
     """
-    res = {}
+    names = []
+    sequences = []
     sequence = ''
     for i in handle:
-        if i[0] == '$': # skip h info
+        if i[0] == '$':  # skip h info
             continue
         elif i[0] == '>' or i[0] == '#':
             if len(sequence) > 0:
-                res.update({h: sequence})
-                sequence = ''   # reset containers
+                names.append(h)
+                sequences.append(sequence)
+                sequence = ''
                 h = i.strip('\n')[1:]
             else:
                 h = i.strip('\n')[1:]
         else:
             sequence += i.strip('\n').upper()
-    res.update({h: sequence})
-    return res
+    names.append(h)
+    sequences.append(sequence)
+    return names, sequences
 
 
 def scorefile(file, database):
@@ -77,16 +81,22 @@ def scorefile(file, database):
     names, genes, muts = aligner.get_mutations(aligner.gene_map())
     ordered_mutation_list = []
     scores = []
+    sequence_lengths = []
+
     with open(file, 'r') as fastafile:
-        sequence_list = list(parse_fasta(fastafile).values())
+        headers, sequence_list = parse_fasta(fastafile)
+        sequence_lengths = [len(s.replace('N', '')) / 3 for s in sequence_list]
     with open('sequence_out.txt','w') as out:
-        out.write('\n'.join(sequence_list))
+        out.write('\n'.join([str(sequence_lengths[i]) + " " + names[i] + " " + str(genes[i]) + sequence_list[i][1:30] +'...'+sequence_list[i][-15:-1] for i in range(1, len(sequence_lengths))]))
+
+    if len(names) != len(muts):
+        print('help')
 
     for index, query in enumerate(names):
         #print("scoring",query)
         ordered_mutation_list.append(sorted(zip(muts[index].keys(), [x[1] for x in muts[index].values()], [x[0] for x in muts[index].values()])))
-        scores.append(score_alg.score_drugs(database, muts[index], sequence_list[index]))
-    return names, scores, ordered_mutation_list, genes
+        scores.append(score_alg.score_drugs(database, muts[index]))
+    return names, scores, ordered_mutation_list, genes, sequence_lengths
 
 
 if __name__ == '__main__':
