@@ -7,12 +7,13 @@ import os
     
     @param HIVdb: the database
     @param sequence: the given sequence
+    @param codon_type: list of strings describing each mutation: "Normal", "Frameshift", or "Deletion"
     @return result_dict: a dictionary holding the score results of each drug for the given sequence
 """
-def score_drugs(HIVdb, seq_mutations):
+def score_drugs(HIVdb, seq_mutations, codon_type):
     result_dict = {}
     for index, drug in enumerate(HIVdb):
-        score = score_single(HIVdb, drug, seq_mutations)
+        score = score_single(HIVdb, drug, seq_mutations, codon_type)
         result_dict[drug] = score
     return result_dict
 
@@ -25,7 +26,7 @@ def score_drugs(HIVdb, seq_mutations):
     @param sequence: user provided sequence of type str (tolerates whitespace on either side, will strip it out later)
     @return score: calculated drm mutation score
 """
-def score_single(HIVdb, drugname, seq_mutations):
+def score_single(HIVdb, drugname, seq_mutations, codon_type):
     assert drugname in HIVdb.keys(), "Drugname: %s not found." % drugname
     rec = lambda x: sum(map(rec, x)) if isinstance(x, list) else x
     single_score = 0
@@ -65,7 +66,11 @@ def score_single(HIVdb, drugname, seq_mutations):
 
                 present = False #assume DRM unfulfilled
                 if position in seq_mutations: #check if the position in the DRM is present in the sequence mutation list
+                    if position == 69 and ('X' in seq_mutations[position][1] or '-' in seq_mutations[position][1]):
+                        print(aalist)
                     for seq_mutation in seq_mutations[position][1]:
+                        if '-' in seq_mutations[position][1]:
+                            seq_mutation = 'd'
                         if seq_mutation in aalist:
                             if not position in combination_positions: # and not combination_positions+[residue] in residuelist:
                                 mut = str(seq_mutations[position][0])+str(position)+str(seq_mutation)
@@ -104,12 +109,5 @@ def score_single(HIVdb, drugname, seq_mutations):
         sequence_mutations = [x for i,x in enumerate(sequence_mutations) if max_mask[i]]
 
     single_score = rec(partial_scores)
-    # if single_score > 0:
-    #     with open('output.txt', 'a') as f:
-    #         f.write(str(drugname)+' '+str(single_score)+'\n')
-    #         f.write(str(residuelist)+'\n')
-    #         f.write(str(partial_scores)+'\n')
-    #         f.write(str(sequence_mutations)+'\n')
-    #         f.write(str('\n')+'\n')
 
     return single_score, partial_scores, sequence_mutations

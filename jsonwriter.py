@@ -5,15 +5,18 @@ import re
 import hashlib
 from hivdb import HIVdb
 import csv
-import pathlib
+from pathlib import Path
 
 
 names = {}
 names['3TC'] = 'LMV'
-cwd = os.getcwd()
-path = cwd + '/data/HIVDB.xml'
-algorithm = HIVdb(path)
-root = xml.parse(path).getroot()
+
+HIVDB_XML_PATH = str(Path('.') / 'data' / 'HIVDB.xml')
+print(HIVDB_XML_PATH)
+
+# Set up algorithm data
+algorithm = HIVdb(HIVDB_XML_PATH)
+root = xml.parse(HIVDB_XML_PATH).getroot()
 version = root.find('ALGVERSION').text
 version_date = root.find('ALGDATE').text
 definitions = algorithm.parse_definitions(algorithm.root)
@@ -21,6 +24,12 @@ levels = definitions['level']
 globalrange = definitions['globalrange']
 database = algorithm.parse_drugs(algorithm.root)
 comments = algorithm.parse_comments(algorithm.root)
+
+with open('./data/comments.txt','w') as comment_out:
+    comment_out.write(str(comments) +'\n')
+    comment_out.write(str(definitions['comment']))
+
+# Load comments files stored locally
 with open('./data/apobec.tsv','r') as csvfile:
     ApobecDRMs = list(csv.reader(csvfile, delimiter='\t'))
 with open('./data/INSTI-comments.csv','r') as INSTI_file:
@@ -117,25 +126,15 @@ def drugresistance(scores,genes):
     drugResistance['gene'] = {'name':genes[0]}
     return [drugResistance]
 
-def alignedgenesequences(ordered_mutation_list, genes):
+def alignedgenesequences(ordered_mutation_list, genes, deletions):
     dic = {}
-    #dic['prettyPairwise'] = {}
-    #mutationline = []
-    #prev = 0
-    #for tuple in ordered_mutation_list:
-    #    mutationline = mutationline + [' - ']*(tuple[0]-1-prev) + [str(tuple[1]).center(3)]
-    #    prev = tuple[0]
-    #dic['prettyPairwise']['mutationLine'] = mutationline
-    #dic['prettyPairwise']['alignedNAsLine'] = []
-    #dic['prettyPairwise']['refAALine'] = []
-    #dic['prettyPairwise']['positionLine'] = []
     dic['lastAA'] = None
     dic['firstAA'] = None
     dic['mutations'] = []
     for a in ordered_mutation_list:
         mutdict = {}
         mutdict['isInsertion'] = None
-        mutdict['isDeletion'] = None
+        mutdict['isDeletion'] = a[0] in deletions
         mutdict['consensus'] = a[2]
         mutdict['AAs'] = a[1]
         mutdict['isApobecDRM'] = isApobecDRM(genes[0], a[2], a[0], a[1])
@@ -145,12 +144,11 @@ def alignedgenesequences(ordered_mutation_list, genes):
 
 def inputsequence(name):
     out = {
-        'header' : name,
-        'SHA512' : ''
+        'header' : name
     }
     return out
 
-def write_to_json(filename, names, scores, genes, ordered_mutation_list, sequence_lengths):
+def write_to_json(filename, names, scores, genes, ordered_mutation_list, sequence_lengths, deletions):
     '''
     The main function to write passed result to a JSON file
     :param filename: the filename to write the JSON to
@@ -170,13 +168,13 @@ def write_to_json(filename, names, scores, genes, ordered_mutation_list, sequenc
             print(names[index], validationresult)
             data['validationResults'] = validationresults(validationresult)
             data['drugResistance'] = drugresistance(score, genes[index])
-            data['alignedGeneSequences'] = alignedgenesequences(ordered_mutation_list[index], genes[index])
+            data['alignedGeneSequences'] = alignedgenesequences(ordered_mutation_list[index], genes[index], deletions[index])
         elif ('RT' in genes[index] and sequence_lengths[index] < 200) or ('PR' in genes[index] and sequence_lengths[index] < 80) or ('IN' in genes[index] and sequence_lengths[index] < 200):
             validationresult = 'WARNING'
             print(names[index], validationresult)
             data['validationResults'] = validationresults(validationresult)
             data['drugResistance'] = drugresistance(score, genes[index])
-            data['alignedGeneSequences'] = alignedgenesequences(ordered_mutation_list[index], genes[index])
+            data['alignedGeneSequences'] = alignedgenesequences(ordered_mutation_list[index], genes[index], deletions[index])
         elif len(genes[index]) == 0:
             validationresult = 'CRITICAL'
             print(names[index], validationresult)
@@ -184,9 +182,9 @@ def write_to_json(filename, names, scores, genes, ordered_mutation_list, sequenc
             data['drugResistance'] = []
             data['alignedGeneSequences'] = []
         else:
-            data['validationResults'] = validationresults(validationresult)
             data['drugResistance'] = drugresistance(score, genes[index])
-            data['alignedGeneSequences'] = alignedgenesequences(ordered_mutation_list[index], genes[index])
+            data['alignedGeneSequences'] = alignedgenesequences(ordered_mutation_list[index], genes[index], deletions[index])
+            data['validationResults'] = validationresults(validationresult)
         out.append(data)
 
     with open('./'+filename,'w+') as outfile:

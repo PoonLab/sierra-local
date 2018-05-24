@@ -60,6 +60,9 @@ class NucAminoAligner():
         muts = []
         genes = []
         names = []
+        codon_types = []
+
+        codon_typer = lambda x: 'Deletion' if x == 'NNN' else ('Frameshift' if 'N' in x else 'Normal')
         
         with open(self.outputname,'r') as tsvin:
             tsvin = csv.reader(tsvin, delimiter='\t')
@@ -90,15 +93,19 @@ class NucAminoAligner():
                     orig_res = [re.findall(r'\D+',x.split(':')[0][:2])[0] for x in mutationpairs]
                     sub_res = [''.join(sorted(re.findall(r'(?<=\d)\D+', x.split(':')[0])[0])) for x in mutationpairs]
                     codon = [x.split(':')[1] for x in mutationpairs]
-                    #deletion mixture handling
-                    # sub_res = [sub_res[i] if not x else 'X' for i, x in enumerate(codon)]
-                    # print(sub_res)
-                    with open('codons.txt', 'a') as codonfile:
-                        codonfile.write(str(codon)+'\n')
-
+                    codon_type = [codon_typer(x) for x in codon]
+                    for i, c in enumerate(codon_type):
+                        if c == 'Frameshift':
+                            sub_res[i] = 'X'
+                            print('frameshift in sequence {}'.format(row[0]))
+                        elif c == 'Deletion':
+                            sub_res[i] = '-'
+                            print('deletion in sequence {}'.format(row[0]))
                     gene_muts = dict(zip(pos, zip(orig_res,sub_res)))
+
                 muts.append(gene_muts)
                 genelist = self.get_genes(firstAA)
                 genes.append(genelist)
+                codon_types.append(codon_type)
         assert len(muts) == len(names), "length of mutations dicts is not the same as length of names"
-        return names, genes, muts
+        return names, genes, muts, codon_types

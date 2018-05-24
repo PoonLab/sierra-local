@@ -81,7 +81,7 @@ def scorefile(file, database, skipalign):
     aligner = NucAminoAligner(file)
     if not skipalign:
         aligner.align_file()
-    names, genes, muts = aligner.get_mutations(aligner.gene_map())
+    names, genes, muts, codon_types = aligner.get_mutations(aligner.gene_map())
     ordered_mutation_list = []
     scores = []
     sequence_lengths = []
