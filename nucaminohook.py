@@ -1,5 +1,6 @@
 import subprocess
 import os
+from pathlib import Path
 import csv
 import re
 
@@ -10,8 +11,8 @@ class NucAminoAligner():
         '''
         self.inputname = filename
         self.outputname = os.path.splitext(filename)[0] + '.tsv'
-        self.cwd = os.getcwd()+'/'
-        items = os.listdir(".")
+        self.cwd = os.path.curdir
+        items = os.listdir(self.cwd)
         self.nucamino_binary = 'nucamino'
         for name in items:
             if 'nucamino' in name and not (name.endswith('py') or name.endswith('pyc')):
@@ -59,7 +60,8 @@ class NucAminoAligner():
         muts = []
         genes = []
         names = []
-        with open(self.cwd+self.outputname,'r') as tsvin:
+        
+        with open(self.outputname,'r') as tsvin:
             tsvin = csv.reader(tsvin, delimiter='\t')
             next(tsvin)
             for row in tsvin:
@@ -87,22 +89,16 @@ class NucAminoAligner():
                     pos = [int(re.findall(r'\d+',x.split(':')[0])[0])-shift for x in mutationpairs]
                     orig_res = [re.findall(r'\D+',x.split(':')[0][:2])[0] for x in mutationpairs]
                     sub_res = [''.join(sorted(re.findall(r'(?<=\d)\D+', x.split(':')[0])[0])) for x in mutationpairs]
-                    #Filter out polymorphic variants with the same residue as the reference
-                    # for index, sub in enumerate(sub_res):
-                    #     if len(sub) > 1:
-                    #         #print(sub)
-                    #         sub_res[index] = sub.replace(orig_res[index],'')
-                    #         #print(sub_res[index])
+                    codon = [x.split(':')[1] for x in mutationpairs]
+                    #deletion mixture handling
+                    # sub_res = [sub_res[i] if not x else 'X' for i, x in enumerate(codon)]
+                    # print(sub_res)
+                    with open('codons.txt', 'a') as codonfile:
+                        codonfile.write(str(codon)+'\n')
+
                     gene_muts = dict(zip(pos, zip(orig_res,sub_res)))
                 muts.append(gene_muts)
                 genelist = self.get_genes(firstAA)
-                # for p in pos:
-                #     position = p+shift
-                #     for key, r in genemap.items():
-                #         if r[0] <= position <= r[1]:
-                #             if key not in genelist:
-                #                 genelist.append(key)
-                # print(str(genelist))
                 genes.append(genelist)
         assert len(muts) == len(names), "length of mutations dicts is not the same as length of names"
         return names, genes, muts
