@@ -12,7 +12,7 @@ names = {}
 names['3TC'] = 'LMV'
 
 HIVDB_XML_PATH = str(Path('.') / 'data' / 'HIVDB.xml')
-print(HIVDB_XML_PATH)
+print("Found HIVdb file {}".format(HIVDB_XML_PATH))
 
 # Set up algorithm data
 algorithm = HIVdb(HIVDB_XML_PATH)
@@ -113,7 +113,7 @@ def drugresistance(scores,genes):
                             # do the other stuff
                             mut = {}
                             #combination = str(pos)+muts
-                            mut['text'] = combination
+                            mut['text'] = combination.replace('d', 'Deletion')
                             mut['comments'] = [{
                                 'text' : findComment(gene, combination, comments, definitions['comment']),
                                 'type' : type_
@@ -126,19 +126,19 @@ def drugresistance(scores,genes):
     drugResistance['gene'] = {'name':genes[0]}
     return [drugResistance]
 
-def alignedgenesequences(ordered_mutation_list, genes, deletions):
+def alignedgenesequences(ordered_mutation_list, genes, codon_type):
     dic = {}
     dic['lastAA'] = None
     dic['firstAA'] = None
     dic['mutations'] = []
     for a in ordered_mutation_list:
         mutdict = {}
-        mutdict['isInsertion'] = None
-        mutdict['isDeletion'] = a[0] in deletions
         mutdict['consensus'] = a[2]
+        mutdict['position'] = int(a[0])
         mutdict['AAs'] = a[1]
+        mutdict['isInsertion'] = a[1] == '_'
+        mutdict['isDeletion'] = a[1] == '-'
         mutdict['isApobecDRM'] = isApobecDRM(genes[0], a[2], a[0], a[1])
-        mutdict['position'] = a[0]
         dic['mutations'].append(mutdict)
     return [dic]
 
@@ -148,7 +148,7 @@ def inputsequence(name):
     }
     return out
 
-def write_to_json(filename, names, scores, genes, ordered_mutation_list, sequence_lengths, deletions):
+def write_to_json(filename, names, scores, genes, ordered_mutation_list, sequence_lengths, codon_types):
     '''
     The main function to write passed result to a JSON file
     :param filename: the filename to write the JSON to
@@ -160,31 +160,22 @@ def write_to_json(filename, names, scores, genes, ordered_mutation_list, sequenc
     out = []
     for index, score in enumerate(scores):
         data = {}
-        data['subtypeText'] = 'NULL'
         data['inputSequence'] = inputsequence(names[index])
+        data['subtypeText'] = 'NULL'
         validationresult = ''
+        if ('RT' in genes[index] and sequence_lengths[index] < 200) or ('PR' in genes[index] and sequence_lengths[index] < 80) or ('IN' in genes[index] and sequence_lengths[index] < 200):
+            validationresult = 'WARNING'
         if ('RT' in genes[index] and sequence_lengths[index] < 150) or ('PR' in genes[index] and sequence_lengths[index] < 60) or ('IN' in genes[index] and sequence_lengths[index] < 100):
             validationresult = 'SEVERE WARNING'
-            print(names[index], validationresult)
-            data['validationResults'] = validationresults(validationresult)
-            data['drugResistance'] = drugresistance(score, genes[index])
-            data['alignedGeneSequences'] = alignedgenesequences(ordered_mutation_list[index], genes[index], deletions[index])
-        elif ('RT' in genes[index] and sequence_lengths[index] < 200) or ('PR' in genes[index] and sequence_lengths[index] < 80) or ('IN' in genes[index] and sequence_lengths[index] < 200):
-            validationresult = 'WARNING'
-            print(names[index], validationresult)
-            data['validationResults'] = validationresults(validationresult)
-            data['drugResistance'] = drugresistance(score, genes[index])
-            data['alignedGeneSequences'] = alignedgenesequences(ordered_mutation_list[index], genes[index], deletions[index])
-        elif len(genes[index]) == 0:
+        if len(genes[index]) == 0:
             validationresult = 'CRITICAL'
-            print(names[index], validationresult)
-            data['validationResults'] = validationresults(validationresult)
-            data['drugResistance'] = []
-            data['alignedGeneSequences'] = []
-        else:
+        data['validationResults'] = validationresults(validationresult)
+        if not validationresult == 'CRITICAL':
+            data['alignedGeneSequences'] = alignedgenesequences(ordered_mutation_list[index], genes[index], codon_types[index])
             data['drugResistance'] = drugresistance(score, genes[index])
-            data['alignedGeneSequences'] = alignedgenesequences(ordered_mutation_list[index], genes[index], deletions[index])
-            data['validationResults'] = validationresults(validationresult)
+        else:
+            data['alignedGeneSequences'] = []
+            data['drugResistance'] = []
         out.append(data)
 
     with open('./'+filename,'w+') as outfile:

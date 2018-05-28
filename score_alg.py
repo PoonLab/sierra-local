@@ -66,8 +66,8 @@ def score_single(HIVdb, drugname, seq_mutations, codon_type):
 
                 present = False #assume DRM unfulfilled
                 if position in seq_mutations: #check if the position in the DRM is present in the sequence mutation list
-                    if position == 69 and ('X' in seq_mutations[position][1] or '-' in seq_mutations[position][1]):
-                        print(aalist)
+                    # if position == 69 and ('X' in seq_mutations[position][1] or '-' in seq_mutations[position][1]):
+                    #     print(aalist)
                     for seq_mutation in seq_mutations[position][1]:
                         if '-' in seq_mutations[position][1]:
                             seq_mutation = 'd'

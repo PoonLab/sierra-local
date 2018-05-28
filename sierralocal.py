@@ -8,6 +8,7 @@ import jsonwriter
 import re
 import string
 from pathlib import Path
+import time
 
 cwd = os.getcwd()
 
@@ -35,15 +36,20 @@ def main():
     definitions = algorithm.parse_definitions(algorithm.root)
     database = algorithm.parse_drugs(algorithm.root)
     comments = algorithm.parse_comments(algorithm.root)
-    print('writing output to {}'.format(args.outfile))
-
+    time_start = time.time()
+    count = 0
     for file in args.fasta:
-        names, scores, ordered_mutation_list, genes, sequence_lengths, deletions = scorefile(file, database, args.skipalign)
+        names, scores, ordered_mutation_list, genes, sequence_lengths, codon_types = scorefile(file, database, args.skipalign)
+        count += len(names)
+        print("{} sequences found in file {}.".format(len(names), file))
         if args.outfile == None:
             outputname = os.path.splitext(file)[0] + '-local.json'
         else:
             outputname = args.outfile
-        jsonwriter.write_to_json(outputname, names, scores, genes, ordered_mutation_list, sequence_lengths, deletions)
+        # print('writing output to {}'.format(outputname))
+        jsonwriter.write_to_json(outputname, names, scores, genes, ordered_mutation_list, sequence_lengths, codon_types)
+    time_end = time.time()
+    print("Time elapsed: {:{prec}} seconds ({:{prec}} it/s)".format(time_end - time_start, count/(time_end - time_start), prec='.5'))
 
 def parse_fasta(handle):
     """
@@ -81,7 +87,7 @@ def scorefile(file, database, skipalign):
     aligner = NucAminoAligner(file)
     if not skipalign:
         aligner.align_file()
-    names, genes, muts, codon_types = aligner.get_mutations(aligner.gene_map())
+    names, genes, muts, codon_types = aligner.get_mutations(aligner.gene_map(), file)
     ordered_mutation_list = []
     scores = []
     sequence_lengths = []
@@ -89,20 +95,11 @@ def scorefile(file, database, skipalign):
     with open(file, 'r') as fastafile:
         headers, sequence_list = parse_fasta(fastafile)
         sequence_lengths = [len(s.replace('N', '')) / 3 for s in sequence_list]
-    # with open('sequence_out.txt','w') as out:
-    #     out.write('\n'.join([str(sequence_lengths[i]) + " " + names[i] + " " + str(genes[i]) + sequence_list[i][1:30] +'...'+sequence_list[i][-15:-1] for i in range(1, len(sequence_lengths))]))
-
-    #flag deletions
-    deletions = []
-    for s in sequence_list:
-        codon_list = [s[i:i+3] for i in range(0, len(s), 3)]
-        deletions.append([i+1 for i, c in enumerate(codon_list) if '~' in c ])
-    # print(deletions)
 
     for index, query in enumerate(names):
         ordered_mutation_list.append(sorted(zip(muts[index].keys(), [x[1] for x in muts[index].values()], [x[0] for x in muts[index].values()])))
-        scores.append(score_alg.score_drugs(database, muts[index], deletions))
-    return names, scores, ordered_mutation_list, genes, sequence_lengths, deletions
+        scores.append(score_alg.score_drugs(database, muts[index], codon_types[index]))
+    return names, scores, ordered_mutation_list, genes, sequence_lengths, codon_types
 
 
 if __name__ == '__main__':
