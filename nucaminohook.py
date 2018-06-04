@@ -5,12 +5,10 @@ import csv
 import re
 
 class NucAminoAligner():
-    def __init__(self, filename):
+    def __init__(self):
         '''
         Initialize NucAmino for a specific input fasta file
         '''
-        self.inputname = filename
-        self.outputname = os.path.splitext(filename)[0] + '.tsv'
         self.cwd = os.path.curdir
         items = os.listdir(self.cwd)
         self.nucamino_binary = 'nucamino'
@@ -20,14 +18,22 @@ class NucAminoAligner():
                 break
         print("Found NucAmino binary", self.nucamino_binary)
 
-    def align_file(self): 
+    def align_file(self, filename): 
         '''
         Using subprocess to call NucAmino, generates an output .tsv containing mutation data for each sequence in the FASTA file
         '''
-        args = ("./{} hiv1b -i {} -g=POL -o {}".format(
-            self.nucamino_binary, self.inputname, self.outputname)).split()
-        # print(args)
-        popen = subprocess.Popen(args, stdout=subprocess.PIPE)
+        self.inputname = filename
+        self.outputname = os.path.splitext(filename)[0] + '.tsv'
+
+        args = [
+            "./{}".format(self.nucamino_binary),
+            "hiv1b",
+            "-q",
+            "-i", "{}".format(self.inputname),
+            "-g=POL",
+            "-o", "{}".format(self.outputname)
+        ]
+        popen = subprocess.Popen(args)
         popen.wait()
 
     def gene_map(self):
@@ -62,44 +68,39 @@ class NucAminoAligner():
         From the tsv output of NucAmino, parses and adjusts indices and returns as lists.
         :return: list of sequence names, list of sequence mutation dictionaries.
         '''
-        muts = []
-        genes = []
-        names = []
-        codon_types = []
+        file_mutations = []
+        file_genes = []
+        file_firstlastNA = []
+        sequence_headers = []
         tripletTable = self.generateTable()
         
         #grab sequences from file
         with open(fastaFileName, 'r') as handle:
             # names = []
-            sequences = []
+            sequence_list = []
             sequence = ''
             for i in handle:
                 if i[0] == '$':  # skip h info
                     continue
                 elif i[0] == '>' or i[0] == '#':
                     if len(sequence) > 0:
-                        # names.append(h)
-                        sequences.append(sequence)
+                        sequence_list.append(sequence)
                         sequence = ''
-                        h = i.strip('\n')[1:]
-                    else:
-                        h = i.strip('\n')[1:]
                 else:
                     sequence += i.strip('\n').upper()
-            # names.append(h)
-            sequences.append(sequence)
-
-        codon_typer = lambda x: 'Deletion' if x == 'NNN' else 'Normal' #lambda function to classify codons based on missing values ('N')
+            sequence_list.append(sequence)
         
-        with open(self.outputname,'r') as tsvin: # open the NucAmino output file
-            tsvin = csv.reader(tsvin, delimiter='\t')
+        with open(os.path.splitext(fastaFileName)[0] + '.tsv','r') as nucamino_alignment: # open the NucAmino output file
+            tsvin = csv.reader(nucamino_alignment, delimiter='\t')
             next(tsvin) #bypass the header row
             for idx, row in enumerate(tsvin): #iterate over sequences (1 per row)
-                names.append(row[0])
+                sequence_headers.append(row[0])
                 # Let's use the gene map to figure the "reference position" for each gene
                 # Nucamino outputs wonky positions, so calculate the shift so we can get positions relative to the start of each individual gene
                 shift = 0
                 firstAA = int(row[1])
+                firstNA = int(row[3])
+                lastNA = int(row[4])
                 pol_map = self.gene_map()
                 for key in pol_map:
                     low, hi = pol_map[key]
@@ -109,50 +110,37 @@ class NucAminoAligner():
 
                 # Edge case of NO mutations
                 if len(row[5]) == 0:
-                    pos = []
-                    orig_res = []
-                    sub_res = []
+                    position_list = []
+                    consensus_list = []
+                    codon_list = []
+                    aminoacid_list = []
                     gene_muts = {}
                 # most cases fall here... mutations are present
                 else:
                     #generate data lists for each sequence
-                    mutationpairs = row[5].split(',') #split list into individual mutations
-                    pos = [int(int(re.findall(r'\d+',x.split(':')[0])[0])-shift) for x in mutationpairs] #residue position list
-                    orig_res = [re.findall(r'\D+',x.split(':')[0][:2])[0] for x in mutationpairs] #consensus list
-                    # sub_res = [''.join(sorted(re.findall(r'(?<=\d)\D+', x.split(':')[0])[0])) for x in mutationpairs] #mixture/mutation list
-                    codon = [x.split(':')[1] for x in mutationpairs] #list of the nucleotide codons
-                    query_codons = [sequences[idx][(((p+int(shift)-int(row[1])+1)-1)*3):((p+int(shift)-int(row[1])+1)*3)] for p in pos] #obtain the mutation codon directly from the query sequence
-                    # if '~' in sequences[idx]:
-                    #     print(row[0], shift)
-                    #     print(codon)
-                    #     print(query_codons)
-                    #     print(pos)
-                    
-                    codon_type = [codon_typer(x) for x in codon] # figure out if the codons are normal, frameshifted, or deletions
-                    sub_res = ['-' if x == '~~~' else self.translateNATriplet(x, tripletTable) for x in query_codons]
-                    # for i, c in enumerate(codon_type): # if frameshifted or deletion, the mutation must be altered before further processing
-                    #     if c == 'Deletion':
-                    #         sub_res[i] = '-'
-                    #         print('deletion in sequence {}'.format(row[0]))
-                    gene_muts = dict(zip(pos, zip(orig_res,sub_res)))
+                    mutation_list = row[5].split(',') #split list into individual mutations
+                    position_list = [int(int(re.findall(r'\d+',x.split(':')[0])[0])-shift) for x in mutation_list] #residue position list
+                    consensus_list = [re.findall(r'\D+',x.split(':')[0][:2])[0] for x in mutation_list] #consensus list
+                    codon_list = [sequence_list[idx][(((p+int(shift)-int(row[1])+1)-1)*3):((p+int(shift)-int(row[1])+1)*3)] for p in position_list] #obtain the mutation codon directly from the query sequence
+                    aminoacid_list = ['-' if x == '~~~' or x == '...' else self.translateNATriplet(x, tripletTable) for x in codon_list]
+                    gene_muts = dict(zip(position_list, zip(consensus_list,aminoacid_list)))
                 # append everything to list of lists of the entire sequence set
-                muts.append(gene_muts)
-                genelist = self.get_genes(firstAA)
-                genes.append(genelist)
-                codon_types.append(codon_type)
-        assert len(muts) == len(names), "length of mutations dicts is not the same as length of names"
-        return names, genes, muts, codon_types
+                file_mutations.append(gene_muts)
+                file_genes.append(self.get_genes(firstAA))
+                file_firstlastNA.append((firstNA, lastNA))
+        assert len(file_mutations) == len(sequence_headers), "length of mutations dicts is not the same as length of names"
+        return sequence_headers, file_genes, file_mutations, file_firstlastNA
+
+# BELOW is an implementation of sierra's Java algorithm for determining codon ambiguity
 
     def translateNATriplet(self, triplet, tripletTable):
         if len(triplet) != 3:
             return "X"
         if '~' in triplet:
-            aa = "X"
-        elif triplet in tripletTable:
-            aa = tripletTable[triplet]
-        else:
-            aa = "X"
-        return aa
+            return "X"
+        if triplet in tripletTable:
+            return tripletTable[triplet]
+        return "X"
 
     def generateTable(self):
         codonToAminoAcidMap = {
@@ -167,13 +155,13 @@ class NucAminoAligner():
                     codons = self.enumerateCodonPossibilities(triplet)
                     uniqueAAs = []
                     for codon in codons:
-                        uniqueAAs.append(codonToAminoAcidMap[codon])
-                    aas = ""
+                        c = codonToAminoAcidMap[codon]
+                        if c not in uniqueAAs:
+                            uniqueAAs.append(c)
                     if len(uniqueAAs) > 4:
                         aas = "X"
                     else:
-                        for uniqueAA in uniqueAAs:
-                            aas += uniqueAA
+                        aas = ''.join(uniqueAAs)
                     tripletTable[triplet] = aas
         return tripletTable
 
@@ -204,3 +192,68 @@ class NucAminoAligner():
                 for p3 in ambiguityMap[pos3]:
                     codonPossibilities.append(p1+p2+p3)
         return codonPossibilities
+
+# trim low quality nucleotides
+
+    def trimLowQualities(sequence, firstAA, lastAA, mutations, frameshifts):
+        SEQUENCE_SHRINKAGE_CUTOFF_PCNT = 30
+        SEQUENCE_SHRINKAGE_WINDOW = 15
+        SEQUENCE_SHRINKAGE_BAD_QUALITY_MUT_PREVALENCE = 0.1
+
+        badPcnt = 0
+        trimLeft = 0
+        trimRight = 0
+        problemSites = 0
+        sinceLastBadQuality = 0
+        proteinSize = lastAA - firstAA + 1
+        candidates = []
+        invalidSites = [False for i in range(proteinSize)]
+
+        for mut in mutations:
+            idx = mut.position - firstAA
+            if not mut.isSequenced() and (mut.getHighestMutPrevalence() < SEQUENCE_SHRINKAGE_BAD_QUALITY_MUT_PREVALANCE or mut.AAs == 'X' or mut.isApobecMutation() or mut.hasStopCodon()):
+                invalidSites[idx] = True
+
+        for fs in frameshifts:
+            idx = fs.getPosition() - firstAA
+            invalidSites[idx] = True
+
+        # forward scan for trimming left
+        for idx in range(0, proteinSize):
+            if sinceLastBadQuality > SEQUENCE_SHRINKAGE_WINDOW:
+                break
+            elif invalidSites[idx]:
+                problemSites += 1
+                trimLeft = idx + 1
+                badPcnt = problemSites * 100 / trimLeft if trimLeft > 0 else 0
+                if badPcnt > SEQUENCE_SHRINKAGE_CUTOFF_POINT:
+                    candidates.append(trimLeft)
+                sinceLastBadQuality = 0
+            else:
+                sinceLastBadQuality += 1
+        trimLeft = candidates[-1] if len(candidates) > 0 else 0
+        candidates = []
+
+        #backward scan for trimming right
+        problemSites = 0
+        sinceLastBadQuality = 0
+        for idx in range(proteinSize-1, -1, -1):
+            if sinceLastBadQuality > SEQUENCE_SHRINKAGE_WINDOW:
+                break
+            elif invalidSites[idx]:
+                problemSites += 1
+                trimRight = proteinSize - idx
+                badPcnt = problemSites * 100 / trimRight if trimRight > 0 else 0
+                if badPcnt > SEQUENCE_SHRINKAGE_CUTOFF_POINT:
+                    candidates.append(trimRight)
+                sinceLastBadQuality = 0
+            else:
+                sinceLastBadQuality += 1
+        trimRight = candidates[-1] if len(candidates) > 0 else 0
+        return (trimLeft, trimRight)
+
+
+
+if __name__ == '__main__':
+    test = NucAminoAligner()
+    print(test.translateNATriplet("YTD", test.generateTable()))

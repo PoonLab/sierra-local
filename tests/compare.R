@@ -1,7 +1,7 @@
 library(jsonlite)
 
-sierra <- fromJSON('./hivdb/sierrapy2.json')
-local <- fromJSON('./hivdb/local2.json')
+sierra <- fromJSON('./hivdb/hivdb-data/PR-12-sierra.json')
+local <- fromJSON('./hivdb/hivdb-data/PR-12-local.json')
 
 assertthat::are_equal(nrow(sierra), nrow(local))
 
@@ -52,20 +52,20 @@ for (header in unmatching.headers) {
   l_mutations <- local$alignedGeneSequences[[local_index]]$mutations[[1]]
   s_scores <- sierra$drugResistance[[sierra_index]]$drugScores[[1]]
   l_scores <- local$drugResistance[[local_index]]$drugScores[[1]]
-  
+
   for(i in 1:nrow(s_scores)) {
     headers <- c(headers, header)
     s_score <- c(s_score, s_scores$score[i])
     l_score <- c(l_score, l_scores$score[i])
     drug <- c(drug, s_scores$drug$name[i])
-    
+
     s_p <- ""
     s_l <- ""
-    
+
     for(j in length(s_scores$partialScores[[i]]$mutations)) {
       s_p <- paste(s_p, paste0(s_scores$partialScores[[i]]$mutations[[j]]$text, collapse = "."))
     }
-    
+
     for(j in length(l_scores$partialScores[[i]]$mutations)) {
       s_l <- paste(s_l, paste0(l_scores$partialScores[[i]]$mutations[[j]]$text, collapse = "."))
     }

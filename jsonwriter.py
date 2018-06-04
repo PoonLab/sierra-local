@@ -46,6 +46,7 @@ class JSONWriter():
         drugResistance['version'] = {}
         drugResistance['version']['text'] = self.version
         drugResistance['version']['publishDate'] = self.version_date
+        drugResistance['gene'] = {'name' : genes[0]}
         drugScores = []
         # TODO: find a way to restrict drug classes, e.g. only NRTI/NNRTI for RT gene sequence...
         for gene in genes:
@@ -67,22 +68,20 @@ class JSONWriter():
                             break
                     resistance_text = self.levels[resistancelevel]
 
-                    drugScore['text'] = list(resistance_text)[0] #resistance level
                     drugScore['drugClass'] = {'name':drugclass} #e.g. NRTI
-                    drugScore['score'] = float(scores[drug][0]) # score for this paritcular drug
                     drugScore['drug'] = {}
-                    drugScore['drug']['displayAbbr'] = drug
                     if drug in self.names:
                         drugScore['drug']['name'] = self.names[drug]
                     else:
                         drugScore['drug']['name'] = drug.replace('/r','')
-                    drugScore['partialScores'] = []
+                    drugScore['drug']['displayAbbr'] = drug
+                    drugScore['score'] = float(scores[drug][0]) # score for this paritcular drug
                     # create partial score, for each mutation, datastructure
+                    drugScore['partialScores'] = []
                     for index,pscore in enumerate(scores[drug][1]):
                         pscore = float(pscore)
                         if not pscore == 0.0:
                             pscoredict = {}
-                            pscoredict['score'] = pscore
                             pscoredict['mutations'] = []
                             for combination in scores[drug][2][index]:
                                 # find the mutation classification "type" based on the gene
@@ -107,22 +106,24 @@ class JSONWriter():
                                             break
                                 mut = {}
                                 mut['text'] = combination.replace('d', 'Deletion')
-                                mut['comments'] = [{
-                                    'text' : self.findComment(gene, combination, self.comments, self.definitions['comment']),
-                                    'type' : type_
-                                }]
                                 mut['primaryType'] = type_
+                                mut['comments'] = [{
+                                    'type' : type_,
+                                    'text' : self.findComment(gene, combination, self.comments, self.definitions['comment'])
+                                }]
                                 pscoredict['mutations'].append(mut)                    
+                            pscoredict['score'] = pscore
                             drugScore['partialScores'].append(pscoredict)
+                    drugScore['text'] = list(resistance_text)[0] #resistance level
                     drugScores.append(drugScore)
         drugResistance['drugScores'] = drugScores
-        drugResistance['gene'] = {'name':genes[0]}
         return [drugResistance]
 
-    def formatAlignedGeneSequences(self, ordered_mutation_list, genes, firstlastAA):
+    def formatAlignedGeneSequences(self, ordered_mutation_list, genes, firstlastNA):
         dic = {}
-        dic['firstAA'] = firstlastAA[0]
-        dic['lastAA'] = firstlastAA[1]
+        dic['firstAA'] = int((firstlastNA[0]+2)/3)
+        dic['lastAA'] = int(firstlastNA[1]/3)
+        dic['gene'] = {'name' : genes[0]}
         dic['mutations'] = []
         for mutation in ordered_mutation_list:
             mutdict = {}
@@ -141,7 +142,7 @@ class JSONWriter():
         }
         return out
 
-    def write_to_json(self, filename, names, scores, genes, ordered_mutation_list, sequence_lengths, file_firstlastAA):
+    def write_to_json(self, filename, names, scores, genes, ordered_mutation_list, sequence_lengths, file_firstlastNA):
         '''
         The main function to write passed result to a JSON file
         :param filename: the filename to write the JSON to
@@ -158,7 +159,7 @@ class JSONWriter():
             validation = self.validateSequence(genes[index], sequence_lengths[index])
             data['validationResults'] = self.formatValidationResults(validation)
             if not 'CRITICAL' in validation:
-                data['alignedGeneSequences'] = self.formatAlignedGeneSequences(ordered_mutation_list[index], genes[index], file_firstlastAA[index])
+                data['alignedGeneSequences'] = self.formatAlignedGeneSequences(ordered_mutation_list[index], genes[index], file_firstlastNA[index])
                 data['drugResistance'] = self.formatDrugResistance(score, genes[index])
             else:
                 data['alignedGeneSequences'] = []
@@ -205,4 +206,4 @@ class JSONWriter():
 
 if __name__ == "__main__":
     writer = JSONWriter()
-    print(writer.isApobecDRM("IN", "G", 163, "TRAG"))
+    assert (writer.isApobecDRM("IN", "G", 163, "TRAG")) == True

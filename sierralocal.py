@@ -2,11 +2,8 @@ import score_alg
 from hivdb import HIVdb
 import os
 import argparse
-import sys
 from nucaminohook import NucAminoAligner
-import jsonwriter
-import re
-import string
+from jsonwriter import JSONWriter
 from pathlib import Path
 import time
 
@@ -24,7 +21,8 @@ def parse_args():
     parser.add_argument('-o', dest='outfile', default=None, type=str, help='Output filename.')
     parser.add_argument('-xml', default=str(Path('.')/'data'/'HIVDB.xml'), 
                         help='Path to HIVDB algorithm XML file, which can be downloaded using the provided script update_HIVDB.py')
-    parser.add_argument('-skipalign', action='store_true')
+    parser.add_argument('-skipalign', action='store_true', help='Skip NucAmino alignment if TSV file already present.')
+    parser.add_argument('-cleanup', action='store_true', help='Deletes NucAmino alignment file after processing.')
     args = parser.parse_args()
     return args
 
@@ -38,69 +36,62 @@ def main():
     comments = algorithm.parse_comments(algorithm.root)
     time_start = time.time()
     count = 0
-    for file in args.fasta:
-        names, scores, ordered_mutation_list, genes, sequence_lengths, codon_types = scorefile(file, database, args.skipalign)
-        count += len(names)
-        print("{} sequences found in file {}.".format(len(names), file))
+    for input_file in args.fasta:
+        sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, file_firstlastNA = scorefile(input_file, database, args.skipalign)
+        count += len(sequence_headers)
+        print("{} sequences found in file {}.".format(len(sequence_headers), input_file))
         if args.outfile == None:
-            outputname = os.path.splitext(file)[0] + '-local.json'
+            output_file = os.path.splitext(input_file)[0] + '-local.json'
         else:
-            outputname = args.outfile
-        # print('writing output to {}'.format(outputname))
-        jsonwriter.write_to_json(outputname, names, scores, genes, ordered_mutation_list, sequence_lengths, codon_types)
+            output_file = args.outfile
+        writer = JSONWriter()
+        writer.write_to_json(output_file, sequence_headers, sequence_scores, file_genes, ordered_mutation_list, sequence_lengths, file_firstlastNA)
     time_end = time.time()
     print("Time elapsed: {:{prec}} seconds ({:{prec}} it/s)".format(time_end - time_start, count/(time_end - time_start), prec='.5'))
-
-def parse_fasta(handle):
-    """
-    Parse open file as FASTA, return dictionary of
-    headers and sequences as key-value pairs.
-    """
-    names = []
-    sequences = []
-    sequence = ''
-    for i in handle:
-        if i[0] == '$':  # skip h info
-            continue
-        elif i[0] == '>' or i[0] == '#':
-            if len(sequence) > 0:
-                names.append(h)
-                sequences.append(sequence)
-                sequence = ''
-                h = i.strip('\n')[1:]
-            else:
-                h = i.strip('\n')[1:]
-        else:
-            sequence += i.strip('\n').upper()
-    names.append(h)
-    sequences.append(sequence)
-    return names, sequences
+    if args.cleanup:
+        os.remove(os.path.splitext(input_file)[0] + '.tsv')
 
 
-def scorefile(file, database, skipalign):
+def scorefile(input_file, database, skipalign):
     '''
     Returns a set of corresponding names, scores, and ordered mutations for a given FASTA file containing pol sequences
     :param file: the FASTA file name containing arbitrary number of sequences and headers
     :param database: the HIVdb drug scores and notations
     :return: list of names, list of scores, list of ordered mutations
     '''
-    aligner = NucAminoAligner(file)
+    aligner = NucAminoAligner()
     if not skipalign:
-        aligner.align_file()
-    names, genes, muts, codon_types = aligner.get_mutations(aligner.gene_map(), file)
+        aligner.align_file(input_file)
+    sequence_headers, file_genes, file_mutations, file_firstlastNA = aligner.get_mutations(aligner.gene_map(), input_file)
     ordered_mutation_list = []
-    scores = []
+    sequence_scores = []
     sequence_lengths = []
 
-    with open(file, 'r') as fastafile:
-        headers, sequence_list = parse_fasta(fastafile)
+    with open(input_file, 'r') as fastafile:
+        sequence_list = get_input_sequences(fastafile)
         sequence_lengths = [len(s.replace('N', '')) / 3 for s in sequence_list]
 
-    for index, query in enumerate(names):
-        ordered_mutation_list.append(sorted(zip(muts[index].keys(), [x[1] for x in muts[index].values()], [x[0] for x in muts[index].values()])))
-        scores.append(score_alg.score_drugs(database, muts[index], codon_types[index]))
-    return names, scores, ordered_mutation_list, genes, sequence_lengths, codon_types
+    for index, query in enumerate(sequence_headers):
+        ordered_mutation_list.append(sorted(zip(file_mutations[index].keys(), [x[1] for x in file_mutations[index].values()], [x[0] for x in file_mutations[index].values()])))
+        sequence_scores.append(score_alg.score_drugs(database, file_mutations[index]))
+    return sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, file_firstlastNA
 
+def get_input_sequences(handle):
+    """
+    Parse open file as FASTA, return dictionary of
+    headers and sequences as key-value pairs.
+    """
+    sequences = []
+    sequence = ''
+    for i in handle:
+        if i[0] == '>' or i[0] == '#':
+            if len(sequence) > 0:
+                sequences.append(sequence)
+                sequence = ''
+        else:
+            sequence += i.strip('\n').upper()
+    sequences.append(sequence)
+    return sequences
 
 if __name__ == '__main__':
     main()
