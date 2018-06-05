@@ -37,7 +37,7 @@ def main():
     time_start = time.time()
     count = 0
     for input_file in args.fasta:
-        sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, file_firstlastNA = scorefile(input_file, database, args.skipalign)
+        sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, file_firstlastNA, file_trims = scorefile(input_file, database, args.skipalign)
         count += len(sequence_headers)
         print("{} sequences found in file {}.".format(len(sequence_headers), input_file))
         if args.outfile == None:
@@ -45,7 +45,7 @@ def main():
         else:
             output_file = args.outfile
         writer = JSONWriter()
-        writer.write_to_json(output_file, sequence_headers, sequence_scores, file_genes, ordered_mutation_list, sequence_lengths, file_firstlastNA)
+        writer.write_to_json(output_file, sequence_headers, sequence_scores, file_genes, ordered_mutation_list, sequence_lengths, file_firstlastNA, file_trims)
     time_end = time.time()
     print("Time elapsed: {:{prec}} seconds ({:{prec}} it/s)".format(time_end - time_start, count/(time_end - time_start), prec='.5'))
     if args.cleanup:
@@ -62,7 +62,7 @@ def scorefile(input_file, database, skipalign):
     aligner = NucAminoAligner()
     if not skipalign:
         aligner.align_file(input_file)
-    sequence_headers, file_genes, file_mutations, file_firstlastNA = aligner.get_mutations(aligner.gene_map(), input_file)
+    sequence_headers, file_genes, file_mutations, file_firstlastNA, file_trims = aligner.get_mutations(aligner.gene_map(), input_file)
     ordered_mutation_list = []
     sequence_scores = []
     sequence_lengths = []
@@ -74,7 +74,7 @@ def scorefile(input_file, database, skipalign):
     for index, query in enumerate(sequence_headers):
         ordered_mutation_list.append(sorted(zip(file_mutations[index].keys(), [x[1] for x in file_mutations[index].values()], [x[0] for x in file_mutations[index].values()])))
         sequence_scores.append(score_alg.score_drugs(database, file_mutations[index]))
-    return sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, file_firstlastNA
+    return sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, file_firstlastNA, file_trims
 
 def get_input_sequences(handle):
     """

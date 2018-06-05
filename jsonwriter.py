@@ -10,8 +10,12 @@ class JSONWriter():
     def __init__(self):
         self.names = {'3TC':'LMV'}
 
-        self.HIVDB_XML_PATH = str(Path('.') / 'data' / 'HIVDB.xml')
-        print("Found HIVdb file {}".format(self.HIVDB_XML_PATH))
+        self.HIVDB_XML_PATH = Path('.') / 'data' / 'HIVDB.xml'
+        if self.HIVDB_XML_PATH.is_file():
+            print("Found HIVdb file {}".format(str(self.HIVDB_XML_PATH)))
+        else:
+            print("HIVDB file missing.")
+            sys.exit(0)
 
         # Set up algorithm data
         self.algorithm = HIVdb(self.HIVDB_XML_PATH)
@@ -25,13 +29,13 @@ class JSONWriter():
         self.comments = self.algorithm.parse_comments(self.algorithm.root)
 
         # Load comments files stored locally
-        with open('./data/apobec.tsv','r') as csvfile:
+        with open(Path('.')/'data'/'apobec.tsv','r') as csvfile:
             self.ApobecDRMs = list(csv.reader(csvfile, delimiter='\t'))
-        with open('./data/INSTI-comments.csv','r') as INSTI_file:
+        with open(Path('.')/'data'/'INSTI-comments.csv','r') as INSTI_file:
             self.INSTI_comments = dict(csv.reader(INSTI_file,delimiter='\t'))
-        with open('./data/PI-comments.csv','r') as PI_file:
+        with open(Path('.')/'data'/'PI-comments.csv','r') as PI_file:
             self.PI_comments = dict(csv.reader(PI_file,delimiter='\t'))
-        with open('./data/RT-comments.csv','r') as RT_file:
+        with open(Path('.')/'data'/'RT-comments.csv','r') as RT_file:
             self.RT_comments = dict(csv.reader(RT_file,delimiter='\t'))
 
 
@@ -142,7 +146,7 @@ class JSONWriter():
         }
         return out
 
-    def write_to_json(self, filename, names, scores, genes, ordered_mutation_list, sequence_lengths, file_firstlastNA):
+    def write_to_json(self, filename, names, scores, genes, ordered_mutation_list, sequence_lengths, file_firstlastNA, file_trims):
         '''
         The main function to write passed result to a JSON file
         :param filename: the filename to write the JSON to
@@ -156,7 +160,7 @@ class JSONWriter():
             data = {}
             data['inputSequence'] = self.formatInputSequence(names[index])
             data['subtypeText'] = None
-            validation = self.validateSequence(genes[index], sequence_lengths[index])
+            validation = self.validateSequence(genes[index], sequence_lengths[index], file_trims[index])
             data['validationResults'] = self.formatValidationResults(validation)
             if not 'CRITICAL' in validation:
                 data['alignedGeneSequences'] = self.formatAlignedGeneSequences(ordered_mutation_list[index], genes[index], file_firstlastNA[index])
@@ -170,7 +174,7 @@ class JSONWriter():
             json.dump(out, outfile, indent=2)
             print("Writing JSON to file {}".format(filename))
 
-    def validateSequence(self, genes, length):
+    def validateSequence(self, genes, length, seq_trim):
         validation_results = []
 
         # Length validation
@@ -181,6 +185,11 @@ class JSONWriter():
         # Gene validation
         if len(genes) == 0:
             validation_results.append(('CRITICAL', 'oops?'))
+
+        if seq_trim[0] > 0:
+            validation_results.append(('WARNING', "The {} sequence had {} amino acid{} trimmed from its 5\u2032-end due to poor quality.".format(genes[0], seq_trim[0], "s" if seq_trim[0] > 1 else "")))
+        if seq_trim[1] > 0:
+            validation_results.append(('WARNING', "The {} sequence had {} amino acid{} trimmed from its 3\u2032-end due to poor quality.".format(genes[0], seq_trim[1], "s" if seq_trim[1] > 1 else "")))
 
         return validation_results
 
