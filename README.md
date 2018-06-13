@@ -7,36 +7,43 @@ The Stanford HIVdb algortihm is a widely used method for predicting the drug res
 
 The HIVdb algorithm is usually accessed through a web service hosted at Stanford University ([Sierra](https://hivdb.stanford.edu/hivdb)).  While this is a convenient format for many clinical laboratories, it requires a network connection and the transmission of potentially sensitive patient-derived data to a remote server.  Transmitting sequence data over the web may present a bottleneck for laboratories located at sites that are geographically distant from the host server, or where network traffic is prone to service disruptions.  Furthermore, the use of HIV-1 sequence data in criminal cases raises significant issues around data privacy.
 
-Our objective was to build a lightweight, open-source Python implementation of the HIVdb algorithm for processing data on a local computer without sending any data over the network.  During the development of sierra-local, the maintainers of [Sierra](https://github.com/hivdb/sierra) released the [source code](https://github.com/hivdb/sierra) for their web service under a permissive free software license (GPL v3.0).  We were thrilled that the [HIVdb developers](https://github.com/hivdb) elected to release their server code3, but we remained committed to complete sierra-local so the HIV research and clinical communities can process their own data without needing to install and maintain an Apache server, build an SQL database, or to install a sizeable number of software [dependencies](https://github.com/hivdb/sierra#dependency-lists).
+Our objective was to build a lightweight, open-source Python implementation of the HIVdb algorithm for processing data on a local computer without sending any data over the network.  During the development of sierra-local, the maintainers of [Sierra](https://github.com/hivdb/sierra) released the [source code](https://github.com/hivdb/sierra) for their web service under a permissive free software license (GPL v3.0).  We were thrilled that the [HIVdb developers](https://github.com/hivdb) elected to release their server code, but we remained committed to complete sierra-local so the HIV research and clinical communities can process their own data without needing to install and maintain an Apache server, build an SQL database, or to install a sizeable number of software [dependencies](https://github.com/hivdb/sierra#dependency-lists).
 
 
 ## Dependencies
-- Python 3
-- [NucAmino](https://github.com/hivdb/nucamino)
+We tried to minimize dependencies:
+- Python 3 (tested on [Python 3.6.5](https://www.python.org/downloads/release/python-365/))
+- [NucAmino v0.1.3](https://github.com/hivdb/nucamino)
+- An internet connection to set up or update HIVdb files
 
 ## Installation
 1. Clone this repository.
-    ```bash
+    ```
     git clone https://github.com/PoonLab/sierra-local.git
     ```
 2. Download the correct [pre-compiled NucAmino binary](https://github.com/hivdb/nucamino#download-binaries) for your platform and place it in the `sierra-local` root directory.
 3. Pull algorithm and essential data using `update_HIVDB.py`. This needs to be done before first use.
-    ```bash
-    python3 ./scripts/update_HIVDB.py
+    ```
+    python ./scripts/update_HIVDB.py
     ```
 
 ## Using sierra-local
-### Example use case:
+### Command-line interface (CLI)
 
 Navigate to the root directory of the project.
-```bash
-python3 sierralocal.py SEQUENCES.fasta -o OUTPUT.json
 ```
-### Optional flags:
-```bash
+python sierralocal.py SEQUENCES.fasta -o OUTPUT.json
+```
+Optional flags:
+```
 -xml		Path to HIVDB ASI XML file
 -skipalign	Skip NucAmino alignment if TSV file already present.
 -cleanup	Deletes NucAmino alignment file after processing.
+```
+### Graphical user interface (GUI)
+From the root directory of the project:
+```
+python gui.py
 ```
 
 ## About Us
