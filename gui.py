@@ -14,17 +14,35 @@ class App():
       self.inputframe = tk.Frame(self.parent)
       self.inputframe.pack()
 
-      self.selectInputfileButton = tk.Button(self.inputframe, text="Select...", fg="black", command=self.getInputFile)
+      #select file frame
+
+      self.selectframe = tk.Frame(self.inputframe)
+      self.selectframe.pack(side = tk.TOP)
+
+      self.selectInputfileButton = tk.Button(self.selectframe, text="Select...", fg="black", command=self.getInputFile)
       self.selectInputfileButton.pack( side = tk.RIGHT)
 
       self.inputFileLabelVar = tk.StringVar()
-      self.inputFileLabel = tk.Label(self.inputframe, textvariable=self.inputFileLabelVar, font = "Verdana 10 bold")
+      self.inputFileLabel = tk.Label(self.selectframe, textvariable=self.inputFileLabelVar, font = "Verdana 10 bold")
       self.inputFileLabelVar.set("Input file")
       self.inputFileLabel.pack(side=tk.LEFT)
 
       self.inputFileNameVar = tk.StringVar()
-      self.inputFileName = tk.Label(self.inputframe, textvariable=self.inputFileNameVar)
+      self.inputFileName = tk.Label(self.selectframe, textvariable=self.inputFileNameVar)
       self.inputFileName.pack(side=tk.LEFT)
+
+      # paste text frame
+
+      self.pasteframe = tk.Frame(self.inputframe)
+      self.pasteframe.pack(side = tk.RIGHT)
+
+      self.inputFileLabelVar = tk.StringVar()
+      self.inputFileLabel = tk.Label(self.pasteframe, textvariable=self.inputFileLabelVar, font = "Verdana 10 bold")
+      self.inputFileLabelVar.set(" or Paste Sequences")
+      self.inputFileLabel.pack()
+
+      self.pastetext = tk.Text(self.pasteframe)
+      self.pastetext.pack()
 
       # OUTPUT FRAME
 
@@ -85,12 +103,26 @@ class App():
       self.outputfileNameVar.set(outputfile)
 
    def runSierra(self, inputfile, outputfile, skipalign, cleanup):
-      self.text.delete(1.0,tk.END)
-      skip = lambda x:' -skipalign' if x==1 else ''
-      clean = lambda x:' -cleanup' if x==0 else ''
-      p = subprocess.Popen('python3 sierralocal.py {} -o {}{}{}'.format(inputfile, outputfile, skip(skipalign), clean(cleanup)),stdout=subprocess.PIPE, shell=True)
-      output, err = p.communicate()
-      self.text.insert(tk.END, output)
+      pastedtext = self.pastetext.get("1.0",'end-1c').strip()
+      if len(pastedtext) < 10: #no pasted sequence
+         self.text.delete(1.0,tk.END)
+         skip = lambda x:' -skipalign' if x==1 else ''
+         clean = lambda x:' -cleanup' if x==0 else ''
+         p = subprocess.Popen('python3 sierralocal.py {} -o {}{}{}'.format(inputfile, outputfile, skip(skipalign), clean(cleanup)),stdout=subprocess.PIPE, shell=True)
+         output, err = p.communicate()
+         self.text.insert(tk.END, output)
+      else: #pasted sequence
+         with open("temp.fa", "w") as temp:
+            temp.write(pastedtext)
+         self.text.delete(1.0,tk.END)
+         skip = lambda x:' -skipalign' if x==1 else ''
+         clean = lambda x:' -cleanup' if x==0 else ''
+         p = subprocess.Popen('python3 sierralocal.py {} -o {}{}{}'.format("temp.fa", outputfile, skip(skipalign), clean(cleanup)),stdout=subprocess.PIPE, shell=True)
+         output, err = p.communicate()
+         self.text.insert(tk.END, output)
+         os.remove("temp.fa")
+
+
 
 def main():
    root = tk.Tk()
