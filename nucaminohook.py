@@ -347,20 +347,24 @@ class NucAminoAligner():
                     return True
         return False
 
-    def getHighestMutPrevalence(self, mutation, gene, subtype): #TODO
-        prevalence = 0.0
-        aas = mutation[1][1]
-        cons = mutation[1][0]
-
-        #ignore consensus
-        if cons in aas:
-            aas = aas.replace(cons, "")
-        # ignore stop codon when there are one or more other AAS
-        if "*" in aas and len(aas) > 1:
-            aas = aas.replace("*", "")
-
+    def getHighestMutPrevalence(self, mutation, gene, subtype):
+        """
+        #TODO
+        @param mutation: a tuple(?) representing a specific position in the amino acid sequence 
+                         that may contain multiple amino acids (polymorphic)
+        @param gene: PR, RT, or INT
+        @param subtype: predicted from function()
+        @return: prevalence of the most common amino acid encoded at this position within the 
+                 subtype alignment
+        """
+        position, aaseq = mutation
+        cons, aas = aaseq
+        aas = aas.replace(cons, '')  # ignore consensus
+        aas = aas.replace('*', '')  # remove stop codons
+        
+        prevalence = 0.
         for aa in aas:
-            aaPrevalence = self.getMutPrevalence(mutation[0], cons, aa, gene, subtype)
+            aaPrevalence = self.getMutPrevalence(position, cons, aa, gene, subtype)
             prevalence = max(prevalence, aaPrevalence)
 
         return prevalence
