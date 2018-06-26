@@ -7,8 +7,6 @@ from sierralocal.jsonwriter import JSONWriter
 from pathlib import Path
 import time
 
-cwd = os.getcwd()
-
 def parse_args():
     '''
     CLI argument parser. Current options include input FASTA files only
@@ -52,7 +50,8 @@ def score(filename):
 def main():
     args = parse_args()
     path = args.xml  #'./data/HIVDB.xml'
-    algorithm = HIVdb(path)
+    # algorithm = HIVdb(path)
+    algorithm = HIVdb()
     definitions = algorithm.parse_definitions(algorithm.root)
     database = algorithm.parse_drugs(algorithm.root)
     comments = algorithm.parse_comments(algorithm.root)

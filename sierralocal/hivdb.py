@@ -15,7 +15,7 @@ class HIVdb():
         #first check if files are present
 
         if path == None:
-            for file in glob.glob(str(Path('.')/'sierralocal'/'data'/'HIVDB*.xml')):
+            for file in glob.glob(str(Path(os.path.dirname(__file__))/'data'/'HIVDB*.xml')):
                 print(file)
                 try:
                     xml.parse(file)
@@ -39,7 +39,7 @@ class HIVdb():
             print("Error: could not retrieve HIVDB XML. Updating...")
             self.update_HIVDB()
 
-        if not os.path.isfile(Path('./sierralocal/data/apobec.tsv')):
+        if not os.path.isfile(Path(os.path.dirname(__file__))/'data'/'apobec.tsv'):
             print("Error: could not retrieve APOBEC DRM data. Updating...")
             self.updateAPOBEC()
 

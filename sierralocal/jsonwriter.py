@@ -30,13 +30,13 @@ class JSONWriter():
         self.comments = self.algorithm.parse_comments(self.algorithm.root)
 
         # Load comments files stored locally
-        with open(Path('.')/'sierralocal'/'data'/'apobec.tsv','r') as csvfile:
+        with open(Path(os.path.dirname(__file__))/'data'/'apobec.tsv','r') as csvfile:
             self.ApobecDRMs = list(csv.reader(csvfile, delimiter='\t'))
-        with open(Path('.')/'sierralocal'/'data'/'INSTI-comments.csv','r') as INSTI_file:
+        with open(Path(os.path.dirname(__file__))/'data'/'INSTI-comments.csv','r') as INSTI_file:
             self.INSTI_comments = dict(csv.reader(INSTI_file,delimiter='\t'))
-        with open(Path('.')/'sierralocal'/'data'/'PI-comments.csv','r') as PI_file:
+        with open(Path(os.path.dirname(__file__))/'data'/'PI-comments.csv','r') as PI_file:
             self.PI_comments = dict(csv.reader(PI_file,delimiter='\t'))
-        with open(Path('.')/'sierralocal'/'data'/'RT-comments.csv','r') as RT_file:
+        with open(Path(os.path.dirname(__file__))/'data'/'RT-comments.csv','r') as RT_file:
             self.RT_comments = dict(csv.reader(RT_file,delimiter='\t'))
 
 

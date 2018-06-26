@@ -17,22 +17,24 @@ We tried to minimize dependencies:
 - An internet connection to set up or update HIVdb files
 
 ## Installation
+### For Use
+Currently Linux only:
+```bash
+pip3 install sierralocal
+```
+### For Development
 1. Clone this repository.
     ```
     git clone https://github.com/PoonLab/sierra-local.git
     ```
 2. Download the correct [pre-compiled NucAmino binary](https://github.com/hivdb/nucamino#download-binaries) for your platform and place it in the `sierra-local` root directory.
-3. Pull algorithm and essential data using `update_HIVDB.py`. This needs to be done before first use.
-    ```
-    python ./scripts/update_HIVDB.py
-    ```
 
 ## Using sierra-local
 ### Command-line interface (CLI)
 
-Navigate to the root directory of the project.
+We provide shell access to the program:
 ```
-python sierralocal.py SEQUENCES.fasta -o OUTPUT.json
+sierralocal SEQUENCES.fasta -o OUTPUT.json
 ```
 Optional flags:
 ```
@@ -44,6 +46,17 @@ Optional flags:
 From the root directory of the project:
 ```
 python gui.py
+```
+
+### As a Python module
+If you did not install via `pip` or `pip3`, must install as a package locally. Navigate to the project root directory:
+```bash
+pip3 install -e .
+```
+```python
+import sierralocal
+sierralocal.score(filename)
+#TODO: make sierralocal.score() return the JSON text. Currently it just runs the program and the JSON is stored as a file.
 ```
 
 ## About Us
