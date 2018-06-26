@@ -10,7 +10,7 @@ class NucAminoAligner():
     '''
     def __init__(self):
         self.cwd = os.path.curdir
-        items = os.listdir(self.cwd)
+        items = os.listdir(Path('./sierralocal/'))
         self.nucamino_binary = 'nucamino'
         for name in items:
             if 'nucamino' in name and not (name.endswith('py') or name.endswith('pyc')):
@@ -18,10 +18,10 @@ class NucAminoAligner():
                 break
         print("Found NucAmino binary", self.nucamino_binary)
         self.tripletTable = self.generateTable()
-        with open(Path('.')/'data'/'apobec.tsv','r') as csvfile:
+        with open(Path('.')/'sierralocal'/'data'/'apobec.tsv','r') as csvfile:
             self.ApobecDRMs = list(csv.reader(csvfile, delimiter='\t'))
 
-        with open(Path('.')/'data'/'INIPrevalences.tsv','r') as INIfile:
+        with open(Path('.')/'sierralocal'/'data'/'INIPrevalences.tsv','r') as INIfile:
             INI_prevalences = list(csv.reader(INIfile, delimiter='\t'))
         self.INI_dict = {}
         col_idx = ["Naive:%" in cell for cell in INI_prevalences[0]]
@@ -30,7 +30,7 @@ class NucAminoAligner():
                 if col:
                     self.INI_dict[str(row[0]+row[1]+row[2]+INI_prevalences[0][i].split(':')[0])] = float(row[i])
 
-        with open(Path('.')/'data'/'PIPrevalences.tsv','r') as PIfile:
+        with open(Path('.')/'sierralocal'/'data'/'PIPrevalences.tsv','r') as PIfile:
             PI_prevalences = list(csv.reader(PIfile, delimiter='\t'))
         self.PI_dict = {}
         col_idx = ["Naive:%" in cell for cell in PI_prevalences[0]]
@@ -39,7 +39,7 @@ class NucAminoAligner():
                 if col:
                     self.PI_dict[str(row[0]+row[1]+row[2]+PI_prevalences[0][i].split(':')[0])] = float(row[i])
 
-        with open(Path('.')/'data'/'RTIPrevalences.tsv','r') as RTIfile:
+        with open(Path('.')/'sierralocal'/'data'/'RTIPrevalences.tsv','r') as RTIfile:
             RTI_prevalences = list(csv.reader(RTIfile, delimiter='\t'))
         self.RTI_dict = {}
         col_idx = ["Naive:%" in cell for cell in RTI_prevalences[0]]
@@ -57,7 +57,7 @@ class NucAminoAligner():
         self.outputname = os.path.splitext(filename)[0] + '.tsv'
 
         args = [
-            "./{}".format(self.nucamino_binary),
+            "./sierralocal/{}".format(self.nucamino_binary),
             "hiv1b",
             "-q",
             "-i", "{}".format(self.inputname),

@@ -1,4 +1,4 @@
-from hivdb import HIVdb
+from sierralocal.hivdb import HIVdb
 import os
 
 

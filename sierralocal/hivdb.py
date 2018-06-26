@@ -1,18 +1,90 @@
 import xml.etree.ElementTree as xml
+import requests
+import urllib.request
+import glob, os
+from pathlib import Path
 import re
 
 
 class HIVdb():
-    def __init__(self, path):
-        try:
-            self.root = xml.parse(path).getroot()
-        except:
-            print("Error: could not retrieve HIVDB XML from path {}.  Try running scripts/update_HIVDB.py".format(path))
-            raise
-        
+    def __init__(self, path=None):
+        file_found = False
+        file_newest = False
+        self.xml_filename = None
+
+        #first check if files are present
+
+        if path == None:
+            for file in glob.glob(str(Path('.')/'sierralocal'/'data'/'HIVDB*.xml')):
+                print(file)
+                try:
+                    xml.parse(file)
+                    file_found = True
+                    self.xml_filename = file
+                    break
+                except:
+                    raise
+        else:
+            if os.path.isfile(path):
+                try:
+                    xml.parse(path)
+                    file_found = True
+                    self.xml_filename = path
+                except:
+                    raise
+            else:
+                print("Provided HIVDB XML cannot be found.")
+
+        if not file_found:
+            print("Error: could not retrieve HIVDB XML. Updating...")
+            self.update_HIVDB()
+
+        if not os.path.isfile(Path('./sierralocal/data/apobec.tsv')):
+            print("Error: could not retrieve APOBEC DRM data. Updating...")
+            self.updateAPOBEC()
+
+        #check version is updated
+        self.root = xml.parse(self.xml_filename).getroot()
         self.algname = self.root.find('ALGNAME').text
         self.version = self.root.find('ALGVERSION').text
         self.version_date = self.root.find('ALGDATE').text
+        
+        #set up HIVDB
+
+
+
+    def updateAPOBEC(self):
+        base_URL = 'https://hivdb.stanford.edu'
+        URL = 'https://hivdb.stanford.edu/page/algorithm-updates'
+        path = os.getcwd()
+
+        # UPDATE APOBEC DRMS
+        try:
+            release_notes = 'https://hivdb.stanford.edu/page/release-notes/'
+            response = urllib.request.urlopen(release_notes)
+            html = response.read().decode('utf-8')
+            apobec_url = base_URL + re.search(u"\/assets\/media\/apobec\-drms.*?tsv",html).group(0)
+            r = requests.get(apobec_url, allow_redirects=True)
+            open(Path('.')/'sierralocal'/'data'/'apobec.tsv', 'wb').write(r.content)
+            print("Updated APOBEC DRMs from", apobec_url, "into {}".format(Path('.')/'sierralocal'/'data'/'apobec.tsv'))
+        except:
+            print("Unable to update APOBEC DRMs. Try running this script from the root directory.")
+
+    def update_HIVDB(self):
+        base_URL = 'https://hivdb.stanford.edu'
+        URL = 'https://hivdb.stanford.edu/page/algorithm-updates'
+        path = os.getcwd()
+
+        # UPDATE ALGORITHM
+        try:
+            response = urllib.request.urlopen(URL)
+            html = response.read().decode('utf-8')
+            xml_url = base_URL + re.search(u"/assets.*?HIVDB_.*?xml",html).group(0)
+            r = requests.get(xml_url, allow_redirects=True)
+            open(Path('.')/'sierralocal'/'data'/os.path.basename(xml_url), 'wb').write(r.content)
+            print("Updated HIVDB XML from",xml_url,"into {}".format(Path('.')/'sierralocal'/'data'/os.path.basename(xml_url)))
+        except:
+            print("Unable to update HIVDB XML. Try running this script from the root directory.")
 
     def parse_definitions(self, root):
         self.definitions = {
@@ -212,3 +284,8 @@ class HIVdb():
             # condition can include an insertion or deletion
 
 
+def main():
+    hivdb = HIVdb()
+
+if __name__ == "__main__":
+    main()

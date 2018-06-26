@@ -2,16 +2,17 @@ import json
 import xml.etree.ElementTree as xml
 import re
 import hashlib
-from hivdb import HIVdb
+from sierralocal.hivdb import HIVdb
 import csv
 from pathlib import Path
+import sys, os
 
 class JSONWriter():
     def __init__(self):
         self.names = {'3TC':'LMV'}
 
-        self.HIVDB_XML_PATH = Path('.') / 'data' / 'HIVDB.xml'
-        if self.HIVDB_XML_PATH.is_file():
+        self.HIVDB_XML_PATH = HIVdb().xml_filename
+        if os.path.isfile(self.HIVDB_XML_PATH):
             print("Found HIVdb file {}".format(str(self.HIVDB_XML_PATH)))
         else:
             print("HIVDB file missing.")
@@ -29,13 +30,13 @@ class JSONWriter():
         self.comments = self.algorithm.parse_comments(self.algorithm.root)
 
         # Load comments files stored locally
-        with open(Path('.')/'data'/'apobec.tsv','r') as csvfile:
+        with open(Path('.')/'sierralocal'/'data'/'apobec.tsv','r') as csvfile:
             self.ApobecDRMs = list(csv.reader(csvfile, delimiter='\t'))
-        with open(Path('.')/'data'/'INSTI-comments.csv','r') as INSTI_file:
+        with open(Path('.')/'sierralocal'/'data'/'INSTI-comments.csv','r') as INSTI_file:
             self.INSTI_comments = dict(csv.reader(INSTI_file,delimiter='\t'))
-        with open(Path('.')/'data'/'PI-comments.csv','r') as PI_file:
+        with open(Path('.')/'sierralocal'/'data'/'PI-comments.csv','r') as PI_file:
             self.PI_comments = dict(csv.reader(PI_file,delimiter='\t'))
-        with open(Path('.')/'data'/'RT-comments.csv','r') as RT_file:
+        with open(Path('.')/'sierralocal'/'data'/'RT-comments.csv','r') as RT_file:
             self.RT_comments = dict(csv.reader(RT_file,delimiter='\t'))
 
 

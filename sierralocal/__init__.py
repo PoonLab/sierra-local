@@ -1,9 +1,9 @@
-import score_alg
-from hivdb import HIVdb
+from sierralocal import score_alg
+from sierralocal.hivdb import HIVdb
 import os
 import argparse
-from nucaminohook import NucAminoAligner
-from jsonwriter import JSONWriter
+from sierralocal.nucaminohook import NucAminoAligner
+from sierralocal.jsonwriter import JSONWriter
 from pathlib import Path
 import time
 
@@ -25,6 +25,28 @@ def parse_args():
     parser.add_argument('-cleanup', action='store_true', help='Deletes NucAmino alignment file after processing.')
     args = parser.parse_args()
     return args
+
+def score(filename):
+    """
+    Functionality as a Python module. Can import this function from sierralocal
+    """
+    assert os.path.isfile(filename), "Provided file not found."
+    # path = Path('./sierralocal/data/HIVDB_8.4.d926dfff.xml')
+    algorithm = HIVdb()
+    definitions = algorithm.parse_definitions(algorithm.root)
+    database = algorithm.parse_drugs(algorithm.root)
+    comments = algorithm.parse_comments(algorithm.root)
+    time_start = time.time()
+    count = 0
+    sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, file_firstlastNA, file_trims = scorefile(filename, database, False)
+    count += len(sequence_headers)
+    print("{} sequences found in file {}.".format(len(sequence_headers), filename))
+    output_file = os.path.splitext(filename)[0] + '-local.json'
+    writer = JSONWriter()
+    writer.write_to_json(output_file, sequence_headers, sequence_scores, file_genes, ordered_mutation_list, sequence_lengths, file_firstlastNA, file_trims)
+    time_end = time.time()
+    print("Time elapsed: {:{prec}} seconds ({:{prec}} it/s)".format(time_end - time_start, count/(time_end - time_start), prec='.5'))
+    os.remove(os.path.splitext(filename)[0] + '.tsv')
 
 
 def main():
