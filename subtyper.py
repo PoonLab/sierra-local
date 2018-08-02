@@ -85,8 +85,8 @@ class Subtyper():
 			for row in reader:
 				name[row[0]] = row[0]
 				parentSubtype[row[0]] = row[1]
-				distanceUpperLimit[row[0]] = row[2]
-				isSimpleCRF[row[0]] = row[3]
+				distanceUpperLimit[row[0]] = float(row[2].replace('%',''))/100
+				isSimpleCRF[row[0]] = bool(row[3])
 				classificationLevel[row[0]] = row[4]
 				breakpoints[row[0]] = row[5]
 		return name, parentSubtype, distanceUpperLimit, isSimpleCRF, classificationLevel, breakpoints
@@ -102,21 +102,20 @@ class Subtyper():
 		# print(closestMatch, closestSubtype)
 
 		if sorted_dists[closestMatch] > 0.11:
-			print(closestMatch)
 			return "Unknown"
 
-		if sorted_dists[closestMatch] < float(self.distanceUpperLimit[closestSubtype].replace('%', ''))/100:
-			if self.isSimpleCRF[closestSubtype] == "False":
+		if sorted_dists[closestMatch] < self.distanceUpperLimit[closestSubtype]:
+			if self.isSimpleCRF[closestSubtype] == False:
 				return closestSubtype
 
-			if self.isSimpleCRF[closestSubtype] == "True":
+			if self.isSimpleCRF[closestSubtype] == True:
 				sufficientCoverage = True #TODO method with breakpoints
 				if sufficientCoverage:
 					return closestSubtype
 				return self.parentSubtype[closestSubtype]
 
 		if sorted_dists[closestMatch] > self.distanceUpperLimit[closestSubtype]:
-			if closestSubtype in ["CRF01_AE", "CRF02_AG"] or self.isSimpleCRF[closestSubtype] == "True":
+			if closestSubtype in ["CRF01_AE", "CRF02_AG"] or self.isSimpleCRF[closestSubtype] == True:
 				parents = [x.trim() for x in self.parentSubtype[closestSubtype].split("+")]
 				nextClosestParent = parents[0]
 				for parent in parents:

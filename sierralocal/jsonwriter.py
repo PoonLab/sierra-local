@@ -18,7 +18,7 @@ class JSONWriter():
         self.definitions = self.algorithm.parse_definitions(self.algorithm.root)
         self.levels = self.definitions['level']
         self.globalrange = self.definitions['globalrange']
-        print(self.globalrange)
+        # print(self.globalrange)
         self.database = self.algorithm.parse_drugs(self.algorithm.root)
         self.comments = self.algorithm.parse_comments(self.algorithm.root)
 

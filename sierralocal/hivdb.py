@@ -13,11 +13,11 @@ class HIVdb():
         self.xml_filename = None
         self.BASE_URL = 'https://hivdb.stanford.edu'
 
-        #first check if files are present
-
+        # User has not specified XML path
         if path == None:
+            # Iterate over possible HIVdb ASI files matching the glob pattern
             for file in glob.glob(str(Path(os.path.dirname(__file__))/'data'/'HIVDB*.xml')):
-                # print(file)
+                # If is XML file and parseable, break
                 try:
                     xml.parse(file)
                     file_found = True
@@ -25,8 +25,11 @@ class HIVdb():
                     break
                 except:
                     raise
+        # User has specified XML path
         else:
+            # Ensure is a file
             if os.path.isfile(path):
+                # Ensure is XML parseable
                 try:
                     xml.parse(path)
                     file_found = True
@@ -36,6 +39,7 @@ class HIVdb():
             else:
                 print("Provided HIVDB XML cannot be found.")
 
+        # Parseable XML file not found. Update from web
         if not file_found:
             print("Error: could not retrieve HIVDB XML. Updating...")
             self.update_HIVDB()
@@ -44,16 +48,13 @@ class HIVdb():
             print("Error: could not retrieve APOBEC DRM data. Updating...")
             self.updateAPOBEC()
 
-        #check version is updated
+        # Set algorithm metadata
         self.root = xml.parse(self.xml_filename).getroot()
         self.algname = self.root.find('ALGNAME').text
         self.version = self.root.find('ALGVERSION').text
         self.version_date = self.root.find('ALGDATE').text
         print("HIVdb version",self.version)
         
-        #set up HIVDB
-
-
 
     def updateAPOBEC(self):
         path = os.getcwd()
