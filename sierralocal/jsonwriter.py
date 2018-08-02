@@ -1,31 +1,24 @@
 import json
 import xml.etree.ElementTree as xml
 import re
-import hashlib
 from sierralocal.hivdb import HIVdb
 import csv
 from pathlib import Path
 import sys, os
 
 class JSONWriter():
-    def __init__(self):
+    def __init__(self, algorithm):
         self.names = {'3TC':'LMV'}
 
-        self.HIVDB_XML_PATH = HIVdb().xml_filename
-        if os.path.isfile(self.HIVDB_XML_PATH):
-            print("Found HIVdb file {}".format(str(self.HIVDB_XML_PATH)))
-        else:
-            print("HIVDB file missing.")
-            sys.exit(0)
-
         # Set up algorithm data
-        self.algorithm = HIVdb(self.HIVDB_XML_PATH)
-        self.root = xml.parse(self.HIVDB_XML_PATH).getroot()
-        self.version = self.root.find('ALGVERSION').text
-        self.version_date = self.root.find('ALGDATE').text
+        self.algorithm = algorithm
+        self.algorithm.root = xml.parse(self.algorithm.xml_filename).getroot()
+        self.algorithm.version = self.algorithm.root.find('ALGVERSION').text
+        self.algorithm.version_date = self.algorithm.root.find('ALGDATE').text
         self.definitions = self.algorithm.parse_definitions(self.algorithm.root)
         self.levels = self.definitions['level']
         self.globalrange = self.definitions['globalrange']
+        print(self.globalrange)
         self.database = self.algorithm.parse_drugs(self.algorithm.root)
         self.comments = self.algorithm.parse_comments(self.algorithm.root)
 
@@ -215,5 +208,5 @@ class JSONWriter():
         return False
 
 if __name__ == "__main__":
-    writer = JSONWriter()
+    writer = JSONWriter(HIVdb())
     assert (writer.isApobecDRM("IN", "G", 163, "TRAG")) == True

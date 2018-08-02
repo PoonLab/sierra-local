@@ -11,12 +11,13 @@ class HIVdb():
         file_found = False
         file_newest = False
         self.xml_filename = None
+        self.BASE_URL = 'https://hivdb.stanford.edu'
 
         #first check if files are present
 
         if path == None:
             for file in glob.glob(str(Path(os.path.dirname(__file__))/'data'/'HIVDB*.xml')):
-                print(file)
+                # print(file)
                 try:
                     xml.parse(file)
                     file_found = True
@@ -48,14 +49,13 @@ class HIVdb():
         self.algname = self.root.find('ALGNAME').text
         self.version = self.root.find('ALGVERSION').text
         self.version_date = self.root.find('ALGDATE').text
+        print("HIVdb version",self.version)
         
         #set up HIVDB
 
 
 
     def updateAPOBEC(self):
-        base_URL = 'https://hivdb.stanford.edu'
-        URL = 'https://hivdb.stanford.edu/page/algorithm-updates'
         path = os.getcwd()
 
         # UPDATE APOBEC DRMS
@@ -63,15 +63,14 @@ class HIVdb():
             release_notes = 'https://hivdb.stanford.edu/page/release-notes/'
             response = urllib.request.urlopen(release_notes)
             html = response.read().decode('utf-8')
-            apobec_url = base_URL + re.search(u"\/assets\/media\/apobec\-drms.*?tsv",html).group(0)
+            apobec_url = self.BASE_URL + re.search(u"\/assets\/media\/apobec\-drms.*?tsv",html).group(0)
             r = requests.get(apobec_url, allow_redirects=True)
-            open(Path('.')/'sierralocal'/'data'/'apobec.tsv', 'wb').write(r.content)
-            print("Updated APOBEC DRMs from", apobec_url, "into {}".format(Path('.')/'sierralocal'/'data'/'apobec.tsv'))
+            open(Path('.')/'data'/'apobec.tsv', 'wb').write(r.content)
+            print("Updated APOBEC DRMs from", apobec_url, "into {}".format(Path('.')/'data'/'apobec.tsv'))
         except:
             print("Unable to update APOBEC DRMs. Try running this script from the root directory.")
 
     def update_HIVDB(self):
-        base_URL = 'https://hivdb.stanford.edu'
         URL = 'https://hivdb.stanford.edu/page/algorithm-updates'
         path = os.getcwd()
 
@@ -79,10 +78,12 @@ class HIVdb():
         try:
             response = urllib.request.urlopen(URL)
             html = response.read().decode('utf-8')
-            xml_url = base_URL + re.search(u"/assets.*?HIVDB_.*?xml",html).group(0)
+            xml_url = self.BASE_URL + re.search(u"/assets.*?HIVDB_.*?xml",html).group(0)
+            print(xml_url)
             r = requests.get(xml_url, allow_redirects=True)
-            open(Path('.')/'sierralocal'/'data'/os.path.basename(xml_url), 'wb').write(r.content)
-            print("Updated HIVDB XML from",xml_url,"into {}".format(Path('.')/'sierralocal'/'data'/os.path.basename(xml_url)))
+            open(Path('.')/'data'/os.path.basename(xml_url), 'wb').write(r.content)
+            print("Updated HIVDB XML from",xml_url,"into {}".format(Path('.')/'data'/os.path.basename(xml_url)))
+            self.xml_filename = Path('.')/'data'/os.path.basename(xml_url)
         except:
             print("Unable to update HIVDB XML. Try running this script from the root directory.")
 
