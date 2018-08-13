@@ -49,6 +49,10 @@ class NucAminoAligner():
                     self.RTI_dict[str(row[0]+row[1]+row[2]+RTI_prevalences[0][i].split(':')[0])] = float(row[i])
 
 
+        #gene map initialize
+        self.pol_start = 2085
+        self.gene_map = self.create_gene_map()
+
     '''
     Using subprocess to call NucAmino, generates an output .tsv containing mutation data for each sequence in the FASTA file
     '''
@@ -68,16 +72,15 @@ class NucAminoAligner():
         popen.wait()
 
     """
-    Returns a dictionary with the amino acid position bounds for each gene in Pol, based on the HXB2 reference annotations.
+    Returns a dictionary with the AMINO ACID position bounds for each gene in Pol, based on the HXB2 reference annotations.
     """
-    def gene_map(self):
-        pol_start = 2085
+    def create_gene_map(self):
         pol_nuc_map = {
             'PR':(2253,2549),
             'RT':(2550,3869),
             'IN':(4230,5096)
         }
-        convert = lambda x:int((x-pol_start)/3)
+        convert = lambda x:int((x-self.pol_start)/3)
         pol_aa_map = {}
         for key, val in pol_nuc_map.items():
             pol_aa_map[key] = (convert(val[0]), convert(val[1]))
@@ -88,14 +91,11 @@ class NucAminoAligner():
     @param firstAA: the first amino acid position of the query sequence, as determined by NucAmino
     @return: list of length 1 with a string of the gene in the sequence
     """
-    def get_genes(self, firstAA):
-        start = 2085
-        gene_list = ['PR', 'RT', 'IN']
-        firstNA = [int((x - start)/3) for x in [2253, 2550, 4230, 5096]]
-        gene_present = [firstNA[i+1] > firstAA > x for i, x in enumerate(firstNA[:-1:])]
-        if any(gene_present):
-            return [gene_list[gene_present.index(True)]] #first TRUE only
-        return []
+    def get_gene(self, firstAA):
+        for gene, bounds in self.gene_map.items():
+            if bounds[0] <= firstAA <= bounds[1]:
+                return gene
+        return None
 
     '''
     From the tsv output of NucAmino, parses and adjusts indices and returns as lists.
@@ -128,6 +128,7 @@ class NucAminoAligner():
         with open(os.path.splitext(fastaFileName)[0] + '.tsv','r') as nucamino_alignment: # open the NucAmino output file
             tsvin = csv.reader(nucamino_alignment, delimiter='\t')
             next(tsvin) #bypass the header row
+
             for idx, row in enumerate(tsvin): #iterate over sequences (1 per row)
                 sequence_headers.append(row[0])
                 # Let's use the gene map to figure the "reference position" for each gene
@@ -137,13 +138,11 @@ class NucAminoAligner():
                 lastAA = int(row[2])
                 firstNA = int(row[3])
                 lastNA = int(row[4])
-                pol_map = self.gene_map()
-                for key in pol_map:
-                    low, hi = pol_map[key]
-                    if low <= firstAA <= hi:
-                        shift = low
-                        break
 
+                gene = self.get_gene(firstAA)
+                shift = self.gene_map[gene][0]
+
+                # parse mutation information:
                 # Edge case of NO mutations
                 if len(row[5]) == 0:
                     position_list = []
@@ -169,10 +168,11 @@ class NucAminoAligner():
 
                 # append everything to list of lists of the entire sequence set
                 file_mutations.append(trimmed_gene_muts)
-                file_genes.append(self.get_genes(firstAA))
+                file_genes.append(gene)
                 file_firstlastNA.append((firstNA, lastNA))
                 file_trims.append((trimLeft, trimRight))
-        assert len(file_mutations) == len(sequence_headers), "length of mutations dicts is not the same as length of names"
+
+        assert len(file_mutations) == len(sequence_headers), "error: length of mutations dicts is not the same as length of names"
         return sequence_headers, file_genes, file_mutations, file_firstlastNA, file_trims
 
 # BELOW is an implementation of sierra's Java algorithm for determining codon ambiguity
@@ -370,17 +370,6 @@ class NucAminoAligner():
         return prevalence
 
     def getMutPrevalence(self, position, cons, aa, gene, subtype):
-        # key = str(position)+str(cons)+str(aa)+str(subtype)
-
-        # if gene == 'IN' and key in self.INI_dict:
-        #     return self.INI_dict[key]
-
-        # if gene == 'PR' and key in self.PI_dict:
-        #     return self.PI_dict[key]
-
-        # if gene == 'RT' and key in self.RTI_dict:
-        #     return self.RTI_dict[key]
-
         key2 = str(position)+str(cons)+str(aa)+"All"
 
         if gene == 'IN' and key2 in self.INI_dict:
@@ -411,3 +400,6 @@ if __name__ == '__main__':
     print(test.getMutPrevalence(6, 'D', 'E', 'IN', "CRF01_AE"))
     print(test.getMutPrevalence(6, 'D', 'E', 'IN', "G"))
     print(test.getMutPrevalence(6, 'E', 'D', 'RT', "A"))
+
+    print(test.gene_map)
+    print(test.get_gene(594))

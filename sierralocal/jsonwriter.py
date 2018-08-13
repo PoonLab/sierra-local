@@ -8,6 +8,7 @@ import sys, os
 
 class JSONWriter():
     def __init__(self, algorithm):
+        # possible alternative drug abbrvs
         self.names = {'3TC':'LMV'}
 
         # Set up algorithm data
@@ -18,11 +19,10 @@ class JSONWriter():
         self.definitions = self.algorithm.parse_definitions(self.algorithm.root)
         self.levels = self.definitions['level']
         self.globalrange = self.definitions['globalrange']
-        # print(self.globalrange)
         self.database = self.algorithm.parse_drugs(self.algorithm.root)
         self.comments = self.algorithm.parse_comments(self.algorithm.root)
 
-        # Load comments files stored locally
+        # Load comments files stored locally. These are distributed in the repo for now.
         with open(Path(os.path.dirname(__file__))/'data'/'apobec.tsv','r') as csvfile:
             self.ApobecDRMs = list(csv.reader(csvfile, delimiter='\t'))
         with open(Path(os.path.dirname(__file__))/'data'/'INSTI-comments.csv','r') as INSTI_file:
@@ -34,90 +34,102 @@ class JSONWriter():
 
 
     def formatValidationResults(self, validated):
-        validationResults = []
-        for v in validated:
-            validationResults.append({'level' : v[0], 'message' : v[1]})
+        """
+        Returns a list of dictionaries detailing validation results, meant for results output.
+        @param validated: list of tuples from validateSequence() function
+        @return validationResults: list of dictionaries
+        """
+        validationResults = [{'level':v[0], 'message':v[1]} for v in validated]
         return validationResults
 
-    def formatDrugResistance(self, scores,genes):
+    def formatDrugResistance(self, scores, gene):
+        """
+        Returns formatted drug resistance and score breakdowns, meant for results output.
+        @param scores: results of one query from score_alg.score_drugs()
+        @param genes: gene found in the sequence
+        @return drugResistance: a list of one dictionary encoding scores and descriptions
+        """
         drugResistance = {}
         drugResistance['version'] = {}
         drugResistance['version']['text'] = self.version
         drugResistance['version']['publishDate'] = self.version_date
-        drugResistance['gene'] = {'name' : genes[0]}
+        drugResistance['gene'] = {'name' : gene}
         drugScores = []
-        # TODO: find a way to restrict drug classes, e.g. only NRTI/NNRTI for RT gene sequence...
-        for gene in genes:
-            for drugclass in self.definitions['gene'][gene]:
-                classlist = self.definitions['drugclass'][drugclass]
-                for drug in classlist:
-                    # Only record data if the score is non-zero
-                    #if float(scores[drug][0]) == 0.0:
-                    #    continue
-                    drugScore = {}
 
-                    #Infer resistance level text from the score and globalrange
-                    resistancelevel = -1
-                    for key in self.globalrange:
-                        maximum = float(self.globalrange[key]['max'])
-                        minimum = float(self.globalrange[key]['min'])
-                        if minimum <= scores[drug][0] <= maximum:
-                            resistancelevel = str(key)
-                            break
-                    resistance_text = self.levels[resistancelevel]
+        for drugclass in self.definitions['gene'][gene]:
+            classlist = self.definitions['drugclass'][drugclass]
+            for drug in classlist:
+                drugScore = {}
 
-                    drugScore['drugClass'] = {'name':drugclass} #e.g. NRTI
-                    drugScore['drug'] = {}
-                    if drug in self.names:
-                        drugScore['drug']['name'] = self.names[drug]
-                    else:
-                        drugScore['drug']['name'] = drug.replace('/r','')
-                    drugScore['drug']['displayAbbr'] = drug
-                    drugScore['score'] = float(scores[drug][0]) # score for this paritcular drug
-                    # create partial score, for each mutation, datastructure
-                    drugScore['partialScores'] = []
-                    for index,pscore in enumerate(scores[drug][1]):
-                        pscore = float(pscore)
-                        if not pscore == 0.0:
-                            pscoredict = {}
-                            pscoredict['mutations'] = []
-                            for combination in scores[drug][2][index]:
-                                # find the mutation classification "type" based on the gene
-                                type_ = drugclass
-                                pos = re.findall(u'([0-9]+)',combination)[0]
-                                muts = re.findall(u'(?<=[0-9])([A-Za-z])+',combination)[0]
-                                #print(pos, muts)
-                                if gene == 'IN':
-                                    for key in self.INSTI_comments:
-                                        if pos in key and muts in key:
-                                            type_ = self.INSTI_comments[key]
-                                            break
-                                elif gene == 'PR':
-                                    for key in self.PI_comments:
-                                        if pos in key and muts in key:
-                                            type_ = self.PI_comments[key]
-                                            break
-                                elif gene == 'RT':
-                                    for key in self.RT_comments:
-                                        if pos in key and muts in key:
-                                            type_ = self.RT_comments[key]
-                                            break
-                                mut = {}
-                                mut['text'] = combination.replace('d', 'Deletion')
-                                mut['primaryType'] = type_
-                                mut['comments'] = [{
-                                    'type' : type_,
-                                    'text' : self.findComment(gene, combination, self.comments, self.definitions['comment'])
-                                }]
-                                pscoredict['mutations'].append(mut)                    
-                            pscoredict['score'] = pscore
-                            drugScore['partialScores'].append(pscoredict)
-                    drugScore['text'] = list(resistance_text)[0] #resistance level
-                    drugScores.append(drugScore)
+                #Infer resistance level text from the score and globalrange
+                resistancelevel = -1
+                for key in self.globalrange:
+                    maximum = float(self.globalrange[key]['max'])
+                    minimum = float(self.globalrange[key]['min'])
+                    if minimum <= scores[drug][0] <= maximum:
+                        resistancelevel = str(key)
+                        break
+                resistance_text = self.levels[resistancelevel]
+
+                drugScore['drugClass'] = {'name':drugclass} #e.g. NRTI
+                drugScore['drug'] = {}
+                if drug in self.names:
+                    drugScore['drug']['name'] = self.names[drug]
+                else:
+                    drugScore['drug']['name'] = drug.replace('/r','')
+                drugScore['drug']['displayAbbr'] = drug
+                drugScore['score'] = float(scores[drug][0]) # score for this paritcular drug
+                # create partial score, for each mutation, datastructure
+                drugScore['partialScores'] = []
+                for index,pscore in enumerate(scores[drug][1]):
+                    pscore = float(pscore)
+                    if not pscore == 0.0:
+                        pscoredict = {}
+                        pscoredict['mutations'] = []
+                        for combination in scores[drug][2][index]:
+                            # find the mutation classification "type" based on the gene
+                            type_ = drugclass
+                            pos = re.findall(u'([0-9]+)',combination)[0]
+                            muts = re.findall(u'(?<=[0-9])([A-Za-z])+',combination)[0]
+                            #print(pos, muts)
+                            if gene == 'IN':
+                                for key in self.INSTI_comments:
+                                    if pos in key and muts in key:
+                                        type_ = self.INSTI_comments[key]
+                                        break
+                            elif gene == 'PR':
+                                for key in self.PI_comments:
+                                    if pos in key and muts in key:
+                                        type_ = self.PI_comments[key]
+                                        break
+                            elif gene == 'RT':
+                                for key in self.RT_comments:
+                                    if pos in key and muts in key:
+                                        type_ = self.RT_comments[key]
+                                        break
+                            mut = {}
+                            mut['text'] = combination.replace('d', 'Deletion')
+                            mut['primaryType'] = type_
+                            mut['comments'] = [{
+                                'type' : type_,
+                                'text' : self.findComment(gene, combination, self.comments, self.definitions['comment'])
+                            }]
+                            pscoredict['mutations'].append(mut)                    
+                        pscoredict['score'] = pscore
+                        drugScore['partialScores'].append(pscoredict)
+                drugScore['text'] = list(resistance_text)[0] #resistance level
+                drugScores.append(drugScore)
         drugResistance['drugScores'] = drugScores
         return [drugResistance]
 
     def formatAlignedGeneSequences(self, ordered_mutation_list, genes, firstlastNA):
+        """
+        Main function to format mutations into dictionary for results output
+        @param ordered_mutation_list: ordered list of mutations in the query sequence relative to reference
+        @param genes: genes found in the query sequence
+        @param firstlastNA: positions tuple of the first and last nucleotide in the query sequence
+        @return: list of one dictionary element describing mutations in a single query sequence
+        """
         dic = {}
         dic['firstAA'] = int((firstlastNA[0]+2)/3)
         dic['lastAA'] = int(firstlastNA[1]/3)
@@ -137,6 +149,7 @@ class JSONWriter():
     def formatInputSequence(self, name):
         out = {
             'header' : name
+            #TODO: SHA512 hash of the gene sequence
         }
         return out
 
@@ -146,7 +159,7 @@ class JSONWriter():
         :param filename: the filename to write the JSON to
         :param names: list of sequence headers
         :param scores: list of sequence scores
-        :param genes: list of genes in pol
+        :param genes: list of single genes in queries
         :param ordered_mutation_list: ordered list of mutations in the query sequence relative to reference
         '''
         out = []
@@ -164,6 +177,7 @@ class JSONWriter():
                 data['drugResistance'] = []
             out.append(data)
 
+        # dump data to JSON file
         with open(filename,'w+') as outfile:
             json.dump(out, outfile, indent=2)
             print("Writing JSON to file {}".format(filename))

@@ -13,7 +13,7 @@ class HIVdb():
         self.xml_filename = None
         self.BASE_URL = 'https://hivdb.stanford.edu'
 
-        # User has not specified XML path
+        # If user has not specified XML path
         if path == None:
             # Iterate over possible HIVdb ASI files matching the glob pattern
             for file in glob.glob(str(Path(os.path.dirname(__file__))/'data'/'HIVDB*.xml')):
@@ -25,7 +25,7 @@ class HIVdb():
                     break
                 except:
                     raise
-        # User has specified XML path
+        # The user has specified XML path
         else:
             # Ensure is a file
             if os.path.isfile(path):
@@ -88,6 +88,11 @@ class HIVdb():
         except:
             print("Unable to update HIVDB XML. Try running this script from the root directory.")
 
+    """ parse_definitions function meant to assemble definitions into nested dictionary and return
+
+        @param root: algorithm root
+        @return definitions: dictionary of gene, level, druglcass, globalrange, and comment dictionaries
+    """
     def parse_definitions(self, root):
         self.definitions = {
             'gene': {},  # gene target names and drug classes
@@ -239,7 +244,7 @@ class HIVdb():
     def _parse_scores(self, drm_lib, drm, chunk, iter):
         scores = re.findall('([0-9]+(?=\W)|-[0-9]+(?=\W))', drm.strip())   # extract scores in same order as grouped drm tuples; stored in (indexable) list
         rANDr = re.findall('\d+[A-z]+[\s?AND\s?\d+\w]+', chunk)
-        #print rANDr
+
         for combo_group in rANDr:
             mut_list = []
             residueAA = re.findall('[0-9]+[A-z]+', combo_group.strip())  # TODO: needs testing
