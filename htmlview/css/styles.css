@@ -1,0 +1,11 @@
+.header {
+	background-color:black;
+	outline:none;
+	cursor:pointer;
+	color:white;
+}
+
+.drugScore{
+	display:block;
+	height:100px;
+}

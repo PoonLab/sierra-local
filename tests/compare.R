@@ -1,7 +1,13 @@
 library(jsonlite)
 
-sierra <- fromJSON('./hivdb/hivdb-data/PR-12-sierra.json')
-local <- fromJSON('./hivdb/hivdb-data/PR-12-local.json')
+g <- 'RT'
+num <- 98
+sierra <- fromJSON(paste0('./hivdb/hivdb-data/', g, '-', num, '-sierra.json'))
+local <- fromJSON(paste0('./hivdb/hivdb-data/', g, '-', num, '-local.json'))
+
+# sierra <- fromJSON(paste0('./hivdb/hivdb-data/DQ-local.json'))
+# local <- fromJSON(paste0('./hivdb/hivdb-data/DQ-sierra.json'))
+
 
 assertthat::are_equal(nrow(sierra), nrow(local))
 
@@ -18,7 +24,7 @@ unmatched.drugs <- 0
 for (sierra_index in 1:nrow(sierra)) {
   s_scores <- sierra$drugResistance[[sierra_index]]$drugScores[[1]]
   header <- sierra$inputSequence[1]$header[sierra_index]
-  local_index <- match(header, local$inputSequence[1]$header)
+  local_index <- sierra_index
   l_scores <- local$drugResistance[[local_index]]$drugScores[[1]]
   
   if(identical(s_scores$score, l_scores$score)) {
@@ -47,7 +53,11 @@ l_partialscore <- c()
 
 for (header in unmatching.headers) {
   sierra_index <- match(header, sierra$inputSequence[1]$header)
-  local_index <- match(header, local$inputSequence[1]$header)
+  # local_index <- match(header, local$inputSequence[1]$header)
+  # if (is.na(local_index)) { # might be due to header unique count difference
+  #   local_index <- match(paste0(header, '.', sierra_index), local$inputSequence[1]$header)
+  # }
+  local_index <- sierra_index
   s_mutations <- sierra$alignedGeneSequences[[sierra_index]]$mutations[[1]]
   l_mutations <- local$alignedGeneSequences[[local_index]]$mutations[[1]]
   s_scores <- sierra$drugResistance[[sierra_index]]$drugScores[[1]]
@@ -80,3 +90,15 @@ unmatched$s_level <- cut(as.numeric(unmatched$s_score), breaks=c(-Inf, 10, 15, 3
 unmatched$l_level <- cut(as.numeric(unmatched$l_score), breaks=c(-Inf, 10, 15, 30, 60, Inf), labels=c(1, 2, 3, 4, 5))
 
 View(unmatched)
+
+25
+50
+AZT
+K219R
+M41L.L210W
+3
+4
+3
+KC221011.35963.B.939
+35
+60

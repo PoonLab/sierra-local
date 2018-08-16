@@ -4,14 +4,19 @@ import urllib.request
 import glob, os
 from pathlib import Path
 import re
+import sierralocal.updater as updater
 
 
 class HIVdb():
-    def __init__(self, path=None):
+    def __init__(self, path=None, forceupdate=False):
         file_found = False
         file_newest = False
         self.xml_filename = None
         self.BASE_URL = 'https://hivdb.stanford.edu'
+
+        # args force update flag is TRUE
+        if forceupdate:
+            self.xml_filename = updater.update_HIVDB()
 
         # If user has not specified XML path
         if path == None:
@@ -37,16 +42,17 @@ class HIVdb():
                 except:
                     raise
             else:
-                print("Provided HIVDB XML cannot be found.")
+                print("Provided HIVDB XML cannot be found")
 
         # Parseable XML file not found. Update from web
         if not file_found:
-            print("Error: could not retrieve HIVDB XML. Updating...")
-            self.update_HIVDB()
+            print("Error: could not retrieve HIVDB XML")
+            self.xml_filename = updater.update_HIVDB()
+
 
         if not os.path.isfile(Path(os.path.dirname(__file__))/'data'/'apobec.tsv'):
-            print("Error: could not retrieve APOBEC DRM data. Updating...")
-            self.updateAPOBEC()
+            print("Error: could not retrieve APOBEC DRM data")
+            updater.updateAPOBEC()
 
         # Set algorithm metadata
         self.root = xml.parse(self.xml_filename).getroot()
@@ -55,38 +61,6 @@ class HIVdb():
         self.version_date = self.root.find('ALGDATE').text
         print("HIVdb version",self.version)
         
-
-    def updateAPOBEC(self):
-        path = os.getcwd()
-
-        # UPDATE APOBEC DRMS
-        try:
-            release_notes = 'https://hivdb.stanford.edu/page/release-notes/'
-            response = urllib.request.urlopen(release_notes)
-            html = response.read().decode('utf-8')
-            apobec_url = self.BASE_URL + re.search(u"\/assets\/media\/apobec\-drms.*?tsv",html).group(0)
-            r = requests.get(apobec_url, allow_redirects=True)
-            open(Path('.')/'data'/'apobec.tsv', 'wb').write(r.content)
-            print("Updated APOBEC DRMs from", apobec_url, "into {}".format(Path('.')/'data'/'apobec.tsv'))
-        except:
-            print("Unable to update APOBEC DRMs. Try running this script from the root directory.")
-
-    def update_HIVDB(self):
-        URL = 'https://hivdb.stanford.edu/page/algorithm-updates'
-        path = os.getcwd()
-
-        # UPDATE ALGORITHM
-        try:
-            response = urllib.request.urlopen(URL)
-            html = response.read().decode('utf-8')
-            xml_url = self.BASE_URL + re.search(u"/assets.*?HIVDB_.*?xml",html).group(0)
-            print(xml_url)
-            r = requests.get(xml_url, allow_redirects=True)
-            open(Path('.')/'data'/os.path.basename(xml_url), 'wb').write(r.content)
-            print("Updated HIVDB XML from",xml_url,"into {}".format(Path('.')/'data'/os.path.basename(xml_url)))
-            self.xml_filename = Path('.')/'data'/os.path.basename(xml_url)
-        except:
-            print("Unable to update HIVDB XML. Try running this script from the root directory.")
 
     """ parse_definitions function meant to assemble definitions into nested dictionary and return
 

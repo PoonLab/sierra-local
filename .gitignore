@@ -1,8 +1,7 @@
 .idea/
 
-./nucamino
-./data/HIVDB.xml
-./data/apobec.tsv
+./nucamino-linux-amd64
+./sierralocal/data/apobec.tsv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

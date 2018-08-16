@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import csv
 import re
+from sierralocal.subtyper import Subtyper
 
 class NucAminoAligner():
     '''
@@ -17,41 +18,36 @@ class NucAminoAligner():
                 self.nucamino_binary = name
                 break
         print("Found NucAmino binary", self.nucamino_binary)
+
         self.tripletTable = self.generateTable()
+
         with open(Path(os.path.dirname(__file__))/'data'/'apobec.tsv','r') as csvfile:
             self.ApobecDRMs = list(csv.reader(csvfile, delimiter='\t'))
 
-        with open(Path(os.path.dirname(__file__))/'data'/'INIPrevalences.tsv','r') as INIfile:
-            INI_prevalences = list(csv.reader(INIfile, delimiter='\t'))
-        self.INI_dict = {}
-        col_idx = ["Naive:%" in cell for cell in INI_prevalences[0]]
-        for row in INI_prevalences[1:]:
-            for i, col in enumerate(col_idx):
-                if col:
-                    self.INI_dict[str(row[0]+row[1]+row[2]+INI_prevalences[0][i].split(':')[0])] = float(row[i])
+        self.PI_dict = self.prevalence_parser('PIPrevalences.tsv')
+        self.RTI_dict = self.prevalence_parser('RTIPrevalences.tsv')
+        self.INI_dict = self.prevalence_parser('INIPrevalences.tsv')
 
-        with open(Path(os.path.dirname(__file__))/'data'/'PIPrevalences.tsv','r') as PIfile:
-            PI_prevalences = list(csv.reader(PIfile, delimiter='\t'))
-        self.PI_dict = {}
-        col_idx = ["Naive:%" in cell for cell in PI_prevalences[0]]
-        for row in PI_prevalences[1:]:
-            for i, col in enumerate(col_idx):
-                if col:
-                    self.PI_dict[str(row[0]+row[1]+row[2]+PI_prevalences[0][i].split(':')[0])] = float(row[i])
-
-        with open(Path(os.path.dirname(__file__))/'data'/'RTIPrevalences.tsv','r') as RTIfile:
-            RTI_prevalences = list(csv.reader(RTIfile, delimiter='\t'))
-        self.RTI_dict = {}
-        col_idx = ["Naive:%" in cell for cell in RTI_prevalences[0]]
-        for row in RTI_prevalences[1:]:
-            for i, col in enumerate(col_idx):
-                if col:
-                    self.RTI_dict[str(row[0]+row[1]+row[2]+RTI_prevalences[0][i].split(':')[0])] = float(row[i])
-
-
-        #gene map initialize
+        #initialize gene map
         self.pol_start = 2085
         self.gene_map = self.create_gene_map()
+
+        #initialize Subtyper class
+        self.typer = Subtyper()
+
+    def prevalence_parser(self, filename):
+        '''
+        Abstracted method for reading ARV prevalence TSV and returning a dictionary of these data.
+        '''
+        with open(Path(os.path.dirname(__file__))/'data'/filename,'r') as file:
+            table = list(csv.reader(file, delimiter='\t'))
+        var = {}
+        col_idx = ["Naive:%" in cell for cell in table[0]]
+        for row in table[1:]:
+            for i, col in enumerate(col_idx):
+                if col:
+                    var[str(row[0]+row[1]+row[2]+table[0][i].split(':')[0])] = float(row[i])
+        return var
 
     '''
     Using subprocess to call NucAmino, generates an output .tsv containing mutation data for each sequence in the FASTA file
@@ -101,13 +97,12 @@ class NucAminoAligner():
     From the tsv output of NucAmino, parses and adjusts indices and returns as lists.
     :return: list of sequence names, list of sequence mutation dictionaries.
     '''
-    def get_mutations(self, genemap, fastaFileName):
+    def get_mutations(self, fastaFileName):
         file_mutations = []
         file_genes = []
         file_firstlastNA = []
         file_trims = []
         sequence_headers = []
-        tripletTable = self.generateTable()
         
         #grab sequences from file
         with open(fastaFileName, 'r') as handle:
@@ -160,10 +155,13 @@ class NucAminoAligner():
                     aminoacid_list = ['-' if x == '~~~' or x == '...' else self.translateNATriplet(x) for x in codon_list]
                     gene_muts = dict(zip(position_list, zip(consensus_list,aminoacid_list)))
 
+                # subtype sequence
+                subtype = self.typer.getClosestSubtype(sequence_list[idx])
+
                 # trim low quality leading and trailing nucleotides
-                trimLeft, trimRight = self.trimLowQualities(codon_list, shift, firstAA, lastAA, gene_muts, [], self.get_genes(firstAA)[0], row[0].split('.')[-1]) #TODO: get subtype via alignment
-                if trimLeft + trimRight > 0:
-                    print(row[0], trimLeft, trimRight)
+                trimLeft, trimRight = self.trimLowQualities(codon_list, shift, firstAA, lastAA, gene_muts, [], gene, subtype)
+                # if trimLeft + trimRight > 0:
+                    # print(row[0], trimLeft, trimRight)
                 trimmed_gene_muts = {k:v for (k,v) in gene_muts.items() if (k >= firstAA - shift + trimLeft) and (k <= lastAA - shift - trimRight)}
 
                 # append everything to list of lists of the entire sequence set
@@ -370,7 +368,7 @@ class NucAminoAligner():
         return prevalence
 
     def getMutPrevalence(self, position, cons, aa, gene, subtype):
-        key2 = str(position)+str(cons)+str(aa)+"All"
+        key2 = str(position)+str(cons)+str(aa)+subtype
 
         if gene == 'IN' and key2 in self.INI_dict:
             return self.INI_dict[key2]
@@ -381,7 +379,7 @@ class NucAminoAligner():
         if gene == 'RT' and key2 in self.RTI_dict:
             return self.RTI_dict[key2]
 
-        return 0.0
+        return 100.0
 
 
 if __name__ == '__main__':

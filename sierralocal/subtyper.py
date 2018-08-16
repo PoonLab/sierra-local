@@ -1,5 +1,6 @@
 from pathlib import Path
 import csv
+import os
 import re
 
 class Subtyper():
@@ -8,7 +9,7 @@ class Subtyper():
 		self.name, self.parentSubtype, self.distanceUpperLimit, self.isSimpleCRF, self.classificationLevel, self.breakPoints = self.getGenotypeProperties()
 
 	def getSubtypeReferences(self):
-		filepath = Path('.') / 'sierralocal' / 'data' / 'genotype-references.9c610d61.fasta'
+		filepath = Path(os.path.dirname(__file__))/'data'/'genotype-references.9c610d61.fasta'
 		sequences = []
 		names = []
 		sequence = ''
@@ -71,7 +72,7 @@ class Subtyper():
 		return dists
 
 	def getGenotypeProperties(self):
-		filepath = Path('.') / 'sierralocal'/'data' / 'genotype-properties.cc00f512.csv'
+		filepath = Path(os.path.dirname(__file__))/'data'/ 'genotype-properties.cc00f512.csv'
 		name = {}
 		parentSubtype = {}
 		distanceUpperLimit = {}
@@ -99,7 +100,6 @@ class Subtyper():
 
 		closestMatch = next(iter(sorted_dists.keys()))
 		closestSubtype = re.findall('\|(.*?)\||$', closestMatch)[0]
-		# print(closestMatch, closestSubtype)
 
 		if sorted_dists[closestMatch] > 0.11:
 			return "Unknown"
@@ -133,7 +133,9 @@ def main():
 	# test out all reference sequences on this system
 	for h, ref in subtyper.subtype_references.items():
 		subtype = re.findall('\|(.*?)\||$', h)[0]
-		print(h, subtyper.getClosestSubtype(ref), subtype)
+		guess = subtyper.getClosestSubtype(ref)
+		if not guess == subtype:
+			print(h, guess, subtype)
 
 
 if __name__ == '__main__':
