@@ -8,10 +8,10 @@ from pathlib import Path
 import time
 
 def parse_args():
-    '''
+    """
     CLI argument parser. Current options include input FASTA files only
     :return: args object
-    '''
+    """
     parser = argparse.ArgumentParser(
         description='Local execution of Stanford HIVdb algorithm for mutation-based resistance scoring of sequences.'
     )
@@ -19,11 +19,15 @@ def parse_args():
     parser.add_argument('-o', dest='outfile', default=None, type=str, help='Output filename.')
     parser.add_argument('-xml', default=None, 
                         help='Path to HIVDB algorithm XML file, which can be downloaded using the provided script updater.py')
-    parser.add_argument('-skipalign', action='store_true', help='Skip NucAmino alignment if TSV file already present.')
-    parser.add_argument('-cleanup', action='store_true', help='Deletes NucAmino alignment file after processing.')
-    parser.add_argument('-forceupdate', action='store_true', help='Forces update of HIVdb algorithm. Requires network connection.')
+    parser.add_argument('-skipalign', action='store_true',
+                        help='Skip NucAmino alignment if TSV file already present.')
+    parser.add_argument('-cleanup', action='store_true',
+                        help='Deletes NucAmino alignment file after processing.')
+    parser.add_argument('-forceupdate', action='store_true',
+                        help='Forces update of HIVdb algorithm. Requires network connection.')
     args = parser.parse_args()
     return args
+
 
 def score(filenames, xml_path=None, forceupdate=False):
     """
@@ -48,10 +52,11 @@ def score(filenames, xml_path=None, forceupdate=False):
     # cleanup is default action
     os.remove(os.path.splitext(filename)[0] + '.tsv')
 
-'''
-Main function called from CLI. Contains all initializing and processing calls.
-'''
+
 def main():
+    """
+    Main function called from CLI. Contains all initializing and processing calls.
+    """
     args = parse_args()
     # initialize algorithm and jsonwriter
     algorithm = HIVdb(path=args.xml, forceupdate=args.forceupdate)
@@ -107,18 +112,18 @@ def scorefile(input_file, database, skipalign):
 
 def get_input_sequences(handle):
     """
-    Parse open file as FASTA, return dictionary of
-    headers and sequences as key-value pairs.
+    Parse open file as FASTA, return a list of sequences.
+    :param handle: open stream to FASTA file in read mode
     """
     sequences = []
     sequence = ''
-    for i in handle:
-        if i[0] == '>' or i[0] == '#':
+    for line in handle:
+        if line.startswith('>') or line.startswith('#'):
             if len(sequence) > 0:
                 sequences.append(sequence)
-                sequence = ''
+                sequence = ''  # reset container
         else:
-            sequence += i.strip('\n').upper()
+            sequence += line.strip('\n').upper()
     sequences.append(sequence)
     return sequences
 

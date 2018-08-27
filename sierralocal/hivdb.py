@@ -8,9 +8,14 @@ import sierralocal.updater as updater
 
 
 class HIVdb():
+    """
+    Define a class for handling network transactions with the Stanford HIVdb
+    webserver, to retrieve the rules-based prediction algorithm as ASI XML,
+    and convert this information into Python objects.
+    """
     def __init__(self, path=None, forceupdate=False):
         file_found = False
-        file_newest = False
+        file_newest = False  # FIXME: this appears to be unused
         self.xml_filename = None
         self.BASE_URL = 'https://hivdb.stanford.edu'
 
@@ -60,14 +65,14 @@ class HIVdb():
         self.version = self.root.find('ALGVERSION').text
         self.version_date = self.root.find('ALGDATE').text
         print("HIVdb version",self.version)
-        
 
-    """ parse_definitions function meant to assemble definitions into nested dictionary and return
 
-        @param root: algorithm root
-        @return definitions: dictionary of gene, level, druglcass, globalrange, and comment dictionaries
-    """
     def parse_definitions(self, root):
+        """ parse_definitions function meant to assemble definitions into nested dictionary and return
+
+            @param root: algorithm root
+            @return definitions: dictionary of gene, level, druglcass, globalrange, and comment dictionaries
+        """
         self.definitions = {
             'gene': {},  # gene target names and drug classes
             'level': {},  # maps from level to S/I/R symbols
@@ -115,13 +120,13 @@ class HIVdb():
 
 
 
-    """ parse_globalrange function meant to assemble a scorerange into a dictionary and return
-    
-        @param grange_dict: dictionary for storing the scoring range specifications on
-        @param scorerange: text to parse out the scorerange for
-        @return grange_dict: dictionary for storing scorerange of the parsed range
-    """
     def parse_globalrange(self, grange_dict, scorerange):
+        """ parse_globalrange function meant to assemble a scorerange into a dictionary and return
+
+            @param grange_dict: dictionary for storing the scoring range specifications on
+            @param scorerange: text to parse out the scorerange for
+            @return grange_dict: dictionary for storing scorerange of the parsed range
+        """
         for item in scorerange:
             order = int(re.split('=>', item)[1].strip('() '))  # str containing order number: '1'
             range = re.split('=>', item)[0].strip('() ')  # str containing the range: '-INF TO 9'
@@ -144,16 +149,15 @@ class HIVdb():
         return grange_dict
 
 
-
-    """ parse_drugs iterates through each drug in HIVDB, 
-        parses condition for a specific drug, 
-        and assigns a library of the drug resistant mutation conditions to the dictionary of drugs
-        Also includes score ranges associated with the drug, (which is most often the default globalrange)
-        
-        @param root: algorithm root
-        @return self.drugs: populated dictionary of drugs, associated with their (global) score ranges
-    """
     def parse_drugs(self, root):
+        """ parse_drugs iterates through each drug in HIVDB,
+            parses condition for a specific drug,
+            and assigns a library of the drug resistant mutation conditions to the dictionary of drugs
+            Also includes score ranges associated with the drug, (which is most often the default globalrange)
+
+            @param root: algorithm root
+            @return self.drugs: populated dictionary of drugs, associated with their (global) score ranges
+        """
         self.drugs = {}
 
         for element in root.getchildren():
@@ -174,16 +178,16 @@ class HIVdb():
         return self.drugs
 
 
-    """ parse_condition function takes a given condition (one of four types)
-        'MAXAND' condition: MAX ((41L AND 215ACDEILNSV) => 5, (41L AND 215FY) => 15)
-        'MAX' condition: MAX ( 219E => 5, 219N => 5, 219Q => 5, 219R => 5 )
-        'AND' condition: (67EGN AND 215FY AND 219ENQR) => 5
-        'single-drm' condition: 62V => 5
-        
-        @param condition: given drug condition to parse
-        @return self.drms: list library updated with all the DRM conditions associated with given drug condition
-    """
     def parse_condition(self, condition):
+        """ parse_condition function takes a given condition (one of four types)
+            'MAXAND' condition: MAX ((41L AND 215ACDEILNSV) => 5, (41L AND 215FY) => 15)
+            'MAX' condition: MAX ( 219E => 5, 219N => 5, 219Q => 5, 219R => 5 )
+            'AND' condition: (67EGN AND 215FY AND 219ENQR) => 5
+            'single-drm' condition: 62V => 5
+
+            @param condition: given drug condition to parse
+            @return self.drms: list library updated with all the DRM conditions associated with given drug condition
+        """
         # drug resistant mutation (DRM)
         mutation_list = ((condition.split('(',1)[1].rstrip(')')) + ',').split('\n')    # NOTE: \n may not be stable or transferable on other platforms
         self.drms= []                            # library of drms for the drug of the given condition
@@ -205,17 +209,17 @@ class HIVdb():
 
         return self.drms
 
-
-    """ _parse_scores function is a helper function to parse_condition.
-        Parses the residues, amino acids, and scores associated with a particular DRM,
-        then updates the specified list library 
-        
-        @param drm_lib: given library to be updated with DRMs
-        @param drm: full name of original drug resistant mutation                           
-        @param chunk: drm_group of one of the condition types   (kinda vague...will fix)
-        @param iter: index to keep track of which DRM is associated with respective index in the extracted list of scores
-    """                                                                                                                     #TODO: combine drm and iter so less params
+                                                                                                                    #TODO: combine drm and iter so less params
     def _parse_scores(self, drm_lib, drm, chunk, iter):
+        """ _parse_scores function is a helper function to parse_condition.
+            Parses the residues, amino acids, and scores associated with a particular DRM,
+            then updates the specified list library
+
+            @param drm_lib: given library to be updated with DRMs
+            @param drm: full name of original drug resistant mutation
+            @param chunk: drm_group of one of the condition types   (kinda vague...will fix)
+            @param iter: index to keep track of which DRM is associated with respective index in the extracted list of scores
+        """
         scores = re.findall('([0-9]+(?=\W)|-[0-9]+(?=\W))', drm.strip())   # extract scores in same order as grouped drm tuples; stored in (indexable) list
         rANDr = re.findall('\d+[A-z]+[\s?AND\s?\d+\w]+', chunk)
 
@@ -233,14 +237,13 @@ class HIVdb():
             scores[:] = []
 
 
-
-    """ parse_comments function retrieves all mutation comments and stores in a dictionary
-        Dictionary is further separated into protease (PR), integrase (IN), and reverse transcriptase (RT) dictionaries
-        
-        @param root: algorithm root
-        @return self.comments: a dictionary with key = mutation and value = mutation comment reference for PR, IN, RT
-    """
     def parse_comments(self, root):
+        """ parse_comments function retrieves all mutation comments and stores in a dictionary
+            Dictionary is further separated into protease (PR), integrase (IN), and reverse transcriptase (RT) dictionaries
+
+            @param root: algorithm root
+            @return self.comments: a dictionary with key = mutation and value = mutation comment reference for PR, IN, RT
+        """
         self.comments = {}
 
         for element in root.getchildren():

@@ -6,9 +6,9 @@ import re
 from sierralocal.subtyper import Subtyper
 
 class NucAminoAligner():
-    '''
+    """
     Initialize NucAmino for a specific input fasta file
-    '''
+    """
     def __init__(self):
         self.cwd = os.path.curdir
         items = os.listdir(Path(os.path.dirname(__file__)))
@@ -72,9 +72,9 @@ class NucAminoAligner():
     """
     def create_gene_map(self):
         pol_nuc_map = {
-            'PR':(2253,2549),
-            'RT':(2550,3869),
-            'IN':(4230,5096)
+            'PR': (2253, 2549),
+            'RT': (2550, 3869),
+            'IN': (4230, 5096)
         }
         convert = lambda x:int((x-self.pol_start)/3)
         pol_aa_map = {}
@@ -104,13 +104,13 @@ class NucAminoAligner():
         file_trims = []
         sequence_headers = []
         
-        #grab sequences from file
+        # grab sequences from file
         with open(fastaFileName, 'r') as handle:
             # names = []
             sequence_list = []
             sequence = ''
             for i in handle:
-                if i[0] == '$':  # skip h info
+                if i[0] == '$':  # skip header info
                     continue
                 elif i[0] == '>' or i[0] == '#':
                     if len(sequence) > 0:
@@ -119,15 +119,17 @@ class NucAminoAligner():
                 else:
                     sequence += i.strip('\n').upper()
             sequence_list.append(sequence)
-        
-        with open(os.path.splitext(fastaFileName)[0] + '.tsv','r') as nucamino_alignment: # open the NucAmino output file
+
+        # open the NucAmino output file
+        with open(os.path.splitext(fastaFileName)[0] + '.tsv','r') as nucamino_alignment:
             tsvin = csv.reader(nucamino_alignment, delimiter='\t')
             next(tsvin) #bypass the header row
 
             for idx, row in enumerate(tsvin): #iterate over sequences (1 per row)
                 sequence_headers.append(row[0])
                 # Let's use the gene map to figure the "reference position" for each gene
-                # Nucamino outputs wonky positions, so calculate the shift so we can get positions relative to the start of each individual gene
+                # Nucamino outputs wonky positions, so calculate the shift so we can get positions relative to the
+                #  start of each individual gene
                 shift = 0
                 firstAA = int(row[1])
                 lastAA = int(row[2])
@@ -147,12 +149,27 @@ class NucAminoAligner():
                     gene_muts = {}
                 # most cases fall here... mutations are present
                 else:
-                    #generate data lists for each sequence
-                    mutation_list = row[5].split(',') #split list into individual mutations
-                    position_list = [int(int(re.findall(r'\d+',x.split(':')[0])[0])-shift) for x in mutation_list] #residue position list
-                    consensus_list = [re.findall(r'\D+',x.split(':')[0][:2])[0] for x in mutation_list] #consensus list
-                    codon_list = [sequence_list[idx][(((p+int(shift)-int(row[1])+1)-1)*3):((p+int(shift)-int(row[1])+1)*3)] for p in position_list] #obtain the mutation codon directly from the query sequence
-                    aminoacid_list = ['-' if x == '~~~' or x == '...' else self.translateNATriplet(x) for x in codon_list]
+                    # generate data lists for each sequence
+                    mutation_list = row[5].split(',')  # split list into individual mutations
+                    # residue position list
+                    position_list = [
+                        int(int(re.findall(r'\d+', x.split(':')[0])[0]) - shift)
+                        for x in mutation_list
+                    ]
+                    consensus_list = [
+                        re.findall(r'\D+', x.split(':')[0][:2])[0]
+                        for x in mutation_list
+                    ]
+                    # obtain the mutation codon directly from the query sequence
+                    # FIXME: this is a horrid list comprehension, refactor
+                    codon_list = [
+                        sequence_list[idx][(((p+int(shift)-int(row[1])+1)-1)*3):((p+int(shift)-int(row[1])+1)*3)]
+                        for p in position_list
+                    ]
+                    aminoacid_list = [
+                        '-' if x == '~~~' or x == '...' else self.translateNATriplet(x)
+                        for x in codon_list
+                    ]
                     gene_muts = dict(zip(position_list, zip(consensus_list,aminoacid_list)))
 
                 # subtype sequence
