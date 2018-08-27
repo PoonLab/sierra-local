@@ -30,7 +30,7 @@ pip3 install sierralocal
     ```
     git clone https://github.com/PoonLab/sierra-local.git
     ```
-2. Download the correct [pre-compiled NucAmino binary](https://github.com/hivdb/nucamino#download-binaries) for your platform and place it in the `sierra-local` root directory.
+2. Download the correct [pre-compiled NucAmino binary](https://github.com/hivdb/nucamino#download-binaries) for your platform and place it in the `sierralocal` directory (not the root directory `sierra-local`).  You might also need to modify the user permissions for the binary file; for example: `chmod 755 nucamino`.
 
 ## Using sierra-local
 ### Command-line interface (CLI)
