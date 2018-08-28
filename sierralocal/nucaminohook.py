@@ -4,6 +4,7 @@ from pathlib import Path
 import csv
 import re
 from sierralocal.subtyper import Subtyper
+import sys
 
 class NucAminoAligner():
     """
@@ -12,12 +13,16 @@ class NucAminoAligner():
     def __init__(self):
         self.cwd = os.path.curdir
         items = os.listdir(Path(os.path.dirname(__file__)))
-        self.nucamino_binary = 'nucamino'
+        self.nucamino_binary = None
         for name in items:
             if 'nucamino' in name and not (name.endswith('py') or name.endswith('pyc')):
                 self.nucamino_binary = name
                 break
-        print("Found NucAmino binary", self.nucamino_binary)
+
+        if self.nucamino_binary:
+            print("Found NucAmino binary", self.nucamino_binary)
+        else:
+            sys.exit('Failed to locate NucAmino binary.  Please download binary from http://github.com/hivdb/nucamino/releases')
 
         self.tripletTable = self.generateTable()
 
