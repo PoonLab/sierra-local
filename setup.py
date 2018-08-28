@@ -22,11 +22,11 @@ setup(
 		'Operating System :: OS Independent'
 	],
 
-	#scripts=['bin/sierralocal'],
+	scripts=['bin/sierralocal'],
     #include_package_data=True
-    entry_points={
-        'console_scripts': [
-            'sierralocal=sierralocal:main',
-        ],
-    }
+    #entry_points={
+    #    'console_scripts': [
+    #        'sierralocal=sierralocal:main',
+    #    ],
+    #}
 )
