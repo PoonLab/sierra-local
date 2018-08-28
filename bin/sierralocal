@@ -7,6 +7,9 @@ import sys
 from sierralocal import main
 
 if __name__ == '__main__':
-    print(sys.version)
     sys.argv[0] = re.sub(r'(-script\.pyw?|\.exe)?$', '', sys.argv[0])
-    sys.exit(main())
+    try:
+        exit_code = main.main()
+    except AttributeError:
+        exit_code = main()  # I have no idea why this works - main is a module
+    sys.exit(exit_code)
