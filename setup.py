@@ -24,6 +24,8 @@ setup(
 
 	scripts=['bin/sierralocal'],
     package_data={'sierralocal': [
+        'data/genotype-properties.*.csv',
+        'data/genotype-references.*.fasta',
         'data/*Prevalences.tsv',
         'data/*-comments.csv'
     ]},
