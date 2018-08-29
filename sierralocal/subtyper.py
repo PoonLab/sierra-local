@@ -109,7 +109,7 @@ class Subtyper():
                 return closestSubtype
 
             if self.isSimpleCRF[closestSubtype] == True:
-                sufficientCoverage = True #TODO method with breakpoints
+                sufficientCoverage = True  # TODO method with breakpoints
                 if sufficientCoverage:
                     return closestSubtype
                 return self.parentSubtype[closestSubtype]

@@ -63,20 +63,28 @@ def scorefile(input_file, database, skipalign):
     aligner = NucAminoAligner()
     if not skipalign:
         aligner.align_file(input_file)
+
     print(input_file)
     sequence_headers, file_genes, file_mutations, file_firstlastNA, file_trims = aligner.get_mutations(input_file)
     ordered_mutation_list = []
     sequence_scores = []
-    sequence_lengths = []
 
     with open(input_file, 'r') as fastafile:
         sequence_list = get_input_sequences(fastafile)
         sequence_lengths = [len(s.replace('N', '')) / 3 for s in sequence_list]
 
     for index, query in enumerate(sequence_headers):
-        ordered_mutation_list.append(sorted(zip(file_mutations[index].keys(), [x[1] for x in file_mutations[index].values()], [x[0] for x in file_mutations[index].values()])))
+        ordered_mutation_list.append(
+            sorted(zip(
+                file_mutations[index].keys(),
+                [x[1] for x in file_mutations[index].values()],
+                [x[0] for x in file_mutations[index].values()]
+            ))
+        )
         sequence_scores.append(score_alg.score_drugs(database, file_mutations[index]))
-    return sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, file_firstlastNA, file_trims
+
+    return sequence_headers, sequence_scores, ordered_mutation_list, file_genes, \
+           sequence_lengths, file_firstlastNA, file_trims
 
 
 def get_input_sequences(handle):
