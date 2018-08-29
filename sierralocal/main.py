@@ -53,38 +53,6 @@ def score(filenames, xml_path=None, forceupdate=False):
     os.remove(os.path.splitext(filename)[0] + '.tsv')
 
 
-def main():
-    """
-    Main function called from CLI. Contains all initializing and processing calls.
-    """
-    args = parse_args()
-    # initialize algorithm and jsonwriter
-    algorithm = HIVdb(path=args.xml, forceupdate=args.forceupdate)
-    definitions = algorithm.parse_definitions(algorithm.root)
-    database = algorithm.parse_drugs(algorithm.root)
-    comments = algorithm.parse_comments(algorithm.root)
-    writer = JSONWriter(algorithm)
-
-    # begin processing
-    time_start = time.time()
-    count = 0
-    for input_file in args.fasta:
-        # process and score file
-        sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, file_firstlastNA, file_trims = scorefile(input_file, database, args.skipalign)
-        count += len(sequence_headers)
-        print("{} sequences found in file {}.".format(len(sequence_headers), input_file))
-        # output results for the file
-        if args.outfile == None:
-            output_file = os.path.splitext(input_file)[0] + '_results.json'
-        else:
-            output_file = args.outfile
-        writer.write_to_json(output_file, sequence_headers, sequence_scores, file_genes, ordered_mutation_list, sequence_lengths, file_firstlastNA, file_trims)
-    time_end = time.time()
-    print("Time elapsed: {:{prec}} seconds ({:{prec}} it/s)".format(time_end - time_start, count/(time_end - time_start), prec='.5'))
-    if args.cleanup:
-        os.remove(os.path.splitext(input_file)[0] + '.tsv')
-
-
 def scorefile(input_file, database, skipalign):
     '''
     Returns a set of corresponding names, scores, and ordered mutations for a given FASTA file containing pol sequences
@@ -110,6 +78,7 @@ def scorefile(input_file, database, skipalign):
         sequence_scores.append(score_alg.score_drugs(database, file_mutations[index]))
     return sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, file_firstlastNA, file_trims
 
+
 def get_input_sequences(handle):
     """
     Parse open file as FASTA, return a list of sequences.
@@ -126,6 +95,79 @@ def get_input_sequences(handle):
             sequence += line.strip('\n').upper()
     sequences.append(sequence)
     return sequences
+
+
+def sierralocal(fasta, outfile, xml=None, skipalign=False, cleanup=False, forceupdate=False):
+    """
+    Contains all initializing and processing calls.
+
+    :param fasta:  relative or absolute paths to FASTA file to process; multiple files may be
+                   passed as a list object
+    :param outfile:  file path to write JSON results
+    :param xml:  <optional> path to local copy of HIVdb algorithm XML file
+    :param skipalign:  <optional> to save time, skip NucAmino alignment step (reuse TSV output)
+    :param forceupdate:  <optional> forces sierralocal to update its local copy of the HIVdb algorithm
+
+    :return:  a tuple of (number of records processed, time elapsed initializing algorithm)
+    """
+
+    # initialize algorithm and jsonwriter
+    time0 = time.time()
+    algorithm = HIVdb(path=xml, forceupdate=forceupdate)
+    definitions = algorithm.parse_definitions(algorithm.root)
+    database = algorithm.parse_drugs(algorithm.root)
+    comments = algorithm.parse_comments(algorithm.root)
+    writer = JSONWriter(algorithm)
+    time_elapsed = time.time() - time0
+
+    # accommodate single file path argument
+    if type(fasta) is str:
+        fasta = [fasta]
+
+    # begin processing
+    count = 0
+    for input_file in fasta:
+        prefix = os.path.splitext(input_file)[0]
+
+        # process and score file
+        sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, file_firstlastNA, \
+        file_trims = scorefile(input_file, database, skipalign)
+
+        count += len(sequence_headers)
+        print("{} sequences found in file {}.".format(len(sequence_headers), input_file))
+
+        # output results for the file
+        if outfile == None:
+            output_file = prefix+'_results.json'
+        else:
+            output_file = outfile
+
+        writer.write_to_json(output_file, sequence_headers, sequence_scores, file_genes, ordered_mutation_list,
+                             sequence_lengths, file_firstlastNA, file_trims)
+
+        if cleanup:
+            # delete alignment file
+            os.remove(prefix+'.tsv')
+
+    return count, time_elapsed
+
+
+def main():
+    """
+    Main function called from CLI.
+    """
+    args = parse_args()
+
+    time_start = time.time()
+    count, time_elapsed = sierralocal(args.fasta, args.outfile, args.xml, args.skipalign, args.forceupdate)
+    time_diff = time.time() - time_start
+
+    print("Time elapsed: {:{prec}} seconds ({:{prec}} it/s)".format(
+        time_diff,
+        count / (time_diff-time_elapsed),  # adjust for XML processing time
+        prec='.5'
+    ))
+
 
 if __name__ == '__main__':
     main()

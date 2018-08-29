@@ -23,6 +23,10 @@ setup(
 	],
 
 	scripts=['bin/sierralocal'],
+    package_data={'sierralocal': [
+        'data/*Prevalences.tsv',
+        'data/*-comments.csv'
+    ]},
     #include_package_data=True
     #entry_points={
     #    'console_scripts': [

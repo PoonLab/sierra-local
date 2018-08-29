@@ -20,11 +20,13 @@ We tried to minimize dependencies:
 - An internet connection to set up or update HIVdb files
 
 ## Installation
+
 ### For Use
 Currently Linux only:
 ```bash
 pip3 install sierralocal
 ```
+
 ### For Development
 1. Clone this repository.
     ```
@@ -38,13 +40,16 @@ pip3 install sierralocal
     and place it in the `sierralocal` directory (not the root directory `sierra-local`).  
     You might also need to modify the user permissions for the binary file; for example: `chmod 755 nucamino`.
 
+
 ## Using sierra-local
+
 ### Command-line interface (CLI)
 
 We provide shell access to the program:
 ```
 sierralocal SEQUENCES.fasta -o OUTPUT.json
 ```
+
 Optional flags:
 ```
 -xml		Path to HIVDB ASI XML file
@@ -54,7 +59,7 @@ Optional flags:
 ### Graphical user interface (GUI)
 From the root directory of the project:
 ```
-python gui.py
+python3 gui.py
 ```
 
 ### As a Python module
