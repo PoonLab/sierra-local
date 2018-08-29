@@ -4,6 +4,7 @@ import os
 import argparse
 from sierralocal.nucaminohook import NucAminoAligner
 from sierralocal.jsonwriter import JSONWriter
+from sierralocal.utils import get_input_sequences
 from pathlib import Path
 import time
 
@@ -85,24 +86,6 @@ def scorefile(input_file, database, skipalign):
 
     return sequence_headers, sequence_scores, ordered_mutation_list, file_genes, \
            sequence_lengths, file_firstlastNA, file_trims
-
-
-def get_input_sequences(handle):
-    """
-    Parse open file as FASTA, return a list of sequences.
-    :param handle: open stream to FASTA file in read mode
-    """
-    sequences = []
-    sequence = ''
-    for line in handle:
-        if line.startswith('>') or line.startswith('#'):
-            if len(sequence) > 0:
-                sequences.append(sequence)
-                sequence = ''  # reset container
-        else:
-            sequence += line.strip('\n').upper()
-    sequences.append(sequence)
-    return sequences
 
 
 def sierralocal(fasta, outfile, xml=None, skipalign=False, cleanup=False, forceupdate=False):

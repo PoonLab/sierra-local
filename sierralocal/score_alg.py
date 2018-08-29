@@ -2,28 +2,29 @@ from sierralocal.hivdb import HIVdb
 import os
 
 
-""" score_drugs function iterates through each drug in the HIV database,
-    with a given sequence it will calculate a score and store it within a resulting dictionary
-    
-    @param HIVdb: the database
-    @param sequence: the given sequence
-    @return result_dict: a dictionary holding the score results of each drug for the given sequence
-"""
 def score_drugs(HIVdb, seq_mutations):
+    """ score_drugs function iterates through each drug in the HIV database,
+        with a given sequence it will calculate a score and store it within a resulting dictionary
+
+        @param HIVdb: the database
+        @param sequence: the given sequence
+        @return result_dict: a dictionary holding the score results of each drug for the given sequence
+    """
     result_dict = {}
     for index, drug in enumerate(HIVdb):
         score = score_single(HIVdb, drug, seq_mutations)
         result_dict[drug] = score
     return result_dict
 
-""" score_single function first checks if the drug is in the HIVdb
-    if found, calculates score with a given drug and sequence according to Stanford algorithm
 
-    @param drugname: name of the drug you want the score for
-    @param sequence: user provided sequence of type str (tolerates whitespace on either side, will strip it out later)
-    @return score: calculated drm mutation score
-"""
 def score_single(HIVdb, drugname, nucamino_mutation_dictionary):
+    """ score_single function first checks if the drug is in the HIVdb
+        if found, calculates score with a given drug and sequence according to Stanford algorithm
+
+        @param drugname: name of the drug you want the score for
+        @param sequence: user provided sequence of type str (tolerates whitespace on either side, will strip it out later)
+        @return score: calculated drm mutation score
+    """
     assert drugname in HIVdb.keys(), "Drugname: %s not found." % drugname
     rec = lambda x: sum(map(rec, x)) if isinstance(x, list) else x
     total_score = 0

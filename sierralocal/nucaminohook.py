@@ -4,6 +4,7 @@ from pathlib import Path
 import csv
 import re
 from sierralocal.subtyper import Subtyper
+from sierralocal.utils import get_input_sequences
 import sys
 
 class NucAminoAligner():
@@ -111,19 +112,7 @@ class NucAminoAligner():
         
         # grab sequences from file
         with open(fastaFileName, 'r') as handle:
-            # names = []
-            sequence_list = []
-            sequence = ''
-            for i in handle:
-                if i[0] == '$':  # skip header info
-                    continue
-                elif i[0] == '>' or i[0] == '#':
-                    if len(sequence) > 0:
-                        sequence_list.append(sequence)
-                        sequence = ''
-                else:
-                    sequence += i.strip('\n').upper()
-            sequence_list.append(sequence)
+            sequence_list = get_input_sequences(handle)
 
         # open the NucAmino output file
         with open(os.path.splitext(fastaFileName)[0] + '.tsv','r') as nucamino_alignment:
