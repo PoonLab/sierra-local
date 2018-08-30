@@ -9,10 +9,8 @@ class Subtyper():
         self.name, self.parentSubtype, self.distanceUpperLimit, self.isSimpleCRF, self.classificationLevel, self.breakPoints = self.getGenotypeProperties()
 
     def getSubtypeReferences(self):
+        # FIXME: this is a hard-coded data filename
         filepath = Path(os.path.dirname(__file__))/'data'/'genotype-references.9c610d61.fasta'
-        sequences = []
-        names = []
-        sequence = ''
 
         with open(filepath, 'r') as handle:
             res = {}
@@ -24,9 +22,7 @@ class Subtyper():
                     if len(sequence) > 0:
                         res.update({h: sequence})
                         sequence = ''   # reset containers
-                        h = i.strip('\n')[1:]
-                    else:
-                        h = i.strip('\n')[1:]
+                    h = i.strip('\n')[1:]
                 else:
                     sequence += i.strip('\n').upper()
             res.update({h: sequence})
@@ -64,12 +60,14 @@ class Subtyper():
 
     def getDistances(self, sequence):
         dists = {}
-        #uncorrected pairwise distances: the number of identical bases divided by the number of bases being compared, ignoring any positions with gaps
+        #uncorrected pairwise distances: the number of identical bases divided by the number of bases
+        # being compared, ignoring any positions with gaps
         #generate concatenated sequenced, with masked SDRMS
         # print(self.subtype_references)
         for header, reference in self.subtype_references.items():
             dists[header] = self.uncorrectedDistance(sequence, reference)
         return dists
+
 
     def getGenotypeProperties(self):
         filepath = Path(os.path.dirname(__file__))/'data'/ 'genotype-properties.cc00f512.csv'
@@ -92,30 +90,30 @@ class Subtyper():
                 breakpoints[row[0]] = row[5]
         return name, parentSubtype, distanceUpperLimit, isSimpleCRF, classificationLevel, breakpoints
 
+
     def getClosestSubtype(self, sequence):
         dists = self.getDistances(sequence)
         # sort dist dict
         sorted_dists = dict([(k, dists[k]) for k in sorted(dists, key=dists.get, reverse=False)])
 
-
         closestMatch = next(iter(sorted_dists.keys()))
+        closestDist = sorted_dists[closestMatch]
         closestSubtype = re.findall('\|(.*?)\||$', closestMatch)[0]
 
-        if sorted_dists[closestMatch] > 0.11:
+        if closestDist > 0.11:
             return "Unknown"
 
-        if sorted_dists[closestMatch] < self.distanceUpperLimit[closestSubtype]:
-            if self.isSimpleCRF[closestSubtype] == False:
-                return closestSubtype
-
-            if self.isSimpleCRF[closestSubtype] == True:
+        if closestDist < self.distanceUpperLimit[closestSubtype]:
+            if self.isSimpleCRF[closestSubtype]:
                 sufficientCoverage = True  # TODO method with breakpoints
                 if sufficientCoverage:
                     return closestSubtype
                 return self.parentSubtype[closestSubtype]
+            else:
+                return closestSubtype
 
-        if sorted_dists[closestMatch] > self.distanceUpperLimit[closestSubtype]:
-            if closestSubtype in ["CRF01_AE", "CRF02_AG"] or self.isSimpleCRF[closestSubtype] == True:
+        if closestDist >= self.distanceUpperLimit[closestSubtype]:
+            if closestSubtype in ["CRF01_AE", "CRF02_AG"] or self.isSimpleCRF[closestSubtype]:
                 parents = [x.trim() for x in self.parentSubtype[closestSubtype].split("+")]
                 nextClosestParent = parents[0]
                 for parent in parents:
@@ -125,6 +123,7 @@ class Subtyper():
                     return nextClosestParent
                 else:
                     return self.parentSubtype[closestSubtype]
+
             if self.classificationLevel[closestSubtype] == "SUBTYPE":
                 return closestSubtype
 
