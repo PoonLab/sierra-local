@@ -1,20 +1,30 @@
 from pathlib import Path
 import csv
 import os
-import re
+#import re
+import sys
 from sierralocal.utils import get_input_sequences
+from time import time
 
 class Subtyper():
     def __init__(self):
+        self.ambiguities = {
+            "A": "A", "C": "C", "G": "G", "T": "T",
+            "R": "AG", "Y": "CT", "M": "AC", "W": "AT", "S": "CG", "K": "GT",
+            "B": "CGT", "D": "AGT", "H": "ACT", "V": "ACG",
+            "N": "ACGT", '~': '', '.': '', '-': 'ACGT'
+        }
+        self.offset = {'PR': 0, 'RT': 297, 'IN': 1977}
+        self.simple_subtypes = {}
         self.subtype_references = self.getSubtypeReferences()
         self.properties = self.getGenotypeProperties()
-        self.simple_subtypes = {}
+
 
     def getSubtypeReferences(self):
         """
         Parse FASTA file containing genotype reference sequences.
         Also extract simple subtypes from reference labels.
-        :return:
+        :return: a dictionary of label:sequence pairs
         """
         # FIXME: this is a hard-coded data filename
         filepath = Path(os.path.dirname(__file__))/'data'/'genotype-references.9c610d61.fasta'
@@ -28,46 +38,41 @@ class Subtyper():
         return result
 
     def uncorrectedDistance(self, seq, ref):
-        possibilies = {
-            "A" : ["A"],
-            "C" : ["C"],
-            "G" : ["G"],
-            "T" : ["T"],
-            "R" : ["A","G"],
-            "Y" : ["C","T"],
-            "M" : ["A","C"],
-            "W" : ["A","T"],
-            "S" : ["C","G"],
-            "K" : ["G","T"],
-            "B" : ["C","G","T"],
-            "D" : ["A","G","T"],
-            "H" : ["A","C","T"],
-            "V" : ["A","C","G"],
-            "N" : ["A","C","G","T"],
-            '~' : [],
-            '.' : [],
-            '-' : []
-        }
-        # Assume sequence has been aligned already
+        """
+        p-distance for nucleotide sequences.
+        Assuming that sequences are aligned, count the number of base
+        differences while accommodating ambiguous base calls.
+
+        :param seq:  first input sequence
+        :param ref:  second input sequences
+        :return:  proportion of base differences
+        """
+
         # TODO: Step 1: mask SDRM in seq with ref nucleotide
         count = 0
         for idx, nuc in enumerate(seq):
             # print(idx, nuc)
-            if not ref[idx] in possibilies[nuc]:
+            rnuc = ref[idx]
+            if nuc == '-' or nuc == rnuc:
+                continue
+            if not ref[idx] in self.ambiguities[nuc]:
                 count += 1
-        return count / len(seq)
+        return count / len(seq.strip('-'))
 
-    def getDistances(self, sequence):
+    def getDistances(self, sequence, offset=0):
         """
         Uncorrected pairwise distances: the number of identical bases divided by
         the sequence length, ignoring positions with gaps.
-        :param sequence:
+
+        :param sequence:  query nucleotide sequence
+        :param offset:  in the case of RT or IN, query sequence is missing
+                        upstream nucleotides so we shift the reference
         :return: a dictionary of (sequence label, distance) key-value pairs
         """
         dists = {}
         #TODO: generate concatenated sequences, with masked SDRMS
         for header, reference in self.subtype_references.items():
-            dists[header] = self.uncorrectedDistance(sequence, reference)
+            dists[header] = self.uncorrectedDistance(sequence, reference[offset:])
         return dists
 
 
@@ -93,12 +98,12 @@ class Subtyper():
         return props
 
 
-    def getClosestSubtype(self, sequence):
-        dists = self.getDistances(sequence)
+    def getClosestSubtype(self, gene, sequence):
+        dists = self.getDistances(sequence, self.offset[gene])
 
         intermed = [(v, k) for k, v in dists.items()]
         intermed.sort(reverse=False)  # increasing order
-        closestMatch, closestDist = intermed[0]
+        closestDist, closestMatch = intermed[0]
 
         # sort dist dict
         #sorted_dists = dict([(k, dists[k]) for k in sorted(dists, key=dists.get, reverse=False)])
@@ -125,6 +130,10 @@ class Subtyper():
             # distance exceeds upper limit
             if closestSubtype in ["CRF01_AE", "CRF02_AG"] or \
                     self.properties[closestSubtype]['is_simple_CRF']:
+
+                if self.properties[closestSubtype]['parent'] == '-':
+                    return "Unknown"
+
                 # if simple recombinant, select most representative parent subtype
                 parents = [x.strip() for x in self.properties[closestSubtype]['parent'].split("+")]
 
@@ -132,6 +141,9 @@ class Subtyper():
                 nextClosestParent = None
                 min_dist = 1e6
                 for parent in parents:
+                    if parent == 'Unknown':
+                        continue
+
                     for ref in self.simple_subtypes[parent]:
                         this_dist = dists[ref]
                         if this_dist < min_dist:
@@ -143,18 +155,39 @@ class Subtyper():
                 else:
                     return self.properties[closestSubtype]['parent']
 
+            # not a recombinant
             if self.properties[closestSubtype]['class_level'] == "SUBTYPE":
                 return closestSubtype
+
+        return "Unknown"
+
 
 def main():
     subtyper = Subtyper()
     # test out all reference sequences on this system
-    for h, ref in subtyper.subtype_references.items():
-        subtype = re.findall('\|(.*?)\||$', h)[0]
-        guess = subtyper.getClosestSubtype(ref)
-        if not guess == subtype:
-            print(h, guess, subtype)
+    #for h, ref in subtyper.subtype_references.items():
+    #    subtype = re.findall('\|(.*?)\||$', h)[0]
+    #    guess = subtyper.getClosestSubtype(ref)
+    #    if not guess == subtype:
+    #        print(h, guess, subtype)
+    if len(sys.argv) < 2:
+        print('Cmdline use: python3 subtyper.py <input FASTA>')
+        sys.exit()
 
+    handle = open(sys.argv[1])
+    fasta = get_input_sequences(handle, return_dict=True)
+    t0 = time()
+    i = 0
+    for h, s in fasta.items():
+        #s = '-'*subtyper.offset['IN'] + s
+        #dists = list(subtyper.getDistances(s).values())
+        closestSubtype = subtyper.getClosestSubtype('IN', s)
+        #dists.sort()
+        print(h, closestSubtype)
+        i += 1
+        if i > 10:
+            break
+    print(time()-t0)
 
 if __name__ == '__main__':
     main()

@@ -30,7 +30,7 @@ def parse_args():
     return args
 
 
-def score(filenames, xml_path=None, forceupdate=False):
+def score(filename, xml_path=None, forceupdate=False):
     """
     Functionality as a Python module. Can import this function from sierralocal
     """
@@ -42,7 +42,9 @@ def score(filenames, xml_path=None, forceupdate=False):
 
     time_start = time.time()
     count = 0
-    sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, file_firstlastNA, file_trims = scorefile(filename, database, False)
+    sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, \
+    file_firstlastNA, file_trims = scorefile(filename, database, False)
+
     count += len(sequence_headers)
     print("{} sequences found in file {}.".format(len(sequence_headers), filename))
     output_file = os.path.splitext(filename)[0] + '-local.json'
@@ -65,8 +67,10 @@ def scorefile(input_file, database, skipalign):
     if not skipalign:
         aligner.align_file(input_file)
 
-    print(input_file)
-    sequence_headers, file_genes, file_mutations, file_firstlastNA, file_trims = aligner.get_mutations(input_file)
+    print('Aligned '+input_file)
+    sequence_headers, file_genes, file_mutations, file_firstlastNA, file_trims, subtypes = \
+        aligner.get_mutations(input_file)
+
     ordered_mutation_list = []
     sequence_scores = []
 
@@ -85,7 +89,7 @@ def scorefile(input_file, database, skipalign):
         sequence_scores.append(score_alg.score_drugs(database, file_mutations[index]))
 
     return sequence_headers, sequence_scores, ordered_mutation_list, file_genes, \
-           sequence_lengths, file_firstlastNA, file_trims
+           sequence_lengths, file_firstlastNA, file_trims, subtypes
 
 
 def sierralocal(fasta, outfile, xml=None, skipalign=False, cleanup=False, forceupdate=False):
@@ -122,7 +126,7 @@ def sierralocal(fasta, outfile, xml=None, skipalign=False, cleanup=False, forceu
 
         # process and score file
         sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, file_firstlastNA, \
-        file_trims = scorefile(input_file, database, skipalign)
+        file_trims, subtypes = scorefile(input_file, database, skipalign)
 
         count += len(sequence_headers)
         print("{} sequences found in file {}.".format(len(sequence_headers), input_file))
@@ -134,7 +138,7 @@ def sierralocal(fasta, outfile, xml=None, skipalign=False, cleanup=False, forceu
             output_file = outfile
 
         writer.write_to_json(output_file, sequence_headers, sequence_scores, file_genes, ordered_mutation_list,
-                             sequence_lengths, file_firstlastNA, file_trims)
+                             sequence_lengths, file_firstlastNA, file_trims, subtypes)
 
         if cleanup:
             # delete alignment file

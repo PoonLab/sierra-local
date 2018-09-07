@@ -153,7 +153,8 @@ class JSONWriter():
         }
         return out
 
-    def write_to_json(self, filename, names, scores, genes, ordered_mutation_list, sequence_lengths, file_firstlastNA, file_trims):
+    def write_to_json(self, filename, names, scores, genes, ordered_mutation_list, sequence_lengths,
+                      file_firstlastNA, file_trims, subtypes):
         '''
         The main function to write passed result to a JSON file
         :param filename: the filename to write the JSON to
@@ -166,7 +167,7 @@ class JSONWriter():
         for index, score in enumerate(scores):
             data = {}
             data['inputSequence'] = self.formatInputSequence(names[index])
-            data['subtypeText'] = None
+            data['subtypeText'] = subtypes[index]
             validation = self.validateSequence(genes[index], sequence_lengths[index], file_trims[index])
             data['validationResults'] = self.formatValidationResults(validation)
             if not 'CRITICAL' in validation:

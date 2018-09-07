@@ -1,7 +1,9 @@
 library(jsonlite)
 
+setwd('~/git/sierra-local')
+
 g <- 'RT'
-num <- 98
+num <- 98  # which subset to analyze
 sierra <- fromJSON(paste0('./hivdb/hivdb-data/', g, '-', num, '-sierra.json'))
 local <- fromJSON(paste0('./hivdb/hivdb-data/', g, '-', num, '-local.json'))
 

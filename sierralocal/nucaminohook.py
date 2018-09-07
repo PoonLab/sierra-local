@@ -90,7 +90,7 @@ class NucAminoAligner():
         # start and end nucleotide coordinates in HXB2 pol
         pol_nuc_map = {
             'PR': (2253, 2549),
-            'RT': (2550, 3869),
+            'RT': (2550, 4229),  # incorrectly includes RNAse, emulating sierrapy
             'IN': (4230, 5096)
         }
         convert = lambda x:int((x-self.pol_start)/3)
@@ -112,7 +112,7 @@ class NucAminoAligner():
         return None
 
 
-    def get_mutations(self, fastaFileName):
+    def get_mutations(self, fastaFileName, do_subtyping=True):
         '''
         From the tsv output of NucAmino, parses and adjusts indices and returns as lists.
         :param fastaFileName:  FASTA input processed by NucAmino
@@ -123,6 +123,7 @@ class NucAminoAligner():
         file_firstlastNA = []
         file_trims = []
         sequence_headers = []
+        subtypes = []
         
         # grab original sequences from input file
         with open(fastaFileName, 'r') as handle:
@@ -147,7 +148,8 @@ class NucAminoAligner():
                 lastNA = int(lastNA)
 
                 gene = self.get_gene(firstAA)
-                shift = int(self.gene_map[gene][0])
+                assert gene is not None, "Fatal error in get_mutations"
+                shift = self.gene_map[gene][0]
 
                 # parse mutation information:
                 codon_list = []
@@ -156,38 +158,44 @@ class NucAminoAligner():
                     # generate data lists for each sequence
                     mutation_list = mutation_list.split(',')  # split list into individual mutations
                     for x in mutation_list:
-                        # each entry takes the form [A-Z]+[0-9]+[A-Z]+:[ACGTN]{3}
-                        mutation, codon = x.split(':')
+                        # for example, "L156M:ATG"
+                        mutation = x.split(':')[0]
                         p = int(re.search('\d+', mutation).group()) - shift  # AA position
                         consensus = mutation[0]
 
                         # obtain the mutation codon directly from the query sequence
                         index = 3*(p+shift-firstAA)
-                        triplet = sequence[index:(index+3)]  #FIXME: isn't this equivalent to <codon>?
+                        triplet = sequence[index:(index+3)]
                         codon_list.append(triplet)
                         aa = '-' if triplet in ['~~~', '...'] else self.translateNATriplet(triplet)
                         gene_muts.update({p: (consensus, aa)})
 
-                # subtype sequence
-                subtype = self.typer.getClosestSubtype(sequence)
-                #subtype = header.split('.')[2]
+                subtype = None
+                trimmed_gene_muts = gene_muts
+                trimLeft = 0
+                trimRight = 0
+                if do_subtyping:
+                    # subtype sequence
+                    subtype = self.typer.getClosestSubtype(gene, sequence)
+                    #subtype = header.split('.')[2]
 
-                # trim low quality leading and trailing nucleotides
-                trimLeft, trimRight = self.trimLowQualities(
-                    codon_list, shift, firstAA, lastAA, mutations=gene_muts, frameshifts=[], gene=gene, subtype=subtype
-                )
-                # if trimLeft + trimRight > 0:
-                    # print(row[0], trimLeft, trimRight)
-                trimmed_gene_muts = {k:v for (k,v) in gene_muts.items() if (k >= firstAA - shift + trimLeft) and (k <= lastAA - shift - trimRight)}
+                    # trim low quality leading and trailing nucleotides
+                    trimLeft, trimRight = self.trimLowQualities(
+                        codon_list, shift, firstAA, lastAA, mutations=gene_muts, frameshifts=[], gene=gene, subtype=subtype
+                    )
+                    # if trimLeft + trimRight > 0:
+                        # print(row[0], trimLeft, trimRight)
+                    trimmed_gene_muts = {k:v for (k,v) in gene_muts.items() if (k >= firstAA - shift + trimLeft) and (k <= lastAA - shift - trimRight)}
 
                 # append everything to list of lists of the entire sequence set
                 file_mutations.append(trimmed_gene_muts)
                 file_genes.append(gene)
                 file_firstlastNA.append((firstNA, lastNA))
                 file_trims.append((trimLeft, trimRight))
+                subtypes.append(subtype)
 
         assert len(file_mutations) == len(sequence_headers), "error: length of mutations dicts is not the same as length of names"
-        return sequence_headers, file_genes, file_mutations, file_firstlastNA, file_trims
+        return sequence_headers, file_genes, file_mutations, file_firstlastNA, file_trims, subtypes
 
     # BELOW is an implementation of sierra's Java algorithm for determining codon ambiguity
     
