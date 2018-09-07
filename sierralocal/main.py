@@ -69,7 +69,7 @@ def scorefile(input_file, database, skipalign):
 
     print('Aligned '+input_file)
     sequence_headers, file_genes, file_mutations, file_firstlastNA, file_trims, subtypes = \
-        aligner.get_mutations(input_file)
+        aligner.get_mutations(input_file, do_subtyping=False)
 
     ordered_mutation_list = []
     sequence_scores = []

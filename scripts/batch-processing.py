@@ -8,12 +8,12 @@ import os
 from multiprocessing import Pool
 import sys
 
-xml = 'sierralocal/data/HIVDB_8.5.d926dfff.xml'
-version = 'v8.5'
+#xml = 'sierralocal/data/HIVDB_8.5.d926dfff.xml'
+#version = 'v8.5'
 
 # settings for integrase (IN)
-#xml = 'sierralocal/data/HIVDB_8.6.1.ca26d72f.xml'
-#version = 'v8.6.1'
+xml = 'sierralocal/data/HIVDB_8.6.1.ca26d72f.xml'
+version = 'v8.6.1'
 
 def process(file):
     outfile = file.replace('.fa', '-refactor-'+version+'.json')
@@ -24,7 +24,7 @@ def process(file):
 
 if __name__ == '__main__':
     # assumes we're calling this script from the repository root
-    files = glob('hivdb/hivdb-data/RT*.fa')
+    files = glob('hivdb/hivdb-data/IN*.fa')
 
     with Pool(processes=8) as pool:
         pool.map(process, files)
