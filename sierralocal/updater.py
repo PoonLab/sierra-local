@@ -16,10 +16,11 @@ def updateAPOBEC():
         apobec_url = BASE_URL + re.search(u"\/assets\/media\/apobec\-drms.*?tsv",html).group(0)
         r = requests.get(apobec_url, allow_redirects=True)
         apobec_path = mod_path/'data'/'apobec.tsv'
-        open(apobec_path, 'wb').write(r.content)
+        open(str(apobec_path), 'wb').write(r.content)
         print("Updated APOBEC DRMs from", apobec_url, "into {}".format(apobec_path))
     except:
         print("Unable to update APOBEC DRMs. Try manually downloading the APOBEC DRM TSV into data/apobec.tsv")
+
 
 def update_HIVDB():
     # UPDATE ALGORITHM
@@ -27,14 +28,19 @@ def update_HIVDB():
     try:
         response = urllib.request.urlopen(URL)
         html = response.read().decode('utf-8')
-        xml_url = BASE_URL + re.search(u"/assets.*?HIVDB_.*?xml",html).group(0)
+
+        # search HTML contents for links to XML files, return first match
+        xml_url = BASE_URL + re.search(u"/assets.*?HIVDB_.*?xml", html).group(0)
+
+        # download the XML file
         r = requests.get(xml_url, allow_redirects=True)
         xml_filename = mod_path/'data'/os.path.basename(xml_url)
-        with open(xml_filename, 'wb') as file:
+        with open(str(xml_filename), 'wb') as file:
             file.write(r.content)
         print("Updated HIVDB XML from",xml_url,"into {}".format(xml_filename))
-    except:
+    except Exception as e:
         print("Unable to update HIVDB XML. Try manually downloading the HIVdb ASI2.")
+        print(e)
     return(xml_filename)
 
 def main():

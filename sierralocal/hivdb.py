@@ -26,7 +26,9 @@ class HIVdb():
         # If user has not specified XML path
         if path == None:
             # Iterate over possible HIVdb ASI files matching the glob pattern
-            for file in glob.glob(str(Path(os.path.dirname(__file__))/'data'/'HIVDB*.xml')):
+            dest = str(Path(os.path.dirname(__file__))/'data'/'HIVDB*.xml')
+            print("searching path "+dest)
+            for file in glob.glob(dest):
                 # If is XML file and parseable, break
                 try:
                     xml.parse(file)
@@ -34,6 +36,7 @@ class HIVdb():
                     self.xml_filename = file
                     break
                 except:
+                    print('Failed to parse XML file. Please post an issue.')
                     raise
         # The user has specified XML path
         else:
@@ -47,20 +50,22 @@ class HIVdb():
                 except:
                     raise
             else:
-                print("Provided HIVDB XML cannot be found")
+                print("HIVDB XML cannot be found at user specified path {}".format(path))
+                raise
 
         # Parseable XML file not found. Update from web
         if not file_found:
-            print("Error: could not retrieve HIVDB XML")
+            print("Error: could not find local copy of HIVDB XML, attempting download...")
             self.xml_filename = updater.update_HIVDB()
 
-
-        if not os.path.isfile(Path(os.path.dirname(__file__))/'data'/'apobec.tsv'):
+        dest = str(Path(os.path.dirname(__file__))/'data'/'apobec.tsv')
+        print(dest)
+        if not os.path.isfile(dest):
             print("Error: could not retrieve APOBEC DRM data")
             updater.updateAPOBEC()
 
         # Set algorithm metadata
-        self.root = xml.parse(self.xml_filename).getroot()
+        self.root = xml.parse(str(self.xml_filename)).getroot()
         self.algname = self.root.find('ALGNAME').text
         self.version = self.root.find('ALGVERSION').text
         self.version_date = self.root.find('ALGDATE').text

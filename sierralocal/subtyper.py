@@ -28,7 +28,7 @@ class Subtyper():
         """
         # FIXME: this is a hard-coded data filename
         filepath = Path(os.path.dirname(__file__))/'data'/'genotype-references.9c610d61.fasta'
-        handle = open(filepath)
+        handle = open(str(filepath))
         result = get_input_sequences(handle, return_dict=True)
         for label, seq in result.items():
             subtype = label.split('|')[1]
@@ -82,7 +82,7 @@ class Subtyper():
         :return:  A nested dictionary keyed by subtype/CRF name
         """
         # FIXME: this is a hard-coded path
-        filepath = Path(os.path.dirname(__file__))/'data'/ 'genotype-properties.cc00f512.csv'
+        filepath = str(Path(os.path.dirname(__file__))/'data'/ 'genotype-properties.cc00f512.csv')
         props = {}
         with open(filepath) as file:
             reader = csv.DictReader(file, delimiter='\t')

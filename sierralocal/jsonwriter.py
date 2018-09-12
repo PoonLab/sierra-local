@@ -13,7 +13,7 @@ class JSONWriter():
 
         # Set up algorithm data
         self.algorithm = algorithm
-        self.algorithm.root = xml.parse(self.algorithm.xml_filename).getroot()
+        self.algorithm.root = xml.parse(str(self.algorithm.xml_filename)).getroot()
         self.algorithm.version = self.algorithm.root.find('ALGVERSION').text
         self.algorithm.version_date = self.algorithm.root.find('ALGDATE').text
         self.definitions = self.algorithm.parse_definitions(self.algorithm.root)
@@ -23,14 +23,21 @@ class JSONWriter():
         self.comments = self.algorithm.parse_comments(self.algorithm.root)
 
         # Load comments files stored locally. These are distributed in the repo for now.
-        with open(Path(os.path.dirname(__file__))/'data'/'apobec.tsv','r') as csvfile:
+        dest = str(Path(os.path.dirname(__file__))/'data'/'apobec.tsv')
+        with open(dest,'r') as csvfile:
             self.ApobecDRMs = list(csv.reader(csvfile, delimiter='\t'))
-        with open(Path(os.path.dirname(__file__))/'data'/'INSTI-comments.csv','r') as INSTI_file:
-            self.INSTI_comments = dict(csv.reader(INSTI_file,delimiter='\t'))
-        with open(Path(os.path.dirname(__file__))/'data'/'PI-comments.csv','r') as PI_file:
-            self.PI_comments = dict(csv.reader(PI_file,delimiter='\t'))
-        with open(Path(os.path.dirname(__file__))/'data'/'RT-comments.csv','r') as RT_file:
-            self.RT_comments = dict(csv.reader(RT_file,delimiter='\t'))
+
+        dest = str(Path(os.path.dirname(__file__))/'data'/'INSTI-comments.csv')
+        with open(dest, 'r') as INSTI_file:
+            self.INSTI_comments = dict(csv.reader(INSTI_file, delimiter='\t'))
+
+        dest = str(Path(os.path.dirname(__file__))/'data'/'PI-comments.csv')
+        with open(dest, 'r') as PI_file:
+            self.PI_comments = dict(csv.reader(PI_file, delimiter='\t'))
+
+        dest = str(Path(os.path.dirname(__file__))/'data'/'RT-comments.csv')
+        with open(dest, 'r') as RT_file:
+            self.RT_comments = dict(csv.reader(RT_file, delimiter='\t'))
 
 
     def formatValidationResults(self, validated):

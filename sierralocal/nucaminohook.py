@@ -14,7 +14,7 @@ class NucAminoAligner():
     def __init__(self):
         self.cwd = os.path.curdir
 
-        items = os.listdir(Path(os.path.dirname(__file__)))
+        items = os.listdir(str(Path(os.path.dirname(__file__))))
         self.nucamino_binary = None
         for name in items:
             if 'nucamino' in name and not (name.endswith('py') or name.endswith('pyc')):
@@ -28,7 +28,7 @@ class NucAminoAligner():
 
         self.tripletTable = self.generateTable()
 
-        with open(Path(os.path.dirname(__file__))/'data'/'apobec.tsv','r') as csvfile:
+        with open(str(Path(os.path.dirname(__file__))/'data'/'apobec.tsv'), 'r') as csvfile:
             self.ApobecDRMs = list(csv.reader(csvfile, delimiter='\t'))
 
         self.PI_dict = self.prevalence_parser('PIPrevalences.tsv')
@@ -49,7 +49,7 @@ class NucAminoAligner():
         :return:  Dictionary of position-consensus-mutation-subtype keys to %prevalence in naive
                   populations
         '''
-        handle = open(Path(os.path.dirname(__file__))/'data'/filename, 'r')
+        handle = open(str(Path(os.path.dirname(__file__))/'data'/filename), 'r')
         table = csv.DictReader(handle, delimiter='\t')
 
         keys = [fn for fn in table.fieldnames if fn.endswith('Naive:%')]
@@ -71,7 +71,7 @@ class NucAminoAligner():
         self.outputname = os.path.splitext(filename)[0] + '.tsv'
 
         args = [
-            Path(os.path.dirname(__file__))/self.nucamino_binary,
+            str(Path(os.path.dirname(__file__))/self.nucamino_binary),
             "hiv1b",
             "-q",
             "-i", "{}".format(self.inputname),
