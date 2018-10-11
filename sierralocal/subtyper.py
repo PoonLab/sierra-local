@@ -4,6 +4,7 @@ import os
 #import re
 import sys
 from sierralocal.utils import get_input_sequences
+#from sierralocal.nucaminohook import NucAminoAligner
 from time import time
 
 class Subtyper():
@@ -98,8 +99,8 @@ class Subtyper():
         return props
 
 
-    def getClosestSubtype(self, gene, sequence):
-        dists = self.getDistances(sequence, self.offset[gene])
+    def getClosestSubtype(self, gene, sequence, offset):
+        dists = self.getDistances(sequence, offset)
 
         intermed = [(v, k) for k, v in dists.items()]
         intermed.sort(reverse=False)  # increasing order
@@ -163,6 +164,7 @@ class Subtyper():
 
 
 def main():
+    from sierralocal.nucaminohook import NucAminoAligner
     subtyper = Subtyper()
     # test out all reference sequences on this system
     #for h, ref in subtyper.subtype_references.items():
@@ -174,20 +176,35 @@ def main():
         print('Cmdline use: python3 subtyper.py <input FASTA>')
         sys.exit()
 
-    handle = open(sys.argv[1])
-    fasta = get_input_sequences(handle, return_dict=True)
-    t0 = time()
-    i = 0
-    for h, s in fasta.items():
-        #s = '-'*subtyper.offset['IN'] + s
-        #dists = list(subtyper.getDistances(s).values())
-        closestSubtype = subtyper.getClosestSubtype('IN', s)
-        #dists.sort()
-        print(h, closestSubtype)
-        i += 1
-        if i > 10:
-            break
-    print(time()-t0)
+    input_file = sys.argv[1]
+
+    # call nucamino
+    aligner = NucAminoAligner()
+    aligner.align_file(input_file)
+
+    with open(input_file) as handle:
+        sequence_list = get_input_sequences(handle, return_dict=False)
+
+    # open the NucAmino output file
+    with open(os.path.splitext(input_file)[0] + '.tsv', 'r') as nucamino_alignment:
+        tsvin = csv.reader(nucamino_alignment, delimiter='\t')
+        next(tsvin)  # bypass the header row
+
+        for idx, row in enumerate(tsvin):  # iterate over sequences (1 per row)
+            header, firstAA, _, firstNA, _, _ = row[:6]
+            sequence = sequence_list[idx]  # NucAmino preserves input order
+
+            firstAA = int(firstAA)  # relative to pol start
+            firstNA = int(firstNA)  # this should be used to adjust offset
+
+            gene = aligner.get_gene(firstAA)
+            assert gene is not None, "Fatal error in get_mutations"
+
+            closestSubtype = subtyper.getClosestSubtype(
+                gene=gene, sequence=sequence, offset=((firstAA-1)-56)*3
+            )
+            print (header, closestSubtype)
+
 
 if __name__ == '__main__':
     main()

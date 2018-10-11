@@ -37,6 +37,11 @@ class NucAminoAligner():
 
         #initialize gene map
         self.pol_start = 2085
+        self.pol_nuc_map = {
+            'PR': (2253, 2549),
+            'RT': (2550, 4229),  # incorrectly includes RNAse, emulating sierrapy
+            'IN': (4230, 5096)
+        }
         self.gene_map = self.create_gene_map()
 
         #initialize Subtyper class
@@ -63,12 +68,15 @@ class NucAminoAligner():
         return result
 
 
-    def align_file(self, filename):
+    def align_file(self, filename, output_format='tsv'):
         '''
-        Using subprocess to call NucAmino, generates an output .tsv containing mutation data for each sequence in the FASTA file
+        Using subprocess to call NucAmino, generates an output .tsv containing mutation
+        data for each sequence in the FASTA file.
+        @param filename:  Path to FASTA file to process
+        @param output_format:  Either 'tsv' or 'json'.
         '''
         self.inputname = filename
-        self.outputname = os.path.splitext(filename)[0] + '.tsv'
+        self.outputname = os.path.splitext(filename)[0]+'.'+output_format
 
         args = [
             str(Path(os.path.dirname(__file__))/self.nucamino_binary),
@@ -76,7 +84,8 @@ class NucAminoAligner():
             "-q",
             "-i", "{}".format(self.inputname),
             "-g=POL",
-            "-o", "{}".format(self.outputname)
+            "-o", "{}".format(self.outputname),
+            "--output-format", output_format
         ]
         popen = subprocess.Popen(args)
         popen.wait()
@@ -88,14 +97,9 @@ class NucAminoAligner():
         based on the HXB2 reference annotations.
         """
         # start and end nucleotide coordinates in HXB2 pol
-        pol_nuc_map = {
-            'PR': (2253, 2549),
-            'RT': (2550, 4229),  # incorrectly includes RNAse, emulating sierrapy
-            'IN': (4230, 5096)
-        }
         convert = lambda x:int((x-self.pol_start)/3)
         pol_aa_map = {}
-        for key, val in pol_nuc_map.items():
+        for key, val in self.pol_nuc_map.items():
             pol_aa_map[key] = (convert(val[0]), convert(val[1]))
         return pol_aa_map
 
@@ -176,16 +180,19 @@ class NucAminoAligner():
                 trimRight = 0
                 if do_subtyping:
                     # subtype sequence
-                    subtype = self.typer.getClosestSubtype(gene, sequence)
-                    #subtype = header.split('.')[2]
+                    subtype = self.typer.getClosestSubtype(gene, sequence, offset=(firstAA-57)*3)
+                    #subtype = header.split('.')[2]  # to re-use hivdb subtypes
 
                     # trim low quality leading and trailing nucleotides
                     trimLeft, trimRight = self.trimLowQualities(
-                        codon_list, shift, firstAA, lastAA, mutations=gene_muts, frameshifts=[], gene=gene, subtype=subtype
+                        codon_list, shift, firstAA, lastAA, mutations=gene_muts,
+                        frameshifts=[], gene=gene, subtype=subtype
                     )
                     # if trimLeft + trimRight > 0:
                         # print(row[0], trimLeft, trimRight)
-                    trimmed_gene_muts = {k:v for (k,v) in gene_muts.items() if (k >= firstAA - shift + trimLeft) and (k <= lastAA - shift - trimRight)}
+                    trimmed_gene_muts = {k:v for (k,v) in gene_muts.items() if
+                                         (k >= firstAA - shift + trimLeft) and
+                                         (k <= lastAA - shift - trimRight)}
 
                 # append everything to list of lists of the entire sequence set
                 file_mutations.append(trimmed_gene_muts)
@@ -247,20 +254,11 @@ class NucAminoAligner():
     """
     def enumerateCodonPossibilities(self, triplet):
         ambiguityMap = {
-            "A" : ["A"],
-            "C" : ["C"],
-            "G" : ["G"],
-            "T" : ["T"],
-            "R" : ["A","G"],
-            "Y" : ["C","T"],
-            "M" : ["A","C"],
-            "W" : ["A","T"],
-            "S" : ["C","G"],
-            "K" : ["G","T"],
-            "B" : ["C","G","T"],
-            "D" : ["A","G","T"],
-            "H" : ["A","C","T"],
-            "V" : ["A","C","G"],
+            "A" : ["A"], "C" : ["C"], "G" : ["G"], "T" : ["T"],
+            "R" : ["A","G"], "Y" : ["C","T"], "M" : ["A","C"],
+            "W" : ["A","T"], "S" : ["C","G"], "K" : ["G","T"],
+            "B" : ["C","G","T"], "D" : ["A","G","T"],
+            "H" : ["A","C","T"], "V" : ["A","C","G"],
             "N" : ["A","C","G","T"]
         }
         codonPossibilities = []
@@ -309,8 +307,9 @@ class NucAminoAligner():
         for j, position in enumerate(mutations):
             idx = position - firstAA + shift
             # print(idx)
+            highest = self.getHighestMutPrevalence((position, mutations[position]), gene, subtype)
             if not self.isUnsequenced(codon_list[j]) and \
-                    (self.getHighestMutPrevalence((position, mutations[position]), gene, subtype) < SEQUENCE_SHRINKAGE_BAD_QUALITY_MUT_PREVALENCE or
+                    (highest > SEQUENCE_SHRINKAGE_BAD_QUALITY_MUT_PREVALENCE or
                      mutations[position][1] == 'X' or
                      self.isApobecDRM(gene, mutations[position][0], position, mutations[position][1]) or
                      self.isStopCodon(codon_list[j])):
