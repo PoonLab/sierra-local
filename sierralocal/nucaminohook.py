@@ -206,12 +206,13 @@ class NucAminoAligner():
 
     # BELOW is an implementation of sierra's Java algorithm for determining codon ambiguity
     
-    """
-    Translates a nucleotide triplet into its amino acid mixture or ambiguity.
-    @param triplet: nucleotide sequence as a string
-    @return: translation of the triplet as a string
-    """
+
     def translateNATriplet(self, triplet):
+        """
+        Translates a nucleotide triplet into its amino acid mixture or ambiguity.
+        @param triplet: nucleotide sequence as a string
+        @return: translation of the triplet as a string
+        """
         if len(triplet) != 3:
             return "X"
         if '~' in triplet:
@@ -220,11 +221,12 @@ class NucAminoAligner():
             return self.tripletTable[triplet]
         return "X"
 
-    """
-    Generates a dictionary of codon to amino acid mappings, including ambiguous combinations.
-    @return tripletTable: codon to amino acid dictionary
-    """
+
     def generateTable(self):
+        """
+        Generates a dictionary of codon to amino acid mappings, including ambiguous combinations.
+        @return tripletTable: codon to amino acid dictionary
+        """
         codonToAminoAcidMap = {
             "TTT" : "F", "TTC" : "F", "TTA" : "L", "TTG" : "L", "CTT" : "L", "CTC" : "L", "CTA" : "L", "CTG" : "L", "ATT" : "I", "ATC" : "I", "ATA" : "I", "ATG" : "M", "GTT" : "V", "GTC" : "V", "GTA" : "V", "GTG" : "V", "TCT" : "S", "TCC" : "S", "TCA" : "S", "TCG" : "S", "CCT" : "P", "CCC" : "P", "CCA" : "P", "CCG" : "P", "ACT" : "T", "ACC" : "T", "ACA" : "T", "ACG" : "T", "GCT" : "A", "GCC" : "A", "GCA" : "A", "GCG" : "A", "TAT" : "Y", "TAC" : "Y", "TAA" : "*", "TAG" : "*", "CAT" : "H", "CAC" : "H", "CAA" : "Q", "CAG" : "Q", "AAT" : "N", "AAC" : "N", "AAA" : "K", "AAG" : "K", "GAT" : "D", "GAC" : "D", "GAA" : "E", "GAG" : "E", "TGT" : "C", "TGC" : "C", "TGA" : "*", "TGG" : "W", "CGT" : "R", "CGC" : "R", "CGA" : "R", "CGG" : "R", "AGT" : "S", "AGC" : "S", "AGA" : "R", "AGG" : "R", "GGT" : "G", "GGC" : "G", "GGA" : "G", "GGG" : "G"
         }
@@ -247,46 +249,46 @@ class NucAminoAligner():
                     tripletTable[triplet] = aas
         return tripletTable
 
-    """
-    Converts a potentially ambiguous nucleotide triplet into standard ATCG codons.
-    @param triplet: nucleotide triplet as a string
-    @return codonPossibilities: list of possible ATCG codons encoded by the triplet
-    """
+
     def enumerateCodonPossibilities(self, triplet):
+        """
+        Converts a potentially ambiguous nucleotide triplet into standard ATCG codons.
+        @param triplet: nucleotide triplet as a string
+        @return codonPossibilities: list of possible ATCG codons encoded by the triplet
+        """
         ambiguityMap = {
-            "A" : ["A"], "C" : ["C"], "G" : ["G"], "T" : ["T"],
-            "R" : ["A","G"], "Y" : ["C","T"], "M" : ["A","C"],
-            "W" : ["A","T"], "S" : ["C","G"], "K" : ["G","T"],
-            "B" : ["C","G","T"], "D" : ["A","G","T"],
-            "H" : ["A","C","T"], "V" : ["A","C","G"],
-            "N" : ["A","C","G","T"]
+            "A": ["A"], "C": ["C"], "G": ["G"], "T": ["T"],
+            "R": ["A","G"], "Y": ["C","T"], "M": ["A","C"],
+            "W": ["A","T"], "S": ["C","G"], "K": ["G","T"],
+            "B": ["C","G","T"], "D": ["A","G","T"],
+            "H": ["A","C","T"], "V": ["A","C","G"],
+            "N": ["A","C","G","T"]
         }
         codonPossibilities = []
-        pos1 = triplet[0]
-        pos2 = triplet[1]
-        pos3 = triplet[2]
+        pos1, pos2, pos3 = triplet
         for p1 in ambiguityMap[pos1]:
             for p2 in ambiguityMap[pos2]:
                 for p3 in ambiguityMap[pos3]:
                     codonPossibilities.append(p1+p2+p3)
         return codonPossibilities
     
-    """
-    Filters low-quality leading and trailing nucleotides from a query.
-    Removes large (length > SEQUENCE_TRIM_SITES_CUTOFF) low quality pieces.
-    Low quality is defined as:
-    (1) unusual mutation; or
-    (2) 'X' in amino acid list; or
-    (3) has a stop codon
 
-    @param sequence: sequence
-    @param firstAA: aligned position of first amino acid in query
-    @param lastAA: aligned position of last amino acid in query
-    @param mutations: list of mutations
-    @param frameshifts: list of frameshifts
-    @return: tuple of how many leading and trailing nucleotides to trim
-    """
     def trimLowQualities(self, codon_list, shift, firstAA, lastAA, mutations, frameshifts, gene, subtype):
+        """
+        Filters low-quality leading and trailing nucleotides from a query.
+        Removes large (length > SEQUENCE_TRIM_SITES_CUTOFF) low quality pieces.
+        Low quality is defined as:
+        (1) unusual mutation; or
+        (2) 'X' in amino acid list; or
+        (3) has a stop codon
+
+        @param sequence: sequence
+        @param firstAA: aligned position of first amino acid in query
+        @param lastAA: aligned position of last amino acid in query
+        @param mutations: list of mutations
+        @param frameshifts: list of frameshifts
+        @return: tuple of how many leading and trailing nucleotides to trim
+        """
         SEQUENCE_SHRINKAGE_CUTOFF_PCNT = 30
         SEQUENCE_SHRINKAGE_WINDOW = 15
         SEQUENCE_SHRINKAGE_BAD_QUALITY_MUT_PREVALENCE = 0.1
@@ -295,8 +297,6 @@ class NucAminoAligner():
         # print(codon_list)
 
         badPcnt = 0
-        trimLeft = 0
-        trimRight = 0
         problemSites = 0
         sinceLastBadQuality = 0
         proteinSize = lastAA - firstAA + 1
@@ -309,9 +309,10 @@ class NucAminoAligner():
             # print(idx)
             highest = self.getHighestMutPrevalence((position, mutations[position]), gene, subtype)
             if not self.isUnsequenced(codon_list[j]) and \
-                    (highest > SEQUENCE_SHRINKAGE_BAD_QUALITY_MUT_PREVALENCE or
+                    (highest < SEQUENCE_SHRINKAGE_BAD_QUALITY_MUT_PREVALENCE or
                      mutations[position][1] == 'X' or
-                     self.isApobecDRM(gene, mutations[position][0], position, mutations[position][1]) or
+                     self.isApobecDRM(gene, mutations[position][0], position,
+                                      mutations[position][1]) or
                      self.isStopCodon(codon_list[j])):
                 invalidSites[idx] = True
 
@@ -323,7 +324,8 @@ class NucAminoAligner():
         for idx in range(0, proteinSize):
             if sinceLastBadQuality > SEQUENCE_SHRINKAGE_WINDOW:
                 break
-            elif invalidSites[idx]:
+
+            if invalidSites[idx]:
                 problemSites += 1
                 trimLeft = idx + 1
                 badPcnt = problemSites * 100 / trimLeft if trimLeft > 0 else 0
@@ -332,8 +334,10 @@ class NucAminoAligner():
                 sinceLastBadQuality = 0
             else:
                 sinceLastBadQuality += 1
+
         trimLeft = candidates[-1] if len(candidates) > 0 else 0
         candidates = []
+
 
         #backward scan for trimming right
         problemSites = 0
@@ -351,6 +355,7 @@ class NucAminoAligner():
             else:
                 sinceLastBadQuality += 1
         trimRight = candidates[-1] if len(candidates) > 0 else 0
+
         return (trimLeft, trimRight)
 
     """
@@ -411,6 +416,7 @@ class NucAminoAligner():
 
 if __name__ == '__main__':
     test = NucAminoAligner()
+    """
     assert test.translateNATriplet("YTD") == "LF"
     assert test.isStopCodon("TAG") == True
     assert test.isStopCodon("TAA") == True
@@ -428,3 +434,8 @@ if __name__ == '__main__':
 
     print(test.gene_map)
     print(test.get_gene(594))
+    """
+    fn = sys.argv[1]
+    test.align_file(fn)
+    res = test.get_mutations(fn, do_subtyping=True)
+    print(res)

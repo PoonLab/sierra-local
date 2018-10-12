@@ -164,21 +164,16 @@ class Subtyper():
 
 
 def main():
-    from sierralocal.nucaminohook import NucAminoAligner
-    subtyper = Subtyper()
-    # test out all reference sequences on this system
-    #for h, ref in subtyper.subtype_references.items():
-    #    subtype = re.findall('\|(.*?)\||$', h)[0]
-    #    guess = subtyper.getClosestSubtype(ref)
-    #    if not guess == subtype:
-    #        print(h, guess, subtype)
     if len(sys.argv) < 2:
         print('Cmdline use: python3 subtyper.py <input FASTA>')
         sys.exit()
 
-    input_file = sys.argv[1]
+    # not running as package, so circular dependency is not an issue
+    from sierralocal.nucaminohook import NucAminoAligner
+    subtyper = Subtyper()
 
     # call nucamino
+    input_file = sys.argv[1]
     aligner = NucAminoAligner()
     aligner.align_file(input_file)
 
@@ -196,6 +191,7 @@ def main():
 
             firstAA = int(firstAA)  # relative to pol start
             firstNA = int(firstNA)  # this should be used to adjust offset
+            #TODO: use JSON output to handle indels
 
             gene = aligner.get_gene(firstAA)
             assert gene is not None, "Fatal error in get_mutations"
