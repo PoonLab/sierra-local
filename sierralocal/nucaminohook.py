@@ -50,6 +50,10 @@ class NucAminoAligner():
     def prevalence_parser(self, filename):
         '''
         Abstracted method for reading ARV prevalence TSV and returning a dictionary of these data.
+        There are two entries for each subtype for treatment-naive and -experienced populations,
+        respectively, e.g., B:RTI_Naive:% and B:RTI:%
+        We take the larger of the two.
+
         :param filename:  Name of TSV file to parse
         :return:  Dictionary of position-consensus-mutation-subtype keys to %prevalence in naive
                   populations
@@ -57,14 +61,18 @@ class NucAminoAligner():
         handle = open(str(Path(os.path.dirname(__file__))/'data'/filename), 'r')
         table = csv.DictReader(handle, delimiter='\t')
 
-        keys = [fn for fn in table.fieldnames if fn.endswith('Naive:%')]
+        keys = [fn for fn in table.fieldnames if fn.endswith(':%')]
         result = {}
         for row in table:
             for key in keys:
                 value = float(row[key])
                 subtype = key.split(':')[0]
                 label = row['Pos'] + row['Cons'] + row['Mut'] + subtype
-                result.update({label: value})
+                if label in result and result[label] < value:
+                    # take the greater percentage of naive or experienced groups
+                    result[label] = value
+                else:
+                    result.update({label: value})
         return result
 
 
@@ -285,7 +293,7 @@ class NucAminoAligner():
         @param sequence: sequence
         @param firstAA: aligned position of first amino acid in query
         @param lastAA: aligned position of last amino acid in query
-        @param mutations: list of mutations
+        @param mutations: dictionary of <position>: (<wt>, <mutant>) pairs
         @param frameshifts: list of frameshifts
         @return: tuple of how many leading and trailing nucleotides to trim
         """
@@ -293,8 +301,8 @@ class NucAminoAligner():
         SEQUENCE_SHRINKAGE_WINDOW = 15
         SEQUENCE_SHRINKAGE_BAD_QUALITY_MUT_PREVALENCE = 0.1
 
-        # print(mutations)
-        # print(codon_list)
+        print(mutations)
+        print(codon_list)
 
         badPcnt = 0
         problemSites = 0
@@ -306,15 +314,17 @@ class NucAminoAligner():
         # account for invalid sites
         for j, position in enumerate(mutations):
             idx = position - firstAA + shift
-            # print(idx)
-            highest = self.getHighestMutPrevalence((position, mutations[position]), gene, subtype)
-            if not self.isUnsequenced(codon_list[j]) and \
-                    (highest < SEQUENCE_SHRINKAGE_BAD_QUALITY_MUT_PREVALENCE or
-                     mutations[position][1] == 'X' or
-                     self.isApobecDRM(gene, mutations[position][0], position,
-                                      mutations[position][1]) or
-                     self.isStopCodon(codon_list[j])):
-                invalidSites[idx] = True
+            if not self.isUnsequenced(codon_list[j]):
+                highest_prev = self.getHighestMutPrevalence((position, mutations[position]), gene, subtype)
+                is_weird = (highest_prev < SEQUENCE_SHRINKAGE_BAD_QUALITY_MUT_PREVALENCE)
+                is_ambig = (mutations[position][1] == 'X')
+                is_apobec = self.isApobecDRM(gene, mutations[position][0], position,
+                                             mutations[position][1])
+                is_stop_codon = self.isStopCodon(codon_list[j])
+                reasons = [is_weird, is_ambig, is_apobec, is_stop_codon]
+                if any(reasons):
+                    print(idx, position, reasons, highest_prev, subtype, position, mutations[position], gene)
+                    invalidSites[idx] = True
 
         # for fs in frameshifts:
         #     idx = fs.getPosition() - firstAA
@@ -387,6 +397,7 @@ class NucAminoAligner():
         @return: prevalence of the most common amino acid encoded at this position within the 
                  subtype alignment
         """
+        print (mutation)
         position, aaseq = mutation
         cons, aas = aaseq
         aas = aas.replace(cons, '')  # ignore consensus
@@ -399,8 +410,10 @@ class NucAminoAligner():
 
         return prevalence
 
+
     def getMutPrevalence(self, position, cons, aa, gene, subtype):
         key2 = str(position)+str(cons)+str(aa)+subtype
+        #print(key2)
 
         if gene == 'IN' and key2 in self.INI_dict:
             return self.INI_dict[key2]
