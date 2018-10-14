@@ -301,8 +301,8 @@ class NucAminoAligner():
         SEQUENCE_SHRINKAGE_WINDOW = 15
         SEQUENCE_SHRINKAGE_BAD_QUALITY_MUT_PREVALENCE = 0.1
 
-        print(mutations)
-        print(codon_list)
+        #print(mutations)
+        #print(codon_list)
 
         badPcnt = 0
         problemSites = 0
@@ -323,7 +323,7 @@ class NucAminoAligner():
                 is_stop_codon = self.isStopCodon(codon_list[j])
                 reasons = [is_weird, is_ambig, is_apobec, is_stop_codon]
                 if any(reasons):
-                    print(idx, position, reasons, highest_prev, subtype, position, mutations[position], gene)
+                    #print(idx, position, reasons, highest_prev, subtype, position, mutations[position], gene)
                     invalidSites[idx] = True
 
         # for fs in frameshifts:
@@ -397,7 +397,6 @@ class NucAminoAligner():
         @return: prevalence of the most common amino acid encoded at this position within the 
                  subtype alignment
         """
-        print (mutation)
         position, aaseq = mutation
         cons, aas = aaseq
         aas = aas.replace(cons, '')  # ignore consensus
