@@ -23,6 +23,7 @@ class OverrideInstall(install):
                 os.chmod(path, 0o777)
                 set_data_dir = True
 
+
 setup(
 	name = 'sierralocal',
     description = 'Local execution of HIVdb algorithm',
@@ -42,11 +43,13 @@ setup(
 	],
 
 	scripts=['bin/sierralocal'],
-    package_data={'sierralocal': [
-        'data/genotype-properties.*.csv',
-        'data/genotype-references.*.fasta',
-        'data/*Prevalences.tsv',
-        'data/*-comments.csv'
+    package_data={
+        'sierralocal': [
+            'bin/nucamino-*',
+            'data/genotype-properties.*.csv',
+            'data/genotype-references.*.fasta',
+            'data/*Prevalences.tsv',
+            'data/*-comments.csv'
     ]},
     cmdclass={'install': OverrideInstall},
     #include_package_data=True

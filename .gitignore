@@ -1,5 +1,10 @@
 .idea/
 
+hivdb/
+*.tsv
+*.json
+*.csv
+*.fa
 ./nucamino-linux-amd64
 ./sierralocal/data/apobec.tsv
 

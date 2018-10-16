@@ -6,25 +6,43 @@ import re
 from sierralocal.subtyper import Subtyper
 from sierralocal.utils import get_input_sequences
 import sys
+import platform
 
 class NucAminoAligner():
     """
     Initialize NucAmino for a specific input fasta file
     """
-    def __init__(self):
+    def __init__(self, binary=None):
+        """
+
+        :param binary:  Absolute path to nucamino binary
+        """
         self.cwd = os.path.curdir
 
-        items = os.listdir(str(Path(os.path.dirname(__file__))))
-        self.nucamino_binary = None
-        for name in items:
-            if 'nucamino' in name and not (name.endswith('py') or name.endswith('pyc')):
-                self.nucamino_binary = name
-                break
+        if binary is None:
+            target = 'nucamino-{}-{}'.format(
+                platform.system().lower(),
+                'amd64' if platform.architecture()[0]=='64bit' else '386'
+            )
 
-        if self.nucamino_binary:
+            # autodetect nucamino binary
+            bin_dir = Path(os.path.dirname(__file__)).joinpath('bin')
+            items = os.listdir(str(bin_dir))
+            self.nucamino_binary = None
+            for name in items:
+                fn = os.path.splitext(name)[0]
+                if fn == target:
+                    self.nucamino_binary = bin_dir.joinpath(name)
+                    break
+
+            if self.nucamino_binary is None:
+                sys.exit('Failed to locate expected NucAmino binary {}. '.format(target) +
+                         'Please download binary from ' +
+                         'http://github.com/hivdb/nucamino/releases')
+
             print("Found NucAmino binary", self.nucamino_binary)
         else:
-            sys.exit('Failed to locate NucAmino binary.  Please download binary from http://github.com/hivdb/nucamino/releases')
+            self.nucamino_binary = binary
 
         self.tripletTable = self.generateTable()
 
@@ -76,7 +94,7 @@ class NucAminoAligner():
         return result
 
 
-    def align_file(self, filename, output_format='tsv'):
+    def align_file(self, filename, outfile=None, output_format='tsv'):
         '''
         Using subprocess to call NucAmino, generates an output .tsv containing mutation
         data for each sequence in the FASTA file.
@@ -84,10 +102,13 @@ class NucAminoAligner():
         @param output_format:  Either 'tsv' or 'json'.
         '''
         self.inputname = filename
-        self.outputname = os.path.splitext(filename)[0]+'.'+output_format
+        if outfile is None:
+            self.outputname = os.path.splitext(filename)[0]+'.'+output_format
+        else:
+            self.outputname = outfile
 
         args = [
-            str(Path(os.path.dirname(__file__))/self.nucamino_binary),
+            self.nucamino_binary,
             "hiv1b",
             "-q",
             "-i", "{}".format(self.inputname),
