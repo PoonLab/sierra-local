@@ -7,6 +7,8 @@ from sierralocal.subtyper import Subtyper
 from sierralocal.utils import get_input_sequences
 import sys
 import platform
+from csv import DictReader
+import json
 
 class NucAminoAligner():
     """
@@ -94,30 +96,84 @@ class NucAminoAligner():
         return result
 
 
-    def align_file(self, filename, outfile=None, output_format='tsv'):
+    def align_file(self, filename):
         '''
         Using subprocess to call NucAmino, generates an output .tsv containing mutation
         data for each sequence in the FASTA file.
         @param filename:  Path to FASTA file to process
-        @param output_format:  Either 'tsv' or 'json'.
         '''
-        self.inputname = filename
-        if outfile is None:
-            self.outputname = os.path.splitext(filename)[0]+'.'+output_format
-        else:
-            self.outputname = outfile
-
         args = [
             self.nucamino_binary,
             "hiv1b",
             "-q",
-            "-i", "{}".format(self.inputname),
+            "-i", "{}".format(filename),
             "-g=POL",
-            "-o", "{}".format(self.outputname),
-            "--output-format", output_format
+            '--output-format', 'json',
         ]
-        popen = subprocess.Popen(args)
-        popen.wait()
+        p = subprocess.Popen(args, stdout=subprocess.PIPE, encoding='utf8')
+        result = json.load(p.stdout)
+        rows = []
+
+        for record in result['POL']:
+            # TODO: reconstitute aligned sequence
+            sites = record['Report']['AlignedSites']
+            nuc = record['Report']['NucleicAcidsLine']
+            control = record['Report']['ControlLine']
+
+            print(record['Name'])
+            print(sites)
+            print(nuc)
+
+            # remove insertions
+            nuc2 = ''
+            index = None  # to index into original sequence
+            for site in sites:
+                posAA = site['PosAA']
+                if posAA < 57:
+                    # don't include codons 5' of PR
+                    continue
+                posNA = site['PosNA']
+                lengthNA = site['LengthNA']
+
+                if index is None:
+                    index = posNA-1
+
+
+                if posNA < index:
+                    # deletion
+                    nuc2 += nuc[(posNA-1):(posNA-1+lengthNA)]
+                elif posNA > index:
+                    # insertion
+                    pass
+
+                index += 3  # expected PosNA
+
+
+
+            rows.append({
+                'Name': record['Name'],
+                'FirstAA': record['Report']['FirstAA'],
+                'LastAA': record['Report']['LastAA'],
+                'FirstNA': record['Report']['FirstNA'],
+                'LastNA': record['Report']['LastNA'],
+                'Mutations': record['Report']['Mutations'],
+                'FrameShifts': record['Report']['FrameShifts']
+            })
+
+        sys.exit()
+
+        results = []
+        for row in DictReader(p.stdout, delimiter='\t'):
+            results.append({
+                'Name': row['Sequence Name'],
+                'FirstAA': int(row['POL FirstAA']),
+                'LastAA': int(row['POL LastAA']),
+                'FirstNA': int(row['POL FirstNA'])
+            })
+
+        print (results)
+        sys.exit()
+
 
 
     def create_gene_map(self):
