@@ -1,6 +1,7 @@
 .idea/
 
 hivdb/
+working/
 *.tsv
 *.json
 *.csv
