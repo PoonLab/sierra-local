@@ -7,6 +7,7 @@ from sierralocal.subtyper import Subtyper
 from sierralocal.utils import get_input_sequences
 import sys
 import platform
+import json
 
 class NucAminoAligner():
     """
@@ -56,6 +57,7 @@ class NucAminoAligner():
         #initialize gene map
         self.pol_start = 2085
         self.pol_nuc_map = {
+            'start': (1, self.pol_start),
             'PR': (2253, 2549),
             'RT': (2550, 4229),  # incorrectly includes RNAse, emulating sierrapy
             'IN': (4230, 5096)
@@ -94,30 +96,35 @@ class NucAminoAligner():
         return result
 
 
-    def align_file(self, filename, outfile=None, output_format='tsv'):
+    def align_file(self, filename):
         '''
         Using subprocess to call NucAmino, generates an output .tsv containing mutation
         data for each sequence in the FASTA file.
         @param filename:  Path to FASTA file to process
         @param output_format:  Either 'tsv' or 'json'.
         '''
-        self.inputname = filename
-        if outfile is None:
-            self.outputname = os.path.splitext(filename)[0]+'.'+output_format
-        else:
-            self.outputname = outfile
-
         args = [
             self.nucamino_binary,
             "hiv1b",
             "-q",
-            "-i", "{}".format(self.inputname),
+            "-i", "{}".format(filename),
             "-g=POL",
-            "-o", "{}".format(self.outputname),
-            "--output-format", output_format
+            "--output-format", 'json'
         ]
-        popen = subprocess.Popen(args)
-        popen.wait()
+        stdout = subprocess.check_output(args)
+
+        # parse JSON output
+        result = []
+        for record in json.loads(stdout):
+            result.append({
+                'Name': record['Name'],
+                'FirstAA': record['Report']['FirstAA'],
+                'LastAA': record['Report']['LastAA'],
+                'FirstNA': record['Report']['FirstNA'],
+                'LastNA': record['Report']['LastNA'],
+                'Mutations': record['Mutations']
+            })
+
 
 
     def create_gene_map(self):
