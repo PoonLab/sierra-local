@@ -48,7 +48,6 @@ class Subtyper():
         :param ref:  second input sequences
         :return:  proportion of base differences
         """
-
         # TODO: Step 1: mask SDRM in seq with ref nucleotide
         count = 0
         for idx, nuc in enumerate(seq):

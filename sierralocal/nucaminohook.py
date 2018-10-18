@@ -9,6 +9,7 @@ import sys
 import platform
 from csv import DictReader
 import json
+import codecs
 
 class NucAminoAligner():
     """
@@ -20,6 +21,7 @@ class NucAminoAligner():
         :param binary:  Absolute path to nucamino binary
         """
         self.cwd = os.path.curdir
+        self.reader = codecs.getreader('utf-8')  # for parsing byte strings from json in align_file()
 
         if binary is None:
             target = 'nucamino-{}-{}'.format(
@@ -96,84 +98,81 @@ class NucAminoAligner():
         return result
 
 
+    def get_aligned_seq(self, nuc, sites):
+        """
+        NucAmino does not return the aligned nucleotide sequence, but its JSON output provides
+        sufficient information to reconstitute this sequence.
+        :param nuc:  NucleicAcidsLine field from JSON record
+        :param sites:  AlignedSites field from JSON record
+        :return:  Aligned nt sequence
+        """
+        aligned = ''
+        skip = 0
+        for si, site in enumerate(sites):
+            if skip > 0:
+                skip -= 1
+                continue
+
+            posAA = site['PosAA']
+            if posAA < 57:
+                # codon is upstream of 5'-PR
+                continue
+
+            codon = nuc[3 * si:(3 * si + 3)]
+            lengthNA = site['LengthNA']
+            if lengthNA == 3:
+                aligned += codon
+            elif lengthNA < 3:
+                # deletion
+                aligned += codon.replace(' ', '-')
+            else:
+                # insertion
+                skip = (lengthNA - 3) / 3
+                aligned += codon
+
+        return aligned
+
+
     def align_file(self, filename):
         '''
         Using subprocess to call NucAmino, generates an output .tsv containing mutation
         data for each sequence in the FASTA file.
+        Reconstitute aligned codon sequnece from NucAmino output.
+        For each codon in NucleicAcidsLine:
+        - if LengthNA < 3, the codon has a deletion
+        - if LengthNA == 3+n where n>0, the following n bases are insertions to be removed
+
         @param filename:  Path to FASTA file to process
         '''
         args = [
-            self.nucamino_binary,
+            '{}'.format(self.nucamino_binary),  # in case of byte-string
             "hiv1b",
             "-q",
-            "-i", "{}".format(filename),
+            "-i", filename,
             "-g=POL",
             '--output-format', 'json',
         ]
-        p = subprocess.Popen(args, stdout=subprocess.PIPE, encoding='utf8')
-        result = json.load(p.stdout)
-        rows = []
+        p = subprocess.Popen(args, stdout=subprocess.PIPE)  #, encoding='utf8')
+        result = json.load(self.reader(p.stdout))
+        records = []
 
         for record in result['POL']:
             # TODO: reconstitute aligned sequence
             sites = record['Report']['AlignedSites']
             nuc = record['Report']['NucleicAcidsLine']
-            control = record['Report']['ControlLine']
 
-            print(record['Name'])
-            print(sites)
-            print(nuc)
-
-            # remove insertions
-            nuc2 = ''
-            index = None  # to index into original sequence
-            for site in sites:
-                posAA = site['PosAA']
-                if posAA < 57:
-                    # don't include codons 5' of PR
-                    continue
-                posNA = site['PosNA']
-                lengthNA = site['LengthNA']
-
-                if index is None:
-                    index = posNA-1
-
-
-                if posNA < index:
-                    # deletion
-                    nuc2 += nuc[(posNA-1):(posNA-1+lengthNA)]
-                elif posNA > index:
-                    # insertion
-                    pass
-
-                index += 3  # expected PosNA
-
-
-
-            rows.append({
+            records.append({
                 'Name': record['Name'],
                 'FirstAA': record['Report']['FirstAA'],
                 'LastAA': record['Report']['LastAA'],
                 'FirstNA': record['Report']['FirstNA'],
                 'LastNA': record['Report']['LastNA'],
                 'Mutations': record['Report']['Mutations'],
-                'FrameShifts': record['Report']['FrameShifts']
+                'Frameshifts': record['Report']['FrameShifts'],
+                'Sequence': self.get_aligned_seq(nuc, sites)
             })
 
-        sys.exit()
-
-        results = []
-        for row in DictReader(p.stdout, delimiter='\t'):
-            results.append({
-                'Name': row['Sequence Name'],
-                'FirstAA': int(row['POL FirstAA']),
-                'LastAA': int(row['POL LastAA']),
-                'FirstNA': int(row['POL FirstNA'])
-            })
-
-        print (results)
-        sys.exit()
-
+        return records
 
 
     def create_gene_map(self):
@@ -201,9 +200,21 @@ class NucAminoAligner():
         return None
 
 
-    def get_mutations(self, fastaFileName, do_subtyping=True):
+
+    def get_mutations(self, records):
         '''
         From the tsv output of NucAmino, parses and adjusts indices and returns as lists.
+
+        TSV has mutations format I59V:GTC,N93S:AGT
+
+        JSON has mutations format:
+        [{'AminoAcidText': 'V', 'InsertedCodonsText': '', 'IsDeletion': False, 'Control': '...',
+         'ReferenceText': 'I', 'InsertedAminoAcidsText': '', 'IsPartial': False, 'NAPosition': 7,
+         'IsInsertion': False, 'Position': 59, 'CodonText': 'GTC'},
+         {'AminoAcidText': 'S', 'InsertedCodonsText': '', 'IsDeletion': False, 'Control': '...',
+         'ReferenceText': 'N', 'InsertedAminoAcidsText': '', 'IsPartial': False, 'NAPosition': 109,
+         'IsInsertion': False, 'Position': 93, 'CodonText': 'AGT'}]
+
         :param fastaFileName:  FASTA input processed by NucAmino
         :return: list of sequence names, list of sequence mutation dictionaries.
         '''
@@ -213,80 +224,47 @@ class NucAminoAligner():
         file_trims = []
         sequence_headers = []
         subtypes = []
-        
-        # grab original sequences from input file
-        with open(fastaFileName, 'r') as handle:
-            sequence_list = get_input_sequences(handle)
 
-        # open the NucAmino output file
-        with open(os.path.splitext(fastaFileName)[0]+'.tsv', 'r') as nucamino_alignment:
-            tsvin = csv.reader(nucamino_alignment, delimiter='\t')
-            next(tsvin) #bypass the header row
+        for record in records:
+            sequence_headers.append(record['Name'])
 
-            for idx, row in enumerate(tsvin): #iterate over sequences (1 per row)
-                header, firstAA, lastAA, firstNA, lastNA, mutation_list = row[:6]
-                sequence_headers.append(header)
-                sequence = sequence_list[idx]  # NucAmino preserves input order
+            firstAA = record['FirstAA']
+            lastAA = record['LastAA']
 
-                # Let's use the gene map to figure the "reference position" for each gene
-                # Nucamino outputs wonky positions, so calculate the shift so we can get positions relative to the
-                #  start of each individual gene
-                firstAA = int(firstAA)
-                lastAA = int(lastAA)
-                firstNA = int(firstNA)
-                lastNA = int(lastNA)
+            gene = self.get_gene(firstAA)
+            shift = self.gene_map[gene][0]
 
-                gene = self.get_gene(firstAA)
-                assert gene is not None, "Fatal error in get_mutations"
-                shift = self.gene_map[gene][0]
+            codon_list = []
+            gene_muts = {}
+            for mut in record['Mutations']:
+                gene_muts.update({mut['Position']: (mut['ReferenceText'], mut['AminoAcidText'])})
+                codon_list.append(mut['CodonText'])
 
-                # parse mutation information:
-                codon_list = []
-                gene_muts = {}
-                if len(mutation_list) > 0:
-                    # generate data lists for each sequence
-                    mutation_list = mutation_list.split(',')  # split list into individual mutations
-                    for x in mutation_list:
-                        # for example, "L156M:ATG"
-                        mutation = x.split(':')[0]
-                        p = int(re.search('\d+', mutation).group()) - shift  # AA position
-                        consensus = mutation[0]
+            # predict subtype
+            offset = (firstAA-57)*3
+            if offset < 0:
+                offset = 0  # align_file() will have trimmed sequence preceding PR
+            subtype = self.typer.getClosestSubtype(gene, record['Sequence'], offset)
 
-                        # obtain the mutation codon directly from the query sequence
-                        index = 3*(p+shift-firstAA)
-                        triplet = sequence[index:(index+3)]
-                        codon_list.append(triplet)
-                        aa = '-' if triplet in ['~~~', '...'] else self.translateNATriplet(triplet)
-                        gene_muts.update({p: (consensus, aa)})
+            # trim low quality leading and trailing nucleotides
+            trimLeft, trimRight = self.trimLowQualities(
+                codon_list, shift, firstAA, lastAA, mutations=gene_muts,
+                frameshifts=[], gene=gene, subtype=subtype
+            )
+            trimmed_gene_muts = {k: v for k, v in gene_muts.items() if
+                                 (k >= firstAA - shift + trimLeft) and
+                                 (k <= lastAA - shift - trimRight)}
 
-                subtype = None
-                trimmed_gene_muts = gene_muts
-                trimLeft = 0
-                trimRight = 0
-                if do_subtyping:
-                    # subtype sequence
-                    subtype = self.typer.getClosestSubtype(gene, sequence, offset=(firstAA-57)*3)
-                    #subtype = header.split('.')[2]  # to re-use hivdb subtypes
+            # update lists
+            file_mutations.append(trimmed_gene_muts)
+            file_genes.append(gene)
+            file_firstlastNA.append((record['FirstNA'], record['FirstNA']))
+            file_trims.append((trimLeft, trimRight))
+            subtypes.append(subtype)
 
-                    # trim low quality leading and trailing nucleotides
-                    trimLeft, trimRight = self.trimLowQualities(
-                        codon_list, shift, firstAA, lastAA, mutations=gene_muts,
-                        frameshifts=[], gene=gene, subtype=subtype
-                    )
-                    # if trimLeft + trimRight > 0:
-                        # print(row[0], trimLeft, trimRight)
-                    trimmed_gene_muts = {k:v for (k,v) in gene_muts.items() if
-                                         (k >= firstAA - shift + trimLeft) and
-                                         (k <= lastAA - shift - trimRight)}
+        assert len(file_mutations) == len(sequence_headers), \
+            "error: length of mutations dicts is not the same as length of names"
 
-                # append everything to list of lists of the entire sequence set
-                file_mutations.append(trimmed_gene_muts)
-                file_genes.append(gene)
-                file_firstlastNA.append((firstNA, lastNA))
-                file_trims.append((trimLeft, trimRight))
-                subtypes.append(subtype)
-
-        assert len(file_mutations) == len(sequence_headers), "error: length of mutations dicts is not the same as length of names"
         return sequence_headers, file_genes, file_mutations, file_firstlastNA, file_trims, subtypes
 
     # BELOW is an implementation of sierra's Java algorithm for determining codon ambiguity
@@ -525,6 +503,6 @@ if __name__ == '__main__':
     print(test.get_gene(594))
     """
     fn = sys.argv[1]
-    test.align_file(fn)
-    res = test.get_mutations(fn, do_subtyping=True)
+    results = test.align_file(fn)
+    res = test.get_mutations(results)
     print(res)

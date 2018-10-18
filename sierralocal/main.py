@@ -20,8 +20,6 @@ def parse_args():
     parser.add_argument('-o', dest='outfile', default=None, type=str, help='Output filename.')
     parser.add_argument('-xml', default=None, 
                         help='Path to HIVDB algorithm XML file, which can be downloaded using the provided script updater.py')
-    parser.add_argument('-skipalign', action='store_true',
-                        help='Skip NucAmino alignment if TSV file already present.')
     parser.add_argument('-cleanup', action='store_true',
                         help='Deletes NucAmino alignment file after processing.')
     parser.add_argument('-forceupdate', action='store_true',
@@ -56,7 +54,7 @@ def score(filename, xml_path=None, forceupdate=False):
     os.remove(os.path.splitext(filename)[0] + '.tsv')
 
 
-def scorefile(input_file, database, skipalign):
+def scorefile(input_file, database):
     '''
     Returns a set of corresponding names, scores, and ordered mutations for a given FASTA file containing pol sequences
     :param file: the FASTA file name containing arbitrary number of sequences and headers
@@ -64,12 +62,11 @@ def scorefile(input_file, database, skipalign):
     :return: list of names, list of scores, list of ordered mutations
     '''
     aligner = NucAminoAligner()
-    if not skipalign:
-        aligner.align_file(input_file)
+    result = aligner.align_file(input_file)
 
     print('Aligned '+input_file)
     sequence_headers, file_genes, file_mutations, file_firstlastNA, file_trims, subtypes = \
-        aligner.get_mutations(input_file, do_subtyping=True)
+        aligner.get_mutations(result)
 
     ordered_mutation_list = []
     sequence_scores = []
@@ -92,7 +89,7 @@ def scorefile(input_file, database, skipalign):
            sequence_lengths, file_firstlastNA, file_trims, subtypes
 
 
-def sierralocal(fasta, outfile, xml=None, skipalign=False, cleanup=False, forceupdate=False):
+def sierralocal(fasta, outfile, xml=None, cleanup=False, forceupdate=False):
     """
     Contains all initializing and processing calls.
 
@@ -126,7 +123,7 @@ def sierralocal(fasta, outfile, xml=None, skipalign=False, cleanup=False, forceu
 
         # process and score file
         sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, file_firstlastNA, \
-        file_trims, subtypes = scorefile(input_file, database, skipalign)
+        file_trims, subtypes = scorefile(input_file, database)
 
         count += len(sequence_headers)
         print("{} sequences found in file {}.".format(len(sequence_headers), input_file))
@@ -154,7 +151,7 @@ def main():
     args = parse_args()
 
     time_start = time.time()
-    count, time_elapsed = sierralocal(args.fasta, args.outfile, args.xml, args.skipalign, args.forceupdate)
+    count, time_elapsed = sierralocal(args.fasta, args.outfile, args.xml, args.forceupdate)
     time_diff = time.time() - time_start
 
     print("Time elapsed: {:{prec}} seconds ({:{prec}} it/s)".format(
