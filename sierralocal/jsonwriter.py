@@ -127,7 +127,7 @@ class JSONWriter():
                 drugScore['text'] = list(resistance_text)[0] #resistance level
                 drugScores.append(drugScore)
         drugResistance['drugScores'] = drugScores
-        return [drugResistance]
+        return drugResistance
 
     def formatAlignedGeneSequences(self, ordered_mutation_list, gene, firstlastNA):
         """
@@ -175,14 +175,18 @@ class JSONWriter():
             data = {}
             data['inputSequence'] = self.formatInputSequence(names[index])
             data['subtypeText'] = subtypes[index]
+
             validation = self.validateSequence(genes[index], sequence_lengths[index], file_trims[index])
             data['validationResults'] = self.formatValidationResults(validation)
+
+            data['drugResistance'] = []
             if not 'CRITICAL' in validation:
                 data['alignedGeneSequences'] = self.formatAlignedGeneSequences(ordered_mutation_list[index], genes[index], file_firstlastNA[index])
-                data['drugResistance'] = self.formatDrugResistance(score, genes[index])
+                for gene in genes[index]:
+                    data['drugResistance'].append(self.formatDrugResistance(score, gene))
             else:
                 data['alignedGeneSequences'] = []
-                data['drugResistance'] = []
+
             out.append(data)
 
         # dump data to JSON file

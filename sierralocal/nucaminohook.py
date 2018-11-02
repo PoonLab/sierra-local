@@ -163,7 +163,7 @@ class NucAminoAligner():
 
             records.append({
                 'Name': record['Name'],
-                'FirstAA': record['Report']['FirstAA'],
+                'FirstAA': record['Report']['FirstAA'],  # relative to start of pol
                 'LastAA': record['Report']['LastAA'],
                 'FirstNA': record['Report']['FirstNA'],
                 'LastNA': record['Report']['LastNA'],
@@ -188,17 +188,17 @@ class NucAminoAligner():
         return pol_aa_map
 
 
-    def get_gene(self, firstAA):
+    def get_genes(self, firstAA, lastAA):
         """
         Determines the first POL gene that is present in the query sequence, by virtue of gene breakpoints
         @param firstAA: the first amino acid position of the query sequence, as determined by NucAmino
         @return: list of length 1 with a string of the gene in the sequence
         """
+        genes = []
         for gene, bounds in self.gene_map.items():
-            if bounds[0] <= firstAA <= bounds[1]:
-                return gene
-        return None
-
+            if firstAA <= bounds[1] and lastAA >= bounds[0]:
+                genes.append(gene)
+        return genes
 
 
     def get_mutations(self, records):
@@ -231,25 +231,31 @@ class NucAminoAligner():
             firstAA = record['FirstAA']
             lastAA = record['LastAA']
 
-            gene = self.get_gene(firstAA)
-            shift = self.gene_map[gene][0]
+            genes = self.get_genes(firstAA, lastAA)
+            first_gene = genes[0]
+            shift = self.gene_map[first_gene][0]
 
             codon_list = []
             gene_muts = {}
             for mut in record['Mutations']:
-                gene_muts.update({mut['Position']: (mut['ReferenceText'], mut['AminoAcidText'])})
+                aas = mut['AminoAcidText']
+                gene_muts.update(
+                    {mut['Position']-shift: (
+                        mut['ReferenceText'],
+                        mut['AminoAcidText'] if len(mut['AminoAcidText']) < 3 else 'X')}
+                )
                 codon_list.append(mut['CodonText'])
 
             # predict subtype
             offset = (firstAA-57)*3
             if offset < 0:
                 offset = 0  # align_file() will have trimmed sequence preceding PR
-            subtype = self.typer.getClosestSubtype(gene, record['Sequence'], offset)
+            subtype = self.typer.getClosestSubtype(record['Sequence'], offset)
 
             # trim low quality leading and trailing nucleotides
             trimLeft, trimRight = self.trimLowQualities(
                 codon_list, shift, firstAA, lastAA, mutations=gene_muts,
-                frameshifts=[], gene=gene, subtype=subtype
+                frameshifts=[], gene=first_gene, subtype=subtype
             )
             trimmed_gene_muts = {k: v for k, v in gene_muts.items() if
                                  (k >= firstAA - shift + trimLeft) and
@@ -257,8 +263,8 @@ class NucAminoAligner():
 
             # update lists
             file_mutations.append(trimmed_gene_muts)
-            file_genes.append(gene)
-            file_firstlastNA.append((record['FirstNA'], record['FirstNA']))
+            file_genes.append(genes)
+            file_firstlastNA.append((record['FirstNA'], record['LastNA']))
             file_trims.append((trimLeft, trimRight))
             subtypes.append(subtype)
 
@@ -291,7 +297,22 @@ class NucAminoAligner():
         @return tripletTable: codon to amino acid dictionary
         """
         codonToAminoAcidMap = {
-            "TTT" : "F", "TTC" : "F", "TTA" : "L", "TTG" : "L", "CTT" : "L", "CTC" : "L", "CTA" : "L", "CTG" : "L", "ATT" : "I", "ATC" : "I", "ATA" : "I", "ATG" : "M", "GTT" : "V", "GTC" : "V", "GTA" : "V", "GTG" : "V", "TCT" : "S", "TCC" : "S", "TCA" : "S", "TCG" : "S", "CCT" : "P", "CCC" : "P", "CCA" : "P", "CCG" : "P", "ACT" : "T", "ACC" : "T", "ACA" : "T", "ACG" : "T", "GCT" : "A", "GCC" : "A", "GCA" : "A", "GCG" : "A", "TAT" : "Y", "TAC" : "Y", "TAA" : "*", "TAG" : "*", "CAT" : "H", "CAC" : "H", "CAA" : "Q", "CAG" : "Q", "AAT" : "N", "AAC" : "N", "AAA" : "K", "AAG" : "K", "GAT" : "D", "GAC" : "D", "GAA" : "E", "GAG" : "E", "TGT" : "C", "TGC" : "C", "TGA" : "*", "TGG" : "W", "CGT" : "R", "CGC" : "R", "CGA" : "R", "CGG" : "R", "AGT" : "S", "AGC" : "S", "AGA" : "R", "AGG" : "R", "GGT" : "G", "GGC" : "G", "GGA" : "G", "GGG" : "G"
+            "TTT": "F", "TTC": "F", "TTA": "L", "TTG": "L",
+            "CTT": "L", "CTC": "L", "CTA": "L", "CTG": "L",
+            "ATT": "I", "ATC": "I", "ATA": "I", "ATG": "M",
+            "GTT": "V", "GTC": "V", "GTA": "V", "GTG": "V",
+            "TCT": "S", "TCC": "S", "TCA": "S", "TCG": "S",
+            "CCT": "P", "CCC": "P", "CCA": "P", "CCG": "P",
+            "ACT": "T", "ACC": "T", "ACA": "T", "ACG": "T",
+            "GCT": "A", "GCC": "A", "GCA": "A", "GCG": "A",
+            "TAT": "Y", "TAC": "Y", "TAA": "*", "TAG": "*",
+            "CAT": "H", "CAC": "H", "CAA": "Q", "CAG": "Q",
+            "AAT": "N", "AAC": "N", "AAA": "K", "AAG": "K",
+            "GAT": "D", "GAC": "D", "GAA": "E", "GAG": "E",
+            "TGT": "C", "TGC": "C", "TGA": "*", "TGG": "W",
+            "CGT": "R", "CGC": "R", "CGA": "R", "CGG": "R",
+            "AGT": "S", "AGC": "S", "AGA": "R", "AGG": "R",
+            "GGT": "G", "GGC": "G", "GGA": "G", "GGG": "G"
         }
         nas = ["A","C","G","T","R","Y","M","W","S","K","B","D","H","V","N"]
         tripletTable = dict()
@@ -363,6 +384,7 @@ class NucAminoAligner():
         problemSites = 0
         sinceLastBadQuality = 0
         proteinSize = lastAA - firstAA + 1
+
         candidates = []
         invalidSites = [False for i in range(proteinSize)]
 

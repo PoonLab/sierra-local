@@ -98,7 +98,7 @@ class Subtyper():
         return props
 
 
-    def getClosestSubtype(self, gene, sequence, offset):
+    def getClosestSubtype(self, sequence, offset):
         dists = self.getDistances(sequence, offset)
 
         intermed = [(v, k) for k, v in dists.items()]

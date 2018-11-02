@@ -8,25 +8,6 @@ from sierralocal.utils import get_input_sequences
 from pathlib import Path
 import time
 
-def parse_args():
-    """
-    CLI argument parser. Current options include input FASTA files only
-    :return: args object
-    """
-    parser = argparse.ArgumentParser(
-        description='Local execution of Stanford HIVdb algorithm for mutation-based resistance scoring of sequences.'
-    )
-    parser.add_argument('fasta', nargs='+', type=str, help='List of input files.')
-    parser.add_argument('-o', dest='outfile', default=None, type=str, help='Output filename.')
-    parser.add_argument('-xml', default=None, 
-                        help='Path to HIVDB algorithm XML file, which can be downloaded using the provided script updater.py')
-    parser.add_argument('-cleanup', action='store_true',
-                        help='Deletes NucAmino alignment file after processing.')
-    parser.add_argument('-forceupdate', action='store_true',
-                        help='Forces update of HIVdb algorithm. Requires network connection.')
-    args = parser.parse_args()
-    return args
-
 
 def score(filename, xml_path=None, forceupdate=False):
     """
@@ -142,6 +123,26 @@ def sierralocal(fasta, outfile, xml=None, cleanup=False, forceupdate=False):
             os.remove(prefix+'.tsv')
 
     return count, time_elapsed
+
+
+def parse_args():
+    """
+    CLI argument parser. Current options include input FASTA files only
+    :return: args object
+    """
+    parser = argparse.ArgumentParser(
+        description='Local execution of Stanford HIVdb algorithm for mutation-based resistance scoring of sequences.'
+    )
+    parser.add_argument('fasta', nargs='+', type=str, help='List of input files.')
+    parser.add_argument('-o', dest='outfile', default=None, type=str, help='Output filename.')
+    parser.add_argument('-xml', default=None,
+                        help='Path to HIVDB algorithm XML file, which can be downloaded using the provided script updater.py')
+    parser.add_argument('-cleanup', action='store_true',
+                        help='Deletes NucAmino alignment file after processing.')
+    parser.add_argument('-forceupdate', action='store_true',
+                        help='Forces update of HIVdb algorithm. Requires network connection.')
+    args = parser.parse_args()
+    return args
 
 
 def main():
