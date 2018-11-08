@@ -144,6 +144,9 @@ class NucAminoAligner():
 
         @param filename:  Path to FASTA file to process
         '''
+
+        # TODO: write to temp file, replace '~' with '-'
+        
         args = [
             '{}'.format(self.nucamino_binary),  # in case of byte-string
             "hiv1b",
@@ -188,16 +191,19 @@ class NucAminoAligner():
         return pol_aa_map
 
 
-    def get_genes(self, firstAA, lastAA):
+    def get_genes(self, firstAA, lastAA, min_overlap=30):
         """
         Determines the first POL gene that is present in the query sequence, by virtue of gene breakpoints
+        TODO: sierra uses different minimum numbers of sites per gene (40, 60 and 30 for PR, RT and IN)
         @param firstAA: the first amino acid position of the query sequence, as determined by NucAmino
         @return: list of length 1 with a string of the gene in the sequence
         """
         genes = []
         for gene, bounds in self.gene_map.items():
-            if firstAA <= bounds[1] and lastAA >= bounds[0]:
+            overlap = min(bounds[1], lastAA) - max(bounds[0], firstAA)
+            if overlap > min_overlap:
                 genes.append(gene)
+
         return genes
 
 
@@ -238,13 +244,15 @@ class NucAminoAligner():
             codon_list = []
             gene_muts = {}
             for mut in record['Mutations']:
-                aas = mut['AminoAcidText']
+                #print(mut)
+                codon = mut['CodonText']
                 gene_muts.update(
                     {mut['Position']-shift: (
                         mut['ReferenceText'],
-                        mut['AminoAcidText'] if len(mut['AminoAcidText']) < 3 else 'X')}
+                        self.translateNATriplet(codon)
+                    )}
                 )
-                codon_list.append(mut['CodonText'])
+                codon_list.append(codon)
 
             # predict subtype
             offset = (firstAA-57)*3
@@ -286,9 +294,7 @@ class NucAminoAligner():
             return "X"
         if '~' in triplet:
             return "X"
-        if triplet in self.tripletTable:
-            return self.tripletTable[triplet]
-        return "X"
+        return self.tripletTable.get(triplet, 'X')
 
 
     def generateTable(self):
