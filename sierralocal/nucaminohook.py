@@ -10,6 +10,8 @@ import platform
 from csv import DictReader
 import json
 import codecs
+import tempfile
+
 
 class NucAminoAligner():
     """
@@ -137,7 +139,7 @@ class NucAminoAligner():
         '''
         Using subprocess to call NucAmino, generates an output .tsv containing mutation
         data for each sequence in the FASTA file.
-        Reconstitute aligned codon sequnece from NucAmino output.
+        Reconstitute aligned codon sequence from NucAmino output.
         For each codon in NucleicAcidsLine:
         - if LengthNA < 3, the codon has a deletion
         - if LengthNA == 3+n where n>0, the following n bases are insertions to be removed
@@ -146,16 +148,24 @@ class NucAminoAligner():
         '''
 
         # TODO: write to temp file, replace '~' with '-'
-        
+        tf = tempfile.NamedTemporaryFile(mode='w', delete=False)
+        with open(filename) as handle:
+            for line in handle:
+                if not line.startswith('>'):
+                    line = line.replace('~', '')
+                tf.write(line)
+        tf.close()
+
         args = [
             '{}'.format(self.nucamino_binary),  # in case of byte-string
             "hiv1b",
             "-q",
-            "-i", filename,
+            "-i", tf.name,
             "-g=POL",
             '--output-format', 'json',
         ]
         p = subprocess.Popen(args, stdout=subprocess.PIPE)  #, encoding='utf8')
+
         result = json.load(self.reader(p.stdout))
         records = []
 
@@ -290,6 +300,8 @@ class NucAminoAligner():
         @param triplet: nucleotide sequence as a string
         @return: translation of the triplet as a string
         """
+        if len(triplet) == 0:
+            return '-'
         if len(triplet) != 3:
             return "X"
         if '~' in triplet:
