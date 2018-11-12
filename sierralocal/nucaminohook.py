@@ -152,7 +152,7 @@ class NucAminoAligner():
         with open(filename) as handle:
             for line in handle:
                 if not line.startswith('>'):
-                    line = line.replace('~', '')
+                    line = line.replace('~', '').replace('-', '').replace('.', '')
                 tf.write(line)
         tf.close()
 
