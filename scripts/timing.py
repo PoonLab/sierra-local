@@ -6,7 +6,7 @@ import time
 import random
 
 # set True to run timing analysis
-run_sierra_local = False
+run_sierra_local = True
 run_sierra_py = False
 
 # correspond to the number of files produced by data_prep.py

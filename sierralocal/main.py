@@ -22,14 +22,15 @@ def score(filename, xml_path=None, forceupdate=False):
     time_start = time.time()
 
     sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, \
-    file_trims, subtypes = scorefile(filename, database, False)
+    file_trims, subtypes = scorefile(filename, algorithm)
 
     count = len(sequence_headers)
 
     print("{} sequences found in file {}.".format(len(sequence_headers), filename))
     output_file = os.path.splitext(filename)[0] + '-local.json'
     writer = JSONWriter(algorithm)
-    writer.write_to_json(output_file, sequence_headers, sequence_scores, file_genes, ordered_mutation_list, sequence_lengths, file_firstlastNA, file_trims, subtypes)
+    writer.write_to_json(output_file, sequence_headers, sequence_scores, file_genes,
+                         ordered_mutation_list, sequence_lengths, file_trims, subtypes)
     time_end = time.time()
     print("Time elapsed: {:{prec}} seconds ({:{prec}} it/s)".format(time_end - time_start, count/(time_end - time_start), prec='.5'))
     # cleanup is default action
