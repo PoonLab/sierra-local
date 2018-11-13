@@ -13,7 +13,6 @@ def score_drugs(HIVdb, gene, seq_mutations):
     result_dict = {}
     for drug_class in HIVdb.definitions['gene'][gene]:
         for drug in HIVdb.definitions['drugclass'][drug_class]:
-            print(drug)
             result_dict.update({drug: score_single(HIVdb, drug, seq_mutations)})
     return result_dict
 

@@ -20,11 +20,12 @@ def score(filename, xml_path=None, forceupdate=False):
     comments = algorithm.parse_comments(algorithm.root)
 
     time_start = time.time()
-    count = 0
-    sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, \
-    file_firstlastNA, file_trims, subtypes = scorefile(filename, database, False)
 
-    count += len(sequence_headers)
+    sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, \
+    file_trims, subtypes = scorefile(filename, database, False)
+
+    count = len(sequence_headers)
+
     print("{} sequences found in file {}.".format(len(sequence_headers), filename))
     output_file = os.path.splitext(filename)[0] + '-local.json'
     writer = JSONWriter(algorithm)
@@ -46,40 +47,44 @@ def scorefile(input_file, algorithm):
     result = aligner.align_file(input_file)
 
     print('Aligned '+input_file)
-    sequence_headers, file_genes, file_mutations, file_firstlastNA, file_trims, subtypes = \
+    sequence_headers, file_genes, file_mutations, file_trims, subtypes = \
         aligner.get_mutations(result)
 
     ordered_mutation_list = []
     sequence_scores = []
-
-    with open(input_file, 'r') as fastafile:
-        sequence_list = get_input_sequences(fastafile)
-        sequence_lengths = [len(s.replace('N', '')) / 3 for s in sequence_list]
+    sequence_lengths = []
 
     # iteration over records in file
     for index, query in enumerate(sequence_headers):
         genes = file_genes[index]
+        mutations = file_mutations[index]
+
         scores = []
         mutation_lists = []
+        length_lists = []
 
         # iterate by gene
-        for idx, mutations in enumerate(file_mutations[index]):
-            gene = genes[idx]
+        for idx, gene_info in enumerate(genes):
+            gene, firstAA, lastAA, firstNA, lastNA = gene_info
+
+            length_lists.append(lastNA - firstNA + 1)
+
             # convert format
             mutation_lists.append(
                 sorted(zip(
-                    mutations.keys(),  # position
-                    [x[1] for x in mutations.values()],  # aa
-                    [x[0] for x in mutations.values()]   # wt
+                    mutations[idx].keys(),  # position
+                    [x[1] for x in mutations[idx].values()],  # aa
+                    [x[0] for x in mutations[idx].values()]   # wt
                 ))
             )
-            scores.append(score_alg.score_drugs(algorithm, gene, mutations))
+            scores.append(score_alg.score_drugs(algorithm, gene, mutations[idx]))
 
         ordered_mutation_list.append(mutation_lists)
         sequence_scores.append(scores)
+        sequence_lengths.append(length_lists)
 
     return sequence_headers, sequence_scores, ordered_mutation_list, file_genes, \
-           sequence_lengths, file_firstlastNA, file_trims, subtypes
+           sequence_lengths, file_trims, subtypes
 
 
 def sierralocal(fasta, outfile, xml=None, cleanup=False, forceupdate=False):
@@ -115,13 +120,11 @@ def sierralocal(fasta, outfile, xml=None, cleanup=False, forceupdate=False):
         prefix = os.path.splitext(input_file)[0]
 
         # process and score file
-        sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, file_firstlastNA, \
+        sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, \
         file_trims, subtypes = scorefile(input_file, algorithm)
 
         count += len(sequence_headers)
         print("{} sequences found in file {}.".format(len(sequence_headers), input_file))
-
-        print(sequence_scores)
 
         # output results for the file
         if outfile == None:
@@ -130,7 +133,7 @@ def sierralocal(fasta, outfile, xml=None, cleanup=False, forceupdate=False):
             output_file = outfile
 
         writer.write_to_json(output_file, sequence_headers, sequence_scores, file_genes, ordered_mutation_list,
-                             sequence_lengths, file_firstlastNA, file_trims, subtypes)
+                             sequence_lengths, file_trims, subtypes)
 
         if cleanup:
             # delete alignment file

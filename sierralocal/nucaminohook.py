@@ -147,7 +147,9 @@ class NucAminoAligner():
         @param filename:  Path to FASTA file to process
         '''
 
-        # TODO: write to temp file, replace '~' with '-'
+        #TODO: check that file is FASTA format
+
+        # remove illegal characters
         tf = tempfile.NamedTemporaryFile(mode='w', delete=False)
         with open(filename) as handle:
             for line in handle:
@@ -170,7 +172,11 @@ class NucAminoAligner():
         records = []
 
         for record in result['POL']:
-            sites = record['Report']['AlignedSites']
+            try:
+                sites = record['Report']['AlignedSites']
+            except:
+                print(record)
+                raise
             nuc = record['Report']['NucleicAcidsLine']
 
             records.append({
@@ -181,6 +187,7 @@ class NucAminoAligner():
                 'LastNA': record['Report']['LastNA'],
                 'Mutations': record['Report']['Mutations'],
                 'Frameshifts': record['Report']['FrameShifts'],
+                'AlignedSites': sites,
                 'Sequence': self.get_aligned_seq(nuc, sites)
             })
 
@@ -200,18 +207,32 @@ class NucAminoAligner():
         return pol_aa_map
 
 
-    def get_genes(self, firstAA, lastAA, min_overlap=30):
+    def get_genes(self, polAlignedSites, polFirstAA, polLastAA):
         """
         Determines the first POL gene that is present in the query sequence, by virtue of gene breakpoints
         TODO: sierra uses different minimum numbers of sites per gene (40, 60 and 30 for PR, RT and IN)
         @param firstAA: the first amino acid position of the query sequence, as determined by NucAmino
         @return: list of length 1 with a string of the gene in the sequence
         """
+        min_overlap = {'PR': 40, 'RT': 60, 'IN': 30}
         genes = []
         for gene, bounds in self.gene_map.items():
-            overlap = min(bounds[1], lastAA) - max(bounds[0], firstAA)
-            if overlap > min_overlap:
-                genes.append(gene)
+            aaStart, aaEnd = bounds
+            geneLength = aaEnd-aaStart+1
+            overlap = min(aaEnd, polLastAA) - max(aaStart, polFirstAA)
+            if overlap < min_overlap[gene]:
+                # discard alignment of this gene, too short
+                continue
+
+            alignedSites = filter(lambda x: x['PosAA'] >= aaStart and x['PosAA'] <= aaEnd, polAlignedSites)
+            alignedSites = list(alignedSites)
+
+            firstAA = max(polFirstAA-aaStart, 1)
+            lastAA = min(polLastAA-aaStart+1, geneLength)
+            firstNA = alignedSites[0]['PosNA']
+            lastNA = alignedSites[-1]['PosNA'] - 1 + alignedSites[-1]['LengthNA']
+
+            genes.append((gene, firstAA, lastAA, firstNA, lastNA))
 
         return genes
 
@@ -243,20 +264,26 @@ class NucAminoAligner():
         for record in records:
             sequence_headers.append(record['Name'])
 
-            firstAA = record['FirstAA']
-            lastAA = record['LastAA']
+            polFirstAA = record['FirstAA']
+            polLastAA = record['LastAA']
 
             # predict subtype
-            offset = (firstAA-57)*3
+            offset = (polFirstAA-57)*3
             if offset < 0:
                 offset = 0  # align_file() will have trimmed sequence preceding PR
             subtype = self.typer.getClosestSubtype(record['Sequence'], offset)
 
-            genes = self.get_genes(firstAA, lastAA)
+            genes = self.get_genes(record['AlignedSites'], polFirstAA, polLastAA)
+
             trimmed_gene_muts = []
             trims = []
+            first_lastNAs = []
+            just_genes = []
 
-            for gene in genes:
+            for gene, firstAA, lastAA, firstNA, lastNA in genes:
+                just_genes.append(gene)
+                first_lastNAs.append((firstNA, lastNA))
+
                 # {'PR': (56, 154), 'RT': (155, 714), 'IN': (715, 1003)}
                 left, right = self.gene_map[gene]
                 codon_list = []
@@ -279,21 +306,20 @@ class NucAminoAligner():
                 trims.append( (trimLeft, trimRight) )
                 trimmed_gene_muts.append(
                     {k: v for k, v in gene_muts.items() if
-                     (k >= firstAA - left + trimLeft) and
-                     (k <= lastAA - left - trimRight)}
+                     (k >= firstAA + trimLeft) and
+                     (k <= lastAA - trimRight)}
                 )
 
             # update lists
             file_mutations.append(trimmed_gene_muts)
             file_genes.append(genes)
-            file_firstlastNA.append((record['FirstNA'], record['LastNA']))
             file_trims.append(trims)
             subtypes.append(subtype)
 
         assert len(file_mutations) == len(sequence_headers), \
             "error: length of mutations dicts is not the same as length of names"
 
-        return sequence_headers, file_genes, file_mutations, file_firstlastNA, file_trims, subtypes
+        return sequence_headers, file_genes, file_mutations, file_trims, subtypes
 
 
     # BELOW is an implementation of sierra's Java algorithm for determining codon ambiguity
@@ -412,7 +438,7 @@ class NucAminoAligner():
 
         # account for invalid sites
         for j, position in enumerate(mutations):
-            idx = position - firstAA + shift
+            idx = position - firstAA #+ shift
             if not self.isUnsequenced(codon_list[j]):
                 highest_prev = self.getHighestMutPrevalence((position, mutations[position]), gene, subtype)
                 is_weird = (highest_prev < SEQUENCE_SHRINKAGE_BAD_QUALITY_MUT_PREVALENCE)

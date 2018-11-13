@@ -130,7 +130,7 @@ class JSONWriter():
         drugResistance['drugScores'] = drugScores
         return drugResistance
 
-    def formatAlignedGeneSequences(self, ordered_mutation_list, gene, firstlastNA):
+    def formatAlignedGeneSequences(self, ordered_mutation_list, gene, firstlastAA):
         """
         Main function to format mutations into dictionary for results output
         @param ordered_mutation_list: ordered list of mutations in the query sequence relative to reference
@@ -139,9 +139,9 @@ class JSONWriter():
         @return: list of one dictionary element describing mutations in a single query sequence
         """
         dic = {}
-        dic['firstAA'] = int((firstlastNA[0]+2)/3)
-        dic['lastAA'] = int(firstlastNA[1]/3)
-        dic['gene'] = {'name': gene}
+        dic['firstAA'] = int(firstlastAA[0])
+        dic['lastAA'] = int(firstlastAA[1])
+        dic['gene'] = {'name': gene, 'length': None}  # TODO: output length
         dic['mutations'] = []
         for mutation in ordered_mutation_list:
             mutdict = {}
@@ -152,7 +152,7 @@ class JSONWriter():
             mutdict['isDeletion'] = mutation[1] == '-'
             mutdict['isApobecDRM'] = self.isApobecDRM(gene, mutation[2], mutation[0], mutation[1])
             dic['mutations'].append(mutdict)
-        return [dic]
+        return dic
 
     def formatInputSequence(self, header):
         out = {
@@ -161,8 +161,8 @@ class JSONWriter():
         }
         return out
 
-    def write_to_json(self, filename, names, scores, genes, ordered_mutation_list, sequence_lengths,
-                      file_firstlastNA, file_trims, subtypes):
+    def write_to_json(self, filename, file_headers, file_scores, file_genes, file_mutation_lists,
+                      file_sequence_lengths, file_trims, file_subtypes):
         '''
         The main function to write passed result to a JSON file
         :param filename: the filename to write the JSON to
@@ -172,23 +172,27 @@ class JSONWriter():
         :param ordered_mutation_list: ordered list of mutations in the query sequence relative to reference
         '''
         out = []
-        for index, score in enumerate(scores):
-            data = {}
-            data['inputSequence'] = self.formatInputSequence(names[index])
-            data['subtypeText'] = subtypes[index]
+        for index, scores in enumerate(file_scores):
+            genes = file_genes[index]
 
-            validation = self.validateSequence(genes[index], sequence_lengths[index], file_trims[index])
+            data = {}
+            data['inputSequence'] = self.formatInputSequence(file_headers[index])
+            data['subtypeText'] = file_subtypes[index]
+
+            validation = self.validateSequence(genes, file_sequence_lengths[index], file_trims[index])
             data['validationResults'] = self.formatValidationResults(validation)
 
+            data['alignedGeneSequences'] = []
             data['drugResistance'] = []
             if not 'CRITICAL' in validation:
-                data['alignedGeneSequences'] = self.formatAlignedGeneSequences(
-                    ordered_mutation_list[index], genes[index], file_firstlastNA[index]
-                )
-                for gene in genes[index]:
-                    data['drugResistance'].append(self.formatDrugResistance(score, gene))
-            else:
-                data['alignedGeneSequences'] = []
+                for idx, gene_info in enumerate(genes):
+                    gene, firstAA, lastAA, firstNA, lastNA = gene_info
+                    omlist = file_mutation_lists[index][idx]
+                    nalist = (firstAA, lastAA)
+                    data['alignedGeneSequences'].append(
+                        self.formatAlignedGeneSequences(omlist, gene, nalist)
+                    )
+                    data['drugResistance'].append(self.formatDrugResistance(scores[idx], gene))
 
             out.append(data)
 
@@ -197,22 +201,47 @@ class JSONWriter():
             json.dump(out, outfile, indent=2)
             print("Writing JSON to file {}".format(filename))
 
-    def validateSequence(self, gene, length, seq_trim):
+
+    def validateSequence(self, genes, lengths, seq_trims):
         validation_results = []
 
-        # Length validation
-        if ('RT' in gene and length < 200) or ('PR' in gene and length < 80) or ('IN' in gene and length < 200):
-            validation_results.append(('WARNING', "The {} sequence contains just {} codons, which is not sufficient for a comprehensive interpretation.".format(gene, int(length))))
-        elif ('RT' in gene and length < 150) or ('PR' in gene and length < 60) or ('IN' in gene and length < 100):
-            validation_results.append('SEVERE WARNING', "The {} sequence contains just {} codons, which is not sufficient for a comprehensive interpretation.".format(gene, int(length)))
-        # Gene validation
-        if len(gene) == 0:
-            validation_results.append(('CRITICAL', 'Unable to process sequence.'))
+        for index, gene in enumerate(genes):
+            length = lengths[index]
+            seq_trim = seq_trims[index]
 
-        if seq_trim[0] > 0:
-            validation_results.append(('WARNING', "The {} sequence had {} amino acid{} trimmed from its 5\u2032-end due to poor quality.".format(gene, seq_trim[0], "s" if seq_trim[0] > 1 else "")))
-        if seq_trim[1] > 0:
-            validation_results.append(('WARNING', "The {} sequence had {} amino acid{} trimmed from its 3\u2032-end due to poor quality.".format(gene, seq_trim[1], "s" if seq_trim[1] > 1 else "")))
+            # Length validation
+            if ('RT' in gene and length < 200) or ('PR' in gene and length < 80) or \
+                    ('IN' in gene and length < 200):
+                validation_results.append(
+                    ('WARNING',
+                     "The {} sequence contains just {} codons, which is not sufficient "
+                     "for a comprehensive interpretation.".format(gene, int(length)))
+                )
+            elif ('RT' in gene and length < 150) or ('PR' in gene and length < 60) or \
+                    ('IN' in gene and length < 100):
+                validation_results.append(
+                    ('SEVERE WARNING',
+                     "The {} sequence contains just {} codons, which is not "
+                     "sufficient for a comprehensive interpretation.".format(gene, int(length)))
+                )
+
+            # Gene validation
+            if len(gene) == 0:
+                validation_results.append(('CRITICAL', 'Unable to process sequence.'))
+
+            if seq_trim[0] > 0:
+                validation_results.append(
+                    ('WARNING',
+                     "The {} sequence had {} amino acid{} trimmed from its 5\u2032-end "
+                     "due to poor quality.".format(gene, seq_trim[0], "s" if seq_trim[0] > 1 else ""))
+                )
+
+            if seq_trim[1] > 0:
+                validation_results.append(
+                    ('WARNING',
+                     "The {} sequence had {} amino acid{} trimmed from its 3\u2032-end "
+                     "due to poor quality.".format(gene, seq_trim[1], "s" if seq_trim[1] > 1 else ""))
+                )
 
         return validation_results
 
