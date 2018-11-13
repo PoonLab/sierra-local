@@ -34,7 +34,7 @@ def score(filename, xml_path=None, forceupdate=False):
     time_end = time.time()
     print("Time elapsed: {:{prec}} seconds ({:{prec}} it/s)".format(time_end - time_start, count/(time_end - time_start), prec='.5'))
     # cleanup is default action
-    os.remove(os.path.splitext(filename)[0] + '.tsv')
+    #os.remove(os.path.splitext(filename)[0] + '.tsv')
 
 
 def scorefile(input_file, algorithm):
