@@ -170,7 +170,6 @@ class NucAminoAligner():
         records = []
 
         for record in result['POL']:
-            # TODO: reconstitute aligned sequence
             sites = record['Report']['AlignedSites']
             nuc = record['Report']['NucleicAcidsLine']
 
@@ -194,7 +193,7 @@ class NucAminoAligner():
         based on the HXB2 reference annotations.
         """
         # start and end nucleotide coordinates in HXB2 pol
-        convert = lambda x:int((x-self.pol_start)/3)
+        convert = lambda x: int((x-self.pol_start)/3)
         pol_aa_map = {}
         for key, val in self.pol_nuc_map.items():
             pol_aa_map[key] = (convert(val[0]), convert(val[1]))
@@ -247,43 +246,48 @@ class NucAminoAligner():
             firstAA = record['FirstAA']
             lastAA = record['LastAA']
 
-            genes = self.get_genes(firstAA, lastAA)
-            first_gene = genes[0]
-            shift = self.gene_map[first_gene][0]
-
-            codon_list = []
-            gene_muts = {}
-            for mut in record['Mutations']:
-                #print(mut)
-                codon = mut['CodonText']
-                gene_muts.update(
-                    {mut['Position']-shift: (
-                        mut['ReferenceText'],
-                        self.translateNATriplet(codon)
-                    )}
-                )
-                codon_list.append(codon)
-
             # predict subtype
             offset = (firstAA-57)*3
             if offset < 0:
                 offset = 0  # align_file() will have trimmed sequence preceding PR
             subtype = self.typer.getClosestSubtype(record['Sequence'], offset)
 
-            # trim low quality leading and trailing nucleotides
-            trimLeft, trimRight = self.trimLowQualities(
-                codon_list, shift, firstAA, lastAA, mutations=gene_muts,
-                frameshifts=[], gene=first_gene, subtype=subtype
-            )
-            trimmed_gene_muts = {k: v for k, v in gene_muts.items() if
-                                 (k >= firstAA - shift + trimLeft) and
-                                 (k <= lastAA - shift - trimRight)}
+            genes = self.get_genes(firstAA, lastAA)
+            trimmed_gene_muts = []
+            trims = []
+
+            for gene in genes:
+                # {'PR': (56, 154), 'RT': (155, 714), 'IN': (715, 1003)}
+                left, right = self.gene_map[gene]
+                codon_list = []
+                gene_muts = {}
+                for mut in record['Mutations']:
+                    position = mut['Position']
+                    if position < left or right < position:
+                        continue  # mutation in other gene
+                    codon = mut['CodonText']
+                    gene_muts.update(
+                        {position-left: (mut['ReferenceText'], self.translateNATriplet(codon))}
+                    )
+                    codon_list.append(codon)
+
+                # trim low quality leading and trailing nucleotides
+                trimLeft, trimRight = self.trimLowQualities(
+                    codon_list, left, firstAA, lastAA, mutations=gene_muts,
+                    frameshifts=[], gene=gene, subtype=subtype
+                )
+                trims.append( (trimLeft, trimRight) )
+                trimmed_gene_muts.append(
+                    {k: v for k, v in gene_muts.items() if
+                     (k >= firstAA - left + trimLeft) and
+                     (k <= lastAA - left - trimRight)}
+                )
 
             # update lists
             file_mutations.append(trimmed_gene_muts)
             file_genes.append(genes)
             file_firstlastNA.append((record['FirstNA'], record['LastNA']))
-            file_trims.append((trimLeft, trimRight))
+            file_trims.append(trims)
             subtypes.append(subtype)
 
         assert len(file_mutations) == len(sequence_headers), \
@@ -291,8 +295,8 @@ class NucAminoAligner():
 
         return sequence_headers, file_genes, file_mutations, file_firstlastNA, file_trims, subtypes
 
+
     # BELOW is an implementation of sierra's Java algorithm for determining codon ambiguity
-    
 
     def translateNATriplet(self, triplet):
         """

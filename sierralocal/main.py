@@ -35,7 +35,7 @@ def score(filename, xml_path=None, forceupdate=False):
     os.remove(os.path.splitext(filename)[0] + '.tsv')
 
 
-def scorefile(input_file, database):
+def scorefile(input_file, algorithm):
     '''
     Returns a set of corresponding names, scores, and ordered mutations for a given FASTA file containing pol sequences
     :param file: the FASTA file name containing arbitrary number of sequences and headers
@@ -56,15 +56,27 @@ def scorefile(input_file, database):
         sequence_list = get_input_sequences(fastafile)
         sequence_lengths = [len(s.replace('N', '')) / 3 for s in sequence_list]
 
+    # iteration over records in file
     for index, query in enumerate(sequence_headers):
-        ordered_mutation_list.append(
-            sorted(zip(
-                file_mutations[index].keys(),
-                [x[1] for x in file_mutations[index].values()],
-                [x[0] for x in file_mutations[index].values()]
-            ))
-        )
-        sequence_scores.append(score_alg.score_drugs(database, file_mutations[index]))
+        genes = file_genes[index]
+        scores = []
+        mutation_lists = []
+
+        # iterate by gene
+        for idx, mutations in enumerate(file_mutations[index]):
+            gene = genes[idx]
+            # convert format
+            mutation_lists.append(
+                sorted(zip(
+                    mutations.keys(),  # position
+                    [x[1] for x in mutations.values()],  # aa
+                    [x[0] for x in mutations.values()]   # wt
+                ))
+            )
+            scores.append(score_alg.score_drugs(algorithm, gene, mutations))
+
+        ordered_mutation_list.append(mutation_lists)
+        sequence_scores.append(scores)
 
     return sequence_headers, sequence_scores, ordered_mutation_list, file_genes, \
            sequence_lengths, file_firstlastNA, file_trims, subtypes
@@ -104,10 +116,12 @@ def sierralocal(fasta, outfile, xml=None, cleanup=False, forceupdate=False):
 
         # process and score file
         sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, file_firstlastNA, \
-        file_trims, subtypes = scorefile(input_file, database)
+        file_trims, subtypes = scorefile(input_file, algorithm)
 
         count += len(sequence_headers)
         print("{} sequences found in file {}.".format(len(sequence_headers), input_file))
+
+        print(sequence_scores)
 
         # output results for the file
         if outfile == None:

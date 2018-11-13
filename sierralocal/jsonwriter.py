@@ -78,17 +78,18 @@ class JSONWriter():
                         break
                 resistance_text = self.levels[resistancelevel]
 
-                drugScore['drugClass'] = {'name':drugclass} #e.g. NRTI
+                drugScore['drugClass'] = {'name': drugclass} #e.g. NRTI
                 drugScore['drug'] = {}
                 if drug in self.names:
                     drugScore['drug']['name'] = self.names[drug]
                 else:
-                    drugScore['drug']['name'] = drug.replace('/r','')
+                    drugScore['drug']['name'] = drug.replace('/r', '')
+
                 drugScore['drug']['displayAbbr'] = drug
                 drugScore['score'] = float(scores[drug][0]) # score for this paritcular drug
                 # create partial score, for each mutation, datastructure
                 drugScore['partialScores'] = []
-                for index,pscore in enumerate(scores[drug][1]):
+                for index, pscore in enumerate(scores[drug][1]):
                     pscore = float(pscore)
                     if not pscore == 0.0:
                         pscoredict = {}
@@ -140,7 +141,7 @@ class JSONWriter():
         dic = {}
         dic['firstAA'] = int((firstlastNA[0]+2)/3)
         dic['lastAA'] = int(firstlastNA[1]/3)
-        dic['gene'] = {'name' : gene}
+        dic['gene'] = {'name': gene}
         dic['mutations'] = []
         for mutation in ordered_mutation_list:
             mutdict = {}
@@ -181,7 +182,9 @@ class JSONWriter():
 
             data['drugResistance'] = []
             if not 'CRITICAL' in validation:
-                data['alignedGeneSequences'] = self.formatAlignedGeneSequences(ordered_mutation_list[index], genes[index], file_firstlastNA[index])
+                data['alignedGeneSequences'] = self.formatAlignedGeneSequences(
+                    ordered_mutation_list[index], genes[index], file_firstlastNA[index]
+                )
                 for gene in genes[index]:
                     data['drugResistance'].append(self.formatDrugResistance(score, gene))
             else:
