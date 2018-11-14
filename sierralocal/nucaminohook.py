@@ -108,6 +108,9 @@ class NucAminoAligner():
         :param sites:  AlignedSites field from JSON record
         :return:  Aligned nt sequence
         """
+
+        # FIXME: this isn't handling insertions and deletions properly
+        # FIXME: the NucAmino coordinate system does not adapt to indels
         aligned = ''
         skip = 0
         pad = 0  # used to accommodate deletions upstream of PR start codon
@@ -116,7 +119,8 @@ class NucAminoAligner():
                 skip -= 1
                 continue
 
-            codon = nuc[3 * si:(3 * si + 3)]
+            codon = nuc[3*si:(3*si+3)]
+
             lengthNA = site['LengthNA']
             if lengthNA < 3:
                 pad += 3-lengthNA
