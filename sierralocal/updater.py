@@ -23,24 +23,36 @@ def updateAPOBEC():
 
 
 def update_HIVDB():
-    # UPDATE ALGORITHM
+    """
+    Query the HIVdb website for new ASI (algorithm specification interface)
+    XML files.
+    :return: absolute path to new XML file
+    """
     URL = 'https://hivdb.stanford.edu/page/algorithm-updates'
     try:
         response = urllib.request.urlopen(URL)
         html = response.read().decode('utf-8')
 
-        # search HTML contents for links to XML files, return first match
-        xml_url = BASE_URL + re.search(u"/assets.*?HIVDB_.*?xml", html).group(0)
+        # search HTML contents for links to XML files, extract link for most recent version
+        matches = re.findall(u"(/assets/media/HIVDB_[0-9a-z.]+\.xml)", html)
+        versions = map(lambda x: re.search(u"_([0-9]+\.[0-9.]+)\.", x).group(1), matches)
+        intermed = [(v, i) for i, v in enumerate(versions)]
+        intermed.sort(reverse=True)  # descending order
+        xml_url = BASE_URL + matches[intermed[0][1]]
 
         # download the XML file
         r = requests.get(xml_url, allow_redirects=True)
         xml_filename = mod_path/'data'/os.path.basename(xml_url)
         with open(str(xml_filename), 'wb') as file:
             file.write(r.content)
-        print("Updated HIVDB XML from",xml_url,"into {}".format(xml_filename))
+
+        print("Updated HIVDB XML from {} into {}".format(xml_url, xml_filename))
+
     except Exception as e:
         print("Unable to update HIVDB XML. Try manually downloading the HIVdb ASI2.")
         print(e)
+        return None
+
     return(xml_filename)
 
 def main():

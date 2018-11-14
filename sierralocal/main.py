@@ -155,9 +155,9 @@ def parse_args():
     parser.add_argument('-o', dest='outfile', default=None, type=str, help='Output filename.')
     parser.add_argument('-xml', default=None,
                         help='Path to HIVDB algorithm XML file, which can be downloaded using the provided script updater.py')
-    parser.add_argument('-cleanup', action='store_true',
+    parser.add_argument('--cleanup', action='store_true',
                         help='Deletes NucAmino alignment file after processing.')
-    parser.add_argument('-forceupdate', action='store_true',
+    parser.add_argument('--forceupdate', action='store_true',
                         help='Forces update of HIVdb algorithm. Requires network connection.')
     args = parser.parse_args()
     return args
@@ -170,7 +170,8 @@ def main():
     args = parse_args()
 
     time_start = time.time()
-    count, time_elapsed = sierralocal(args.fasta, args.outfile, args.xml, args.forceupdate)
+    count, time_elapsed = sierralocal(args.fasta, args.outfile, args.xml,
+                                      cleanup=args.cleanup, forceupdate=args.forceupdate)
     time_diff = time.time() - time_start
 
     print("Time elapsed: {:{prec}} seconds ({:{prec}} it/s)".format(

@@ -2,24 +2,32 @@ library(jsonlite)
 
 setwd('~/git/sierra-local')
 directory <- './hivdb/hivdb-data/'
-gene <- 'PR'
+gene <- 'RT'
+version <- 'rs3-v8.5' #'rs3-v8.6.1'
+
+gene <- 'IN'
+version <- 'rs3-v8.6.1'
 
 sierra_file_list <- list.files(path=directory, pattern=paste0(gene, '-[0-9]+-sierra'))
 #local_file_list <- list.files(path=directory, pattern=paste0(gene, '-[0-9]+-local'))
-local_file_list <- gsub("sierra", "refactor-v8.5", sierra_file_list)
+local_file_list <- gsub("sierra", version, sierra_file_list)
+#local_file_list <- gsub("sierra", "refactor-v8.6.1", sierra_file_list)
 
+length(sierra_file_list) == length(local_file_list)
 
 compare <- function(sierra, local) {
   complete.matches <- 0
-  unmatching.headers <- c()
-  unmatched.drugs <- 0
+  discordant <- list()
+  #unmatching.headers <- c()
+  #unmatched.drugs <- 0
   
   #figure out which ones match
   for (sierra_index in 1:nrow(sierra)) {
     # extracts a data frame summarizing HIVdb score by drug
     s_scores <- sierra$drugResistance[[sierra_index]]$drugScores[[1]]
     header <- sierra$inputSequence[1]$header[sierra_index]
-    
+    val.results <- sierra$validationResults[[sierra_index]]$message
+      
     # find corresponding sequence label in <local> JSON
     local_index <- match(header, local$inputSequence[1]$header)
     if (is.na(local_index)) { # might be due to header unique count difference
@@ -30,20 +38,28 @@ compare <- function(sierra, local) {
       local_index <- sierra_index
     }
     l_scores <- local$drugResistance[[local_index]]$drugScores[[1]]
+    lval.results <- local$validationResults[[sierra_index]]$message
     
     if(identical(s_scores$score, l_scores$score)) {
       complete.matches <- complete.matches + 1
     } else {
-      unmatching.headers <- c(unmatching.headers, header)
-      unmatched.drugs <- unmatched.drugs + sum(s_scores$score %in% l_scores$score)
+      discordant[[header]] <- list(
+        sierra.scores=setNames(s_scores$score, s_scores$drug$displayAbbr),
+        local.scores=setNames(l_scores$score, l_scores$drug$displayAbbr),
+        sierra.val=val.results,
+        local.val=lval.results
+      )
+      #unmatching.headers <- c(unmatching.headers, header)
+      #unmatched.drugs <- unmatched.drugs + sum(s_scores$score %in% l_scores$score)
     }
   }
   
-  return (list(
-    complete.matches=complete.matches,
-    unmatching.headers=unmatching.headers,
-    unmatched.drugs=unmatched.drugs
-  ))
+  #return (list(
+    #complete.matches=complete.matches,
+    #unmatching.headers=unmatching.headers,
+    #unmatched.drugs=unmatched.drugs
+  #))
+  return(discordant)
 }
 
 
@@ -59,11 +75,34 @@ res <- mclapply(1:length(sierra_file_list),
   }, mc.cores=10
 )
 
+
 # post processing
-results_unmatched <- sapply(res, function(x) length(x$unmatching.headers))
-results_p <- sapply(res, function(x) x$complete.matches / 
-                      (x$complete.matches+length(x$unmatching.headers)))
-results_unmatched_headers <- sapply(res, function(x) paste(x$unmatching.headers, collapse=' '))
+
+## filter out empty entries
+temp <- res[sapply(res, length) > 0]
+
+discordant <- data.frame(sierra.val=unlist(sapply(temp, function(samples) { 
+  sapply(samples, function(sample) paste(sample$sierra.val, collapse=';'))
+})))
+
+#discordant$sierra.scores <- unlist(sapply(temp, function(samples) { 
+#  sapply(samples, function(sample) paste(sample$local.val, collapse=';'))
+#}))
+
+discordant$local.val <- unlist(sapply(temp, function(samples) { 
+  sapply(samples, function(sample) paste(sample$local.val, collapse=';'))
+}))
+
+
+
+write.csv(discordant, file=paste(gene, 'discordant.csv', sep='-'), quote=TRUE)
+
+
+#$results_unmatched <- sapply(res, function(x) length(x$unmatching.headers))
+#results_p <- sapply(res, function(x) x$complete.matches / 
+#                      (x$complete.matches+length(x$unmatching.headers)))
+#results_unmatched_headers <- sapply(res, function(x) paste(x$unmatching.headers, collapse=' '))
+
 
 ## previous serial code below
 
@@ -95,8 +134,10 @@ results_unmatched_headers <- sapply(res, function(x) paste(x$unmatching.headers,
 out <- data.frame(f=sierra_file_list, p=results_p, unmatched=results_unmatched, 
                   headers=results_unmatched_headers)
 #View(out)
-write.table(out, file=paste(gene, '-analysis-v5.tsv', sep=''), 
+write.table(out, file=paste(gene, '-analysis-v7.tsv', sep=''), 
             sep='\t', col.names = NA, quote=FALSE)
+
+
 
 
 # RT-13-sierra.json is missing!  I had to type with v8.6.1 using Sierra web service
@@ -130,4 +171,10 @@ res <- sapply(1:nrow(drug.scores), function(i) {
 })
 
 table(res)  # they all match
+
+
+
+local <- fromJSON('tests/Ethiopia_results.json')
+sierra <- fromJSON('tests/Ethiopia-sierra.json')
+res <- compare(sierra, local)
 

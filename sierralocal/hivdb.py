@@ -23,27 +23,35 @@ class HIVdb():
         if forceupdate:
             self.xml_filename = updater.update_HIVDB()
 
-        # If user has not specified XML path
-        if path == None:
+        if path is None:
+            # If user has not specified XML path
             # Iterate over possible HIVdb ASI files matching the glob pattern
             dest = str(Path(os.path.dirname(__file__))/'data'/'HIVDB*.xml')
-            print("searching path "+dest)
-            for file in glob.glob(dest):
-                # If is XML file and parseable, break
+            print("searching path " + dest)
+            files = glob.glob(dest)
+
+            # find the newest XML that can be parsed
+            intermed = []
+            for file in files:
+                version = re.search("HIVDB_([0-9]\.[0-9.]+)\.", file).group(1)
+                intermed.append((version, file))
+            intermed.sort(reverse=True)
+
+            for version, file in intermed:
                 try:
                     xml.parse(file)
-                    file_found = True
+                    file_found = True  # if no exception thrown
                     self.xml_filename = file
                     break
                 except:
-                    print('Failed to parse XML file. Please post an issue.')
+                    print('Failed to parse XML file. Please post an issue at http://github.com/PoonLab/sierra-local/issues.')
                     raise
-        # The user has specified XML path
         else:
-            # Ensure is a file
+            # The user has specified XML path
             if os.path.isfile(path):
-                # Ensure is XML parseable
+                # Ensure is a file
                 try:
+                    # Ensure is XML parseable
                     xml.parse(path)
                     file_found = True
                     self.xml_filename = path
