@@ -110,18 +110,22 @@ class NucAminoAligner():
         """
         aligned = ''
         skip = 0
+        pad = 0  # used to accommodate deletions upstream of PR start codon
         for si, site in enumerate(sites):
             if skip > 0:
                 skip -= 1
                 continue
 
-            posAA = site['PosAA']
+            codon = nuc[3 * si:(3 * si + 3)]
+            lengthNA = site['LengthNA']
+            if lengthNA < 3:
+                pad += 3-lengthNA
+
+            posAA = site['PosAA'] - pad//3
             if posAA < 57:
                 # codon is upstream of 5'-PR
                 continue
 
-            codon = nuc[3 * si:(3 * si + 3)]
-            lengthNA = site['LengthNA']
             if lengthNA == 3:
                 aligned += codon
             elif lengthNA < 3:

@@ -174,31 +174,12 @@ def main():
     # call nucamino
     input_file = sys.argv[1]
     aligner = NucAminoAligner()
-    aligner.align_file(input_file)
+    records = aligner.align_file(input_file)
 
-    with open(input_file) as handle:
-        sequence_list = get_input_sequences(handle, return_dict=False)
-
-    # open the NucAmino output file
-    with open(os.path.splitext(input_file)[0] + '.tsv', 'r') as nucamino_alignment:
-        tsvin = csv.reader(nucamino_alignment, delimiter='\t')
-        next(tsvin)  # bypass the header row
-
-        for idx, row in enumerate(tsvin):  # iterate over sequences (1 per row)
-            header, firstAA, _, firstNA, _, _ = row[:6]
-            sequence = sequence_list[idx]  # NucAmino preserves input order
-
-            firstAA = int(firstAA)  # relative to pol start
-            firstNA = int(firstNA)  # this should be used to adjust offset
-            #TODO: use JSON output to handle indels
-
-            gene = aligner.get_gene(firstAA)
-            assert gene is not None, "Fatal error in get_mutations"
-
-            closestSubtype = subtyper.getClosestSubtype(
-                gene=gene, sequence=sequence, offset=((firstAA-1)-56)*3
-            )
-            print (header, closestSubtype)
+    for record in records:
+        offset = max((record['FirstAA'] - 57) * 3, 0)
+        subtype = subtyper.getClosestSubtype(record['Sequence'], offset)
+        print('{}\t{}'.format(record['Name'], subtype))
 
 
 if __name__ == '__main__':
