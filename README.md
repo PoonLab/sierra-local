@@ -33,6 +33,38 @@ Note that you need super-user privileges to install the package by this method. 
 
 ### Command-line interface (CLI)
 
+To run a quick example, use the following sequence of commands:
+```console
+art@Jesry:~/git/sierra-local$ python3 scripts/retrieve_hivdb_data.py RT RT.fa
+art@Jesry:~/git/sierra-local$ sierralocal RT.fa
+searching path /usr/local/lib/python3.6/dist-packages/sierralocal/data/HIVDB*.xml
+Error: could not find local copy of HIVDB XML, attempting download...
+Updated HIVDB XML from https://hivdb.stanford.edu/assets/media/HIVDB_8.7.9e470b87.xml into /usr/local/lib/python3.6/dist-packages/sierralocal/data/HIVDB_8.7.9e470b87.xml
+/usr/local/lib/python3.6/dist-packages/sierralocal/data/apobec.tsv
+Error: could not retrieve APOBEC DRM data
+Updated APOBEC DRMs from https://hivdb.stanford.edu/assets/media/apobec-drms.5b7e1215.tsv into /usr/local/lib/python3.6/dist-packages/sierralocal/data/apobec.tsv
+HIVdb version 8.7
+Found NucAmino binary /usr/local/lib/python3.6/dist-packages/sierralocal/bin/nucamino-linux-amd64
+Aligned RT.fa
+100 sequences found in file RT.fa.
+Writing JSON to file RT_results.json
+Time elapsed: 7.476 seconds (17.803 it/s)
+```
+`retrieve_hivdb_data.py` is a Python script that we provided to download small samples of HIV-1 sequence data from the Stanford HIVdb database.  In this case, we have retrieved 100 reverse transcriptase (RT) sequences and processsed them with the *sierra-local* pipeline.  By default, the results are written to the file `[FASTA basename]_results.json`:
+```console
+art@Jesry:~/git/sierra-local$ head RT_results.json 
+[
+  {
+    "inputSequence": {
+      "header": "U54771.CM240.CRF01_AE.0"
+    },
+    "subtypeText": "CRF01_AE",
+    "validationResults": [],
+    "alignedGeneSequences": [
+      {
+        "firstAA": 1,
+```
+
 We provide shell access to the program:
 ```
 sierralocal SEQUENCES.fasta -o OUTPUT.json
@@ -51,15 +83,30 @@ python3 gui.py
 ```
 
 ### As a Python module
-If you did not install via `pip` or `pip3`, must install as a package locally. Navigate to the project root directory:
-```bash
-pip3 install -e .
+If you have downloaded the package source to your computer, you can also run *sierra-local* as a Python module from the root directory of the package.  In the following example, we are calling the main function of *sierra-local* from an interactive Python session:
+```console
+art@Jesry:~/git/sierra-local$ git clone http://github.com/PoonLab/sierra-local
+art@Jesry:~/git/sierra-local$ cd sierra-local
+art@Jesry:~/git/sierra-local$ python3
+Python 3.6.6 (default, Sep 12 2018, 18:26:19) 
+[GCC 8.0.1 20180414 (experimental) [trunk revision 259383]] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> from sierralocal.main import sierralocal
+>>> sierralocal('RT.fa', 'RT.json')
+searching path /home/art/git/sierra-local/sierralocal/data/HIVDB*.xml
+Error: could not find local copy of HIVDB XML, attempting download...
+Updated HIVDB XML from https://hivdb.stanford.edu/assets/media/HIVDB_8.7.9e470b87.xml into /home/art/git/sierra-local/sierralocal/data/HIVDB_8.7.9e470b87.xml
+/home/art/git/sierra-local/sierralocal/data/apobec.tsv
+Error: could not retrieve APOBEC DRM data
+Updated APOBEC DRMs from https://hivdb.stanford.edu/assets/media/apobec-drms.5b7e1215.tsv into /home/art/git/sierra-local/sierralocal/data/apobec.tsv
+HIVdb version 8.7
+Found NucAmino binary /home/art/git/sierra-local/sierralocal/bin/nucamino-linux-amd64
+Aligned RT.fa
+100 sequences found in file RT.fa.
+Writing JSON to file RT.json
+(100, 1.9369409084320068)
 ```
-```python
-import sierralocal
-sierralocal.score(filename)
-#TODO: make sierralocal.score() return the JSON text. Currently it just runs the program and the JSON is stored as a file.
-```
+Note that this doesn't require any `sudo` privileges.
 
 ## About Us
 This project was developed at the Poon Lab under the Department of Pathology and Laboratory Medicine, Schulich School of Medicine and Dentistry, Western University, London, Ontario.
