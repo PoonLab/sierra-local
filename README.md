@@ -20,26 +20,7 @@ We tried to minimize dependencies:
 - An internet connection to set up or update HIVdb files
 
 ## Installation
-
-### For Use
-Currently Linux only:
-```bash
-pip3 install sierralocal
-```
-
-### For Development
-1. Clone this repository.
-    ```
-    git clone https://github.com/PoonLab/sierra-local.git
-    ```
-2. Download the correct [pre-compiled NucAmino](https://github.com/hivdb/nucamino) binary for your platform, *e.g.*:
-   ```
-   # for Linux
-   wget https://github.com/hivdb/nucamino/releases/download/v0.1.3/nucamino-linux-amd64
-   ```
-    and place it in the `sierralocal` directory (not the root directory `sierra-local`).  
-    You might also need to modify the user permissions for the binary file; for example: `chmod 755 nucamino`.
-
+Please refer to the document [INSTALL.md](INSTALL.md) that should be located in the root directory of this Python package.
 
 ## Using sierra-local
 
