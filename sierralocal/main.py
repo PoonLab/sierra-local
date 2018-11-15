@@ -170,10 +170,11 @@ def main():
     """
     args = parse_args()
 
-    # check that the FASTA file exists
-    if not os.path.exists(args.fasta):
-        print("Error: there is no file {}".format(args.fasta))
-        sys.exit()
+    # check that FASTA files in list all exist
+    for file in args.fasta:
+        if not os.path.exists(file):
+            print("Error: there is no file {}".format(file))
+            sys.exit()
 
     time_start = time.time()
     count, time_elapsed = sierralocal(args.fasta, args.outfile, args.xml,
