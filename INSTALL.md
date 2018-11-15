@@ -1,5 +1,40 @@
+# Installing sierra-local
 
-### For Use
+## For Linux Users
+The recommended method to install *sierra-local* on a Linux system is to clone the source from this repository and run the `setup.py` installation script with superuser privileges, with will install the package to `/usr/local/lib`:
+```console
+art@Jesry:~/git$ git clone http://github.com/PoonLab/sierra-local
+Cloning into 'sierra-local'...
+warning: redirecting to https://github.com/PoonLab/sierra-local/
+remote: Enumerating objects: 71, done.
+remote: Counting objects: 100% (71/71), done.
+remote: Compressing objects: 100% (52/52), done.
+remote: Total 709 (delta 40), reused 39 (delta 19), pack-reused 638
+Receiving objects: 100% (709/709), 10.08 MiB | 5.54 MiB/s, done.
+Resolving deltas: 100% (403/403), done. 
+art@Jesry:~/git$ cd sierra-local
+art@Jesry:~/git/sierra-local$ sudo python3 setup.py install
+[sudo] password for art: 
+running install
+running build
+running build_py
+running build_scripts
+running install_lib
+creating /usr/local/lib/python3.6/dist-packages/sierralocal
+copying build/lib/sierralocal/utils.py -> /usr/local/lib/python3.6/dist-packages/sierralocal
+[...]
+running install_scripts
+copying build/scripts-3.6/sierralocal -> /usr/local/bin
+changing mode of /usr/local/bin/sierralocal to 775
+Changing permissions of /usr/local/lib/python3.6/dist-packages/sierralocal/data to 0o777
+art@Jesry:~/git/sierra-local$ sierralocal
+usage: sierralocal [-h] [-o OUTFILE] [-xml XML] [--cleanup] [--forceupdate]
+                   fasta [fasta ...]
+sierralocal: error: the following arguments are required: fasta
+```
+However, we appreciate that many users will not have root privileges on their computer or may prefer not to clone the git repository, so we provide some alternative installation instructions below.
+
+### Using pip3
 To install *sierra-local* from the [Python Package Index](https://pypi.org/), you need to have `pip3` on your system.  You can check whether this program is installed by invoking it from the command line:
 ```
 art@Jesry:~$ pip3
@@ -67,6 +102,36 @@ Now you have two options for installing *sierra-local* with `pip3`:
    art@Jesry:~$ locate sierralocal
    /home/art/.local/bin/sierralocal
    ```
+   The `.local/` directory is probably not on your `PATH` (the set of directories where the OS looks for executable programs):
+   ```console
+   art@Jesry:~$ echo $PATH
+   /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+   ```
+   To append this directory to the `PATH` environmental variable, you need to run this command:
+   ```
+   art@Jesry:~$ export PATH=/home/art/.local/bin:$PATH
+   art@Jesry:~$ echo $PATH
+   /home/art/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+   ```
+   Note this is a temporary fix, and your `PATH` may revert to the original setting.
+   
+   Now your OS will be able to find the `sierralocal` executable file when you invoke it on the command line:
+   ```console
+   art@Jesry:~$ sierralocal RT.fa
+   searching path /home/art/.local/lib/python3.6/site-packages/sierralocal/data/HIVDB*.xml
+   Error: could not find local copy of HIVDB XML, attempting download...
+   Updated HIVDB XML from https://hivdb.stanford.edu/assets/media/HIVDB_8.7.9e470b87.xml into /home/art/.local/lib/python3.6/site-packages/sierralocal/data/HIVDB_8.7.9e470b87.xml
+   /home/art/.local/lib/python3.6/site-packages/sierralocal/data/apobec.tsv
+   Error: could not retrieve APOBEC DRM data
+   Updated APOBEC DRMs from https://hivdb.stanford.edu/assets/media/apobec-drms.5b7e1215.tsv into /home/art/.local/lib/python3.6/site-packages/sierralocal/data/apobec.tsv
+   HIVdb version 8.7
+   Found NucAmino binary /home/art/.local/lib/python3.6/site-packages/sierralocal/bin/nucamino-linux-amd64
+   Aligned RT.fa
+   100 sequences found in file RT.fa.
+   Writing JSON to file RT_results.json
+   Time elapsed: 7.9871 seconds (17.795 it/s)
+   ```
+2. If you do have root privileges on your computer and you still prefer to use `pip3`, 
 
 
 ### For Development
