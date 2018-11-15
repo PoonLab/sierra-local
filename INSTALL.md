@@ -131,6 +131,8 @@ Now you have two options for installing *sierra-local* with `pip3`:
    Writing JSON to file RT_results.json
    Time elapsed: 7.9871 seconds (17.795 it/s)
    ```
+   Note the `RT.fa` file in this example is a small random sample of HIV-1 RT sequences that was generated using the `retrieve_hivdb_data.py` provided in the `scripts/` directory of this repository.
+   
 2. If you **do** have root privileges on your computer and you still prefer to use `pip3`, you can do so:
    ```console
    art@Jesry:~$ sudo pip3 install sierralocal
@@ -166,18 +168,31 @@ Now you have two options for installing *sierra-local* with `pip3`:
    drwxr-sr-x 2 root staff  4096 Nov 15 10:59 data
    -rw-r--r-- 1 root staff 13386 Nov 15 10:59 hivdb.py
    ```
-   
+   To rectify this, we have to elevate the read/write/execute privileges to everyone:
+   ```console
+   art@Jesry:~$ sudo chmod 777 /usr/local/lib/python3.6/dist-packages/sierralocal/data
+   art@Jesry:~$ ls -l /usr/local/lib/python3.6/dist-packages/sierralocal
+   total 100
+   drwxr-sr-x 2 root staff  4096 Nov 15 10:59 bin
+   drwxrwsrwx 2 root staff  4096 Nov 15 10:59 data
+   -rw-r--r-- 1 root staff 13386 Nov 15 10:59 hivdb.py
+   ```
+   The *sierra-local* `setup.py` script does this automatically, which is why it is the recommended method if you have sudo privileges.
+   Now the program should run properly:
+   ```console
+   art@Jesry:~$ sierralocal RT.fa
+   searching path /usr/local/lib/python3.6/dist-packages/sierralocal/data/HIVDB*.xml
+   Error: could not find local copy of HIVDB XML, attempting download...
+   Updated HIVDB XML from https://hivdb.stanford.edu/assets/media/HIVDB_8.7.9e470b87.xml into /usr/local/lib/python3.6/dist-packages/sierralocal/data/HIVDB_8.7.9e470b87.xml
+   /usr/local/lib/python3.6/dist-packages/sierralocal/data/apobec.tsv
+   Error: could not retrieve APOBEC DRM data
+   Updated APOBEC DRMs from https://hivdb.stanford.edu/assets/media/apobec-drms.5b7e1215.tsv into /usr/local/lib/python3.6/dist-packages/sierralocal/data/apobec.tsv
+   HIVdb version 8.7
+   Found NucAmino binary /usr/local/lib/python3.6/dist-packages/sierralocal/bin/nucamino-linux-amd64
+   Aligned RT.fa
+   100 sequences found in file RT.fa.
+   Writing JSON to file git/sierra-local/RT_results.json
+   Time elapsed: 8.1593 seconds (18.869 it/s)
+   ```
 
 
-### For Development
-1. Clone this repository.
-    ```
-    git clone https://github.com/PoonLab/sierra-local.git
-    ```
-2. Download the correct [pre-compiled NucAmino](https://github.com/hivdb/nucamino) binary for your platform, *e.g.*:
-   ```
-   # for Linux
-   wget https://github.com/hivdb/nucamino/releases/download/v0.1.3/nucamino-linux-amd64
-   ```
-    and place it in the `sierralocal` directory (not the root directory `sierra-local`).  
-    You might also need to modify the user permissions for the binary file; for example: `chmod 755 nucamino`.
