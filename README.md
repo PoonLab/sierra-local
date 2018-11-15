@@ -20,7 +20,14 @@ We tried to minimize dependencies:
 - An internet connection to set up or update HIVdb files
 
 ## Installation
-Please refer to the document [INSTALL.md](INSTALL.md) that should be located in the root directory of this Python package.
+
+On a Linux system, you can install *sierra-local* as follows:
+```
+git clone http://github.com/PoonLab/sierra-local
+cd sierra-local
+sudo python3 setup.py install
+```
+Note that you need super-user privileges to install the package by this method.  For more detailed instrucitons, please refer to the document [INSTALL.md](INSTALL.md) that should be located in the root directory of this Python package.
 
 ## Using sierra-local
 
