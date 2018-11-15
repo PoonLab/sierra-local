@@ -43,6 +43,7 @@ setup(
 	],
 
 	scripts=['bin/sierralocal'],
+    options={'build_scripts': {'executable': '/usr/bin/env python3'}},
     package_data={
         'sierralocal': [
             'bin/nucamino-*',
