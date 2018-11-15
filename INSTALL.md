@@ -295,4 +295,5 @@ The following instructions are for installing *sierra-local* in Windows 10.  Ple
    Installing collected packages: sierralocal
    Successfully installed sierralocal-0.1.2
    ```
+   This installs the package to `"C:\Users\art\AppData\Local\Programs\Python\Python37\lib\site-packages\sierralocal\`
 3. 
