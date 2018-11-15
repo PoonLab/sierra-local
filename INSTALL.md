@@ -1,7 +1,7 @@
 # Installing sierra-local
 
 ## For Linux Users
-The recommended method to install *sierra-local* on a Linux system is to clone the source from this repository and run the `setup.py` installation script with superuser privileges, with will install the package to `/usr/local/lib`:
+The recommended method to install *sierra-local* on a Linux system is to clone the source from this repository and run the `setup.py` installation script with superuser privileges, which will install the package to `/usr/local/lib`:
 ```console
 art@Jesry:~/git$ git clone http://github.com/PoonLab/sierra-local
 Cloning into 'sierra-local'...
@@ -36,7 +36,7 @@ However, we appreciate that many users will not have root privileges on their co
 
 ### Using pip3
 To install *sierra-local* from the [Python Package Index](https://pypi.org/), you need to have `pip3` on your system.  You can check whether this program is installed by invoking it from the command line:
-```
+```console
 art@Jesry:~$ pip3
 
 Command 'pip3' not found, but can be installed with:
@@ -46,14 +46,14 @@ sudo apt install python3-pip
 Note that this response will vary with Linux distributions.  This example uses Ubuntu 18.04.
 
 Alternatively, you can use the `which` command:
-```
+```console
 art@Jesry:~$ which pip3
 art@Jesry:~$
 ```
 If this command returns nothing, then you need to install `pip3` with your system's package manager.  
 
 For Ubuntu/Debian systems, for example:
-```
+```console
 art@Jesry:~$ sudo apt install python3-pip
 [sudo] password for art: 
 Reading package lists... Done
@@ -79,7 +79,7 @@ If you are okay with these packages being installed, then respond with `y`.  You
 
 Now you have two options for installing *sierra-local* with `pip3`:
 1. You can install it locally in your user home directory:
-   ```bash
+   ```console
    art@Jesry:~$ pip3 install sierralocal
    Collecting sierralocal
      Downloading https://files.pythonhosted.org/packages/ce/a8/2501b1b3ad9b8abc7994b7ece3d325b3d765401c4ce7f5760bda765f5267/sierralocal-0.0.1.tar.gz (1.7MB)
@@ -93,12 +93,12 @@ Now you have two options for installing *sierra-local* with `pip3`:
    ```
    Note that the version number (*e.g., `0.0.1`) will vary over time.
    However, you may find that calling the main program `sierralocal` fails to run anything:
-   ```
+   ```console
    art@Jesry:~$ sierralocal
    sierralocal: command not found
    ```
    This happens because the package was installed in a hidden directory within your home directory:
-   ```
+   ```console
    art@Jesry:~$ locate sierralocal
    /home/art/.local/bin/sierralocal
    ```
@@ -131,7 +131,42 @@ Now you have two options for installing *sierra-local* with `pip3`:
    Writing JSON to file RT_results.json
    Time elapsed: 7.9871 seconds (17.795 it/s)
    ```
-2. If you do have root privileges on your computer and you still prefer to use `pip3`, 
+2. If you **do** have root privileges on your computer and you still prefer to use `pip3`, you can do so:
+   ```console
+   art@Jesry:~$ sudo pip3 install sierralocal
+   [sudo] password for art: 
+   The directory '/home/art/.cache/pip/http' or its parent directory is not owned by the current user and the cache has been disabled. Please check the permissions and owner of that directory. If executing pip with sudo, you may want sudo's -H flag.
+   The directory '/home/art/.cache/pip' or its parent directory is not owned by the current user and caching wheels has been disabled. check the permissions and owner of that directory. If executing pip with sudo, you may want sudo's -H flag.
+   Collecting sierralocal
+     Downloading https://test-files.pythonhosted.org/packages/1a/67/4b5c97b7bd526bb1b654f9d5fa913f51e70b6c3edb1d2aaefb24a6727a3a/sierralocal-0.1.0-py3-none-any.whl (8.0MB)
+    100% |████████████████████████████████| 8.0MB 255kB/s 
+   Installing collected packages: sierralocal
+   Successfully installed sierralocal-0.1.0
+   ```
+   
+   However, attempting to run the program will throw this exception:
+   ```console
+   art@Jesry:~$ sierralocal RT.fa
+   searching path /usr/local/lib/python3.6/dist-packages/sierralocal/data/HIVDB*.xml
+   Error: could not find local copy of HIVDB XML, attempting download...
+   Unable to update HIVDB XML. Try manually downloading the HIVdb ASI2.
+   [Errno 13] Permission denied: '/usr/local/lib/python3.6/dist-packages/sierralocal/data/HIVDB_8.7.9e470b87.xml'
+   /usr/local/lib/python3.6/dist-packages/sierralocal/data/apobec.tsv
+   Error: could not retrieve APOBEC DRM data
+   Unable to update APOBEC DRMs. Try manually downloading the APOBEC DRM TSV into data/apobec.tsv
+   Traceback (most recent call last):
+     [...omitted...]
+   FileNotFoundError: [Errno 2] No such file or directory: 'None'
+   ```
+   This occurs because Python does not have permission to write the HIVdb XML files to `/usr/local/lib`:
+   ```console
+   art@Jesry:~$ ls -l /usr/local/lib/python3.6/dist-packages/sierralocal
+   total 100
+   drwxr-sr-x 2 root staff  4096 Nov 15 10:59 bin
+   drwxr-sr-x 2 root staff  4096 Nov 15 10:59 data
+   -rw-r--r-- 1 root staff 13386 Nov 15 10:59 hivdb.py
+   ```
+   
 
 
 ### For Development
