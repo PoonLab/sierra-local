@@ -195,4 +195,6 @@ Now you have two options for installing *sierra-local* with `pip3`:
    Time elapsed: 8.1593 seconds (18.869 it/s)
    ```
 
+## For macOS users
+
 
