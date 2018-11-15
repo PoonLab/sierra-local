@@ -197,4 +197,77 @@ Now you have two options for installing *sierra-local* with `pip3`:
 
 ## For macOS users
 
+Since macOS is a UNIX-like system, the installation process is very similar to that of Linux operating systems.  Again, the recommended method for installing *sierra-local* is with the `setup.py` script:
+```console
+art@biomech:~/git$ git clone http://github.com/PoonLab/sierra-local
+Cloning into 'sierra-local'...
+warning: redirecting to https://github.com/PoonLab/sierra-local/
+remote: Enumerating objects: 92, done.
+remote: Counting objects: 100% (92/92), done.
+remote: Compressing objects: 100% (73/73), done.
+remote: Total 730 (delta 54), reused 39 (delta 19), pack-reused 638
+Receiving objects: 100% (730/730), 10.09 MiB | 2.42 MiB/s, done.
+Resolving deltas: 100% (417/417), done.
+```
+
+However, *sierra-local* requires Python 3.x, and macOS ships with only Python 2.7 by default.  There are a number of options for installing Python 3 in macOS.  First, you can install the [Homebrew](https://brew.sh/) package manager, and then install `python3` and `pip3`.
+```console
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+brew install python
+```
+Alternatively, you can download and install the pre-compiled binaries from the [Python homepage](https://www.python.org/downloads/mac-osx/).
+
+When you have a working copy of Python 3, you can run the following:
+```
+art@biomech:~/git$ cd sierra-local/
+art@biomech:~/git/sierra-local$ sudo python3 setup.py install
+Password:
+running install
+running build
+running build_py
+creating build
+[... lots of stuff ...]
+running install_scripts
+copying build/scripts-3.7/sierralocal -> /usr/local/bin
+changing mode of /usr/local/bin/sierralocal to 755
+Changing permissions of /usr/local/lib/python3.7/site-packages/sierralocal/data to 0o777
+art@biomech:~/git/sierra-local$ sierralocal
+usage: sierralocal [-h] [-o OUTFILE] [-xml XML] [--cleanup] [--forceupdate]
+                   fasta [fasta ...]
+sierralocal: error: the following arguments are required: fasta
+```
+
+Now we test the installation:
+```console
+art@biomech:~/git/sierra-local$ python3 scripts/retrieve_hivdb_data.py RT RT.fa
+art@biomech:~/git/sierra-local$ sierralocal RT.fa
+searching path /usr/local/lib/python3.7/site-packages/sierralocal/data/HIVDB*.xml
+Error: could not find local copy of HIVDB XML, attempting download...
+Updated HIVDB XML from https://hivdb.stanford.edu/assets/media/HIVDB_8.7.9e470b87.xml into /usr/local/lib/python3.7/site-packages/sierralocal/data/HIVDB_8.7.9e470b87.xml
+/usr/local/lib/python3.7/site-packages/sierralocal/data/apobec.tsv
+Error: could not retrieve APOBEC DRM data
+Updated APOBEC DRMs from https://hivdb.stanford.edu/assets/media/apobec-drms.5b7e1215.tsv into /usr/local/lib/python3.7/site-packages/sierralocal/data/apobec.tsv
+HIVdb version 8.7
+Found NucAmino binary /usr/local/lib/python3.7/site-packages/sierralocal/bin/nucamino-darwin-amd64
+Aligned RT.fa
+100 sequences found in file RT.fa.
+Writing JSON to file RT_results.json
+Time elapsed: 11.297 seconds (11.495 it/s)
+```
+
+If you prefer, you can also install *sierra-local* from PyPI:
+```console
+art@biomech:~$ pip3 install sierralocal
+Collecting sierralocal
+  Downloading https://files.pythonhosted.org/packages/e6/e0/55bb3c81b2cd725a2fc5a6dc61b5e3a899defa1991bb0f2f5c323ec9fc5e/sierralocal-0.1.2-py3-none-any.whl (8.0MB)
+    100% |████████████████████████████████| 8.0MB 2.6MB/s 
+Installing collected packages: sierralocal
+Successfully installed sierralocal-0.1.2
+art@biomech:~$ which sierralocal
+/usr/local/bin/sierralocal
+art@biomech:~$ sierralocal
+usage: sierralocal [-h] [-o OUTFILE] [-xml XML] [--cleanup] [--forceupdate]
+                   fasta [fasta ...]
+sierralocal: error: the following arguments are required: fasta
+```
 
