@@ -7,6 +7,7 @@ from sierralocal.jsonwriter import JSONWriter
 from sierralocal.utils import get_input_sequences
 from pathlib import Path
 import time
+import sys
 
 
 def score(filename, xml_path=None, forceupdate=False):
@@ -168,6 +169,11 @@ def main():
     Main function called from CLI.
     """
     args = parse_args()
+
+    # check that the FASTA file exists
+    if not os.path.exists(args.fasta):
+        print("Error: there is no file {}".format(args.fasta))
+        sys.exit()
 
     time_start = time.time()
     count, time_elapsed = sierralocal(args.fasta, args.outfile, args.xml,
