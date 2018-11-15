@@ -65,17 +65,6 @@ art@Jesry:~/git/sierra-local$ head RT_results.json
         "firstAA": 1,
 ```
 
-We provide shell access to the program:
-```
-sierralocal SEQUENCES.fasta -o OUTPUT.json
-```
-
-Optional flags:
-```
--xml		Path to HIVDB ASI XML file
--skipalign	Skip NucAmino alignment if TSV file already present.
--cleanup	Deletes NucAmino alignment file after processing.
-```
 
 ### As a Python module
 If you have downloaded the package source to your computer, you can also run *sierra-local* as a Python module from the root directory of the package.  In the following example, we are calling the main function of *sierra-local* from an interactive Python session:
