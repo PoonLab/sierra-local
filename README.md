@@ -76,11 +76,6 @@ Optional flags:
 -skipalign	Skip NucAmino alignment if TSV file already present.
 -cleanup	Deletes NucAmino alignment file after processing.
 ```
-### Graphical user interface (GUI)
-From the root directory of the project:
-```
-python3 gui.py
-```
 
 ### As a Python module
 If you have downloaded the package source to your computer, you can also run *sierra-local* as a Python module from the root directory of the package.  In the following example, we are calling the main function of *sierra-local* from an interactive Python session:
@@ -107,6 +102,13 @@ Writing JSON to file RT.json
 (100, 1.9369409084320068)
 ```
 Note that this doesn't require any `sudo` privileges.
+
+### Graphical user interface (GUI)
+We have a GUI in development that uses the Python Tkinter framework.  To use this script, you need to check out the *gui* branch of this repository and then call the script from the root directory of the project:
+```
+python3 gui.py
+```
+
 
 ## About Us
 This project was developed at the Poon Lab under the Department of Pathology and Laboratory Medicine, Schulich School of Medicine and Dentistry, Western University, London, Ontario.
