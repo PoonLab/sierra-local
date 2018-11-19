@@ -1,5 +1,9 @@
 # Installing sierra-local
 
+1. [Linux](https://github.com/PoonLab/sierra-local/blob/master/INSTALL.md#for-linux-users)
+2. [macOS](https://github.com/PoonLab/sierra-local/blob/master/INSTALL.md#for-macos-users)
+3. [Windows](https://github.com/PoonLab/sierra-local/blob/master/INSTALL.md#for-windows-users)
+
 ## For Linux Users
 The recommended method to install *sierra-local* on a Linux system is to clone the source from this repository and run the `setup.py` installation script with superuser privileges, which will install the package to `/usr/local/lib`:
 ```console
@@ -273,27 +277,4 @@ sierralocal: error: the following arguments are required: fasta
 
 
 ## For Windows users
-The following instructions are for installing *sierra-local* in Windows 10.  Please note that this was tested using a virtual machine, so we cannot guarantee that it will work on a native Windows system.
-1. Download the Python Windows x86-64 executable installer program from [https://www.python.org/downloads/windows/](https://www.python.org/downloads/windows/).  (We are assuming that you are running a 64-bit system.  If you are using an older 32-bit system, then you will want to download the Windows x86 executable installer.)
-2. Make the Python executable accessible by appending its path to the `PATH` environment:
-   ```
-   C:\Users\art>set PATH=C:\Users\art\AppData\Local\Programs\Python\Python37;%PATH%
-   ```
-2. The `pip` program is automatically installed in a nested directory:
-   ```
-   C:\Users\art\AppData\Local\Programs\Python\Python37\Scripts>pip
-
-   Usage:
-     pip <command> [options]
-   ```
-   Run the following command:
-   ```
-   C:\Users\art\AppData\Local\Programs\Python\Python37\Scripts>pip3.7 install sierralocal
-   Collecting sierralocal
-     Downloading https://files.pythonhosted.org/packages/e6/e0/55bb3c81b2cd725a2fc5a6dc61b5e3a899defa1991bb0f2f5c323ec9fc5e/sierralocal-0.1.2-py3-none-any.whl (8.0MB)
-       100% |████████████████████████████████| 8.0MB 1.6MB/s
-   Installing collected packages: sierralocal
-   Successfully installed sierralocal-0.1.2
-   ```
-   This installs the package to `"C:\Users\art\AppData\Local\Programs\Python\Python37\lib\site-packages\sierralocal\`
-3. 
+Windows 10 now enables users to install a Linux operating system as a Windows subsystem.  Installation instructions can be found at https://docs.microsoft.com/en-us/windows/wsl/install-win10.  Although there are several Linux distributions available for installation through this method, we recommend using Ubuntu as the distribution in which *sierra-local* was primarily developed and tested.  Subsequent to installing the subsystem, please refer to the [Linux](https://github.com/PoonLab/sierra-local/blob/master/INSTALL.md#for-linux-users) installation instructions for the next steps.
