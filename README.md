@@ -16,8 +16,7 @@ Our objective was to build a lightweight, open-source Python implementation of t
 ## Dependencies
 We tried to minimize dependencies:
 - Python 3 (tested on [Python 3.6.5](https://www.python.org/downloads/release/python-365/))
-- [NucAmino](https://github.com/hivdb/nucamino) `v0.1.3` or later
-- An internet connection to set up or update HIVdb files
+- [NucAmino](https://github.com/hivdb/nucamino) `v0.1.3` or later (included with package).
 
 ## Installation
 
