@@ -138,4 +138,10 @@ python3 gui.py
 
 
 ## About Us
-This project was developed at the Poon Lab under the Department of Pathology and Laboratory Medicine, Schulich School of Medicine and Dentistry, Western University, London, Ontario.
+This project was developed at the [Poon lab](http://github.com/PoonLab) within the [Department of Pathology and Laboratory Medicine](https://www.schulich.uwo.ca/pathol/), Schulich School of Medicine and Dentistry, [Western University](http://uwo.ca), London, Ontario.  The developers were supported in part by a grant from the [Canadian Institutes of Health Research](http://www.cihr-irsc.gc.ca/e/193.html) (PJT-156178).
+
+If you cite this package, please use the following reference:
+### sierra-local: A lightweight standalone application for secure HIV-1 drug resistance prediction
+Jasper C Ho, Garway T Ng, Mathias Renaud, Art FY Poon
+
+*bioRxiv* 393207; doi: https://doi.org/10.1101/393207
