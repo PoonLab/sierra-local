@@ -64,6 +64,45 @@ art@Jesry:~/git/sierra-local$ head RT_results.json
         "firstAA": 1,
 ```
 
+We can also specify a different ASI (XML) file representing an earlier version of the HIVdb algorithm to reprocess the same data, and save the output to another file:
+```console
+art@Jesry:~/git/sierra-local$ sierralocal -xml sierralocal/data/HIVDB_8.5.d926dfff.xml RT.fa -o RT-v8.5.json
+/usr/local/lib/python3.6/dist-packages/sierralocal/data/apobec.tsv
+HIVdb version 8.5
+Found NucAmino binary /usr/local/lib/python3.6/dist-packages/sierralocal/bin/nucamino-linux-amd64
+Aligned RT.fa
+100 sequences found in file RT.fa.
+Writing JSON to file RT-v8.5.json
+Time elapsed: 5.5014 seconds (18.337 it/s)
+```
+
+We find that switching versions of the algorithm from 8.5 to 8.7 results in substantial changes in resistance scores for these data with the introduction of a new drug [doravirine](https://aidsinfo.nih.gov/drugs/546/doravirine/0/patient) (DOR).  In addition, two of 100 cases were scored differently:
+```console
+art@Jesry:~/git/sierra-local$ python3 scripts/json2csv.py RT_results.json RT-v8.7.json.csv
+art@Jesry:~/git/sierra-local$ python3 scripts/json2csv.py RT-v8.5.json RT-v8.5.json.csv
+art@Jesry:~/git/sierra-local$ R
+```
+```R
+> v5 <- read.csv('RT-v8.5.json.csv')
+> v7 <- read.csv('RT-v8.7.json.csv')
+> v7 <- v7[,-which(names(v7)=='DOR')]
+> temp <- sapply(1:nrow(v5), function(i) any(v5[i,] != v7[i,]))
+> which(temp)
+[1] 23 63
+> v5[23,]
+                name subtype ABC AZT D4T DDI FTC LMV TDF EFV ETR NVP RPV
+23 Y14503.BCF13.O.22 Group O  15 -10 -10  10  60  60 -10  50  45  95  65
+> v7[23,]
+                name subtype ABC AZT D4T DDI FTC LMV TDF EFV ETR NVP RPV
+23 Y14503.BCF13.O.22 Group O  15 -10 -10  10  60  60 -10  50  55 105  75
+> v5[63,]
+                name subtype ABC AZT D4T DDI FTC LMV TDF EFV ETR NVP RPV
+63 AF102332.A11.B.62       B  90 115 115  90  80  80  60   0   0   0   0
+> v7[63,]
+                name subtype ABC AZT D4T DDI FTC LMV TDF EFV ETR NVP RPV
+63 AF102332.A11.B.62       B  90 115 115  90  80  80  60   0  10  10  10
+```
+
 
 ### As a Python module
 If you have downloaded the package source to your computer, you can also run *sierra-local* as a Python module from the root directory of the package.  In the following example, we are calling the main function of *sierra-local* from an interactive Python session:
