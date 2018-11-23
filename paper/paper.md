@@ -216,7 +216,7 @@ local computing resources available.
 # Concluding remarks
 
 The distribution of the HIVdb resistance genotyping algorithm in a
-standardized format (ASI [@betts2003asi] is an important resource for
+standardized format (ASI [@betts2003asi]) is an important resource for
 HIV-1 research and clinical management, and an exemplary case of open
 science. *sierra-local* provides a convenient framework to generate HIV
 drug resistance predictions from ASI releases in a secure environment
