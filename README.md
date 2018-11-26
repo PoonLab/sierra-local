@@ -2,7 +2,7 @@
 [![PyPI](https://img.shields.io/pypi/v/sierralocal.svg)](https://pypi.org/project/sierralocal/)
 
 # sierra-local
-sierra-local is a local implementation of Stanford University's HIVdb web interface Sierra. It generates drug resistance predictions given HIV-1 sequence data, and outputs this in a standard format.
+sierra-local is a Python 3 implementation of the Stanford University HIV Drug Resistance Database (HIVdb) [Sierra web service](https://hivdb.stanford.edu/page/webservice/) for generating drug resistance predictions from HIV-1 sequence data. This Python package enables laboratories to run this resistance genotyping algorithm without needing to transmit patient data over the network, and confers full control over data provenance and security.
 
 ## Rationale
 
@@ -10,7 +10,7 @@ The Stanford HIVdb algortihm is a widely used method for predicting the drug res
 
 The HIVdb algorithm is usually accessed through a web service hosted at Stanford University ([Sierra](https://hivdb.stanford.edu/hivdb)).  While this is a convenient format for many clinical laboratories, it requires a network connection and the transmission of potentially sensitive patient-derived data to a remote server.  Transmitting sequence data over the web may present a bottleneck for laboratories located at sites that are geographically distant from the host server, or where network traffic is prone to service disruptions.  Furthermore, the use of HIV-1 sequence data in criminal cases raises significant issues around data privacy.
 
-Our objective was to build a lightweight, open-source Python implementation of the HIVdb algorithm for processing data on a local computer without sending any data over the network.  During the development of sierra-local, the maintainers of [Sierra](https://github.com/hivdb/sierra) released the [source code](https://github.com/hivdb/sierra) for their web service under a permissive free software license (GPL v3.0).  We were thrilled that the [HIVdb developers](https://github.com/hivdb) elected to release their server code, but we remained committed to complete sierra-local so the HIV research and clinical communities can process their own data without needing to install and maintain an Apache server, build an SQL database, or to install a sizeable number of software [dependencies](https://github.com/hivdb/sierra#dependency-lists).
+Our objective was to build a lightweight, open-source Python implementation of the HIVdb algorithm for processing data on a local computer without sending any data over the network.  During the development of sierra-local, the maintainers of [Sierra](https://hivdb.stanford.edu/page/webservice/) released the [source code](https://github.com/hivdb/sierra) for their web service under a permissive free software license (GPL v3.0).  We were thrilled that the [HIVdb developers](https://github.com/hivdb) elected to release their server code, but we remained committed to complete sierra-local so the HIV research and clinical communities can process their own data without needing to install and maintain an Apache server, build an SQL database, or to install a sizeable number of software [dependencies](https://github.com/hivdb/sierra#dependency-lists).
 
 
 ## Dependencies
