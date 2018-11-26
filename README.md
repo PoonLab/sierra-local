@@ -2,7 +2,7 @@
 [![PyPI](https://img.shields.io/pypi/v/sierralocal.svg)](https://pypi.org/project/sierralocal/)
 
 # sierra-local
-sierra-local is a Python 3 implementation of the Stanford University HIV Drug Resistance Database (HIVdb) [Sierra web service](https://hivdb.stanford.edu/page/webservice/) for generating drug resistance predictions from HIV-1 sequence data. This Python package enables laboratories to run this resistance genotyping algorithm without needing to transmit patient data over the network, and confers full control over data provenance and security.
+sierra-local is a Python 3 implementation of the [Stanford University HIV Drug Resistance Database](https://hivdb.stanford.edu/) (HIVdb) [Sierra web service](https://hivdb.stanford.edu/page/webservice/) for generating drug resistance predictions from HIV-1 sequence data. This Python package enables laboratories to run this resistance genotyping algorithm without needing to transmit patient data over the network, and confers full control over data provenance and security.
 
 ## Rationale
 
