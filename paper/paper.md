@@ -174,22 +174,15 @@ and representing a diversity of HIV-1 subtypes and sampling locations
 around the world.  All resistance scores for all 1,006 sequences were 
 completely concordant between the pipelines.
 
-[lrL[2in]{}rL[1in]{}r]{} Country/region & Sample & Subtypes & Sequence &
-Accession & Ref.\
-& size & & length (nt) & numbers &\
-Brazil & 103 & B (100%) & 1262.0 & MF545238 – MF545340 &\
-Ethiopia & 67 & C (97.0%), B (1.5%), A (1.5%) & 1042.1 & MH324937 –
-MH325003 & [@arimide2018hiv]\
-Guinea-Bissau & 54 & CRF02\_AG (88.9%), A (5.6%), CRF06\_cpx (1.8%) &
-1035.0 & MH605452 – MH605505 & [@wilhelmson2018prevalence]\
-Hong Kong & 284 & C (36.0%), CRF07\_BC (36.0%), CRF02\_AG (8.8%) &
-1157.8 & MH757122 – MH757405 &\
-South Africa & 212 & C (100%) & 1195.0 & MH920641 – MH920852 &
-[@rasmussen2017external]\
-Tajikistan & 146 & A (97.3%), CRF02\_AG (2.0%), CRF63\_02A1 (0.7%) &
-1351.1 & MH543115 – MH543260 &\
-Uganda & 140 & D (99.3%), CRF10\_CD (0.7%) & 864.0 & MH925538 – MH925677
-&\
+| Country/region | Sample size | Subtypes | Sequence length (nt) | Accession no. | Ref. |
+|----------------|-------------|----------|----------------------|---------------|------|
+| Brazil         | 103         | B (100%) | 1262.0               | MF545238 – MF545340 | |
+| Ethiopia       | 67          | C (97.0%), B (1.5%), A (1.5%) | 1042.1 | MH324937 – MH325003 | [@arimide2018hiv] |
+| Guinea-Bissau  | 54          | CRF02\_AG (88.9%), A (5.6%), CRF06\_cpx (1.8%) | 1035.0 | MH605452 – MH605505 | [@wilhelmson2018prevalence] |
+| Hong Kong      | 284  | C (36.0%), CRF07\_BC (36.0%), CRF02\_AG (8.8%) | 1157.8 | MH757122 – MH757405 | |
+| South Africa   | 212  | C (100%) | 1195.0 | MH920641 – MH920852 | [@rasmussen2017external] |
+| Tajikistan     | 146  | A (97.3%), CRF02\_AG (2.0%), CRF63\_02A1 (0.7%) | 1351.1 | MH543115 – MH543260 | |
+| Uganda         | 140  | D (99.3%), CRF10\_CD (0.7%) | 864.0 | MH925538 – MH925677 | |
 
 
 # Performance
