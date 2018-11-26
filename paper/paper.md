@@ -155,42 +155,41 @@ sequences in the Stanford database.
 
 We obtained the entirety of the genotype-treatment correlation datasets
 available through the Stanford HIV Drug Resistance Database (HIVdb
-[@shafer2006rationale]) on May 7 2018. These data included nucleotide
-sequences of 105,694 protease (PR) isolates, 112,723
-reverse-transcriptase (RT) isolates, and 12,332 integrase (IN) isolates
-for a total of 230,749 sequences. In addition to sequence data, each
-record comprised of a list of the specific antiretrovirals (ARVs) that
-each isolate had been exposed to *in vivo* prior to collection, the
-region and year of collection, and subtype as determined by the Stanford
-University HIV Drug Resistance Database’s HIV Subtyping Program. After
-screening for empty and invalid data, the resulting dataset contained
-103,711 PR entries, 110,222 RT entries, and 11,769 IN entries totalling
-226,702 records. In addition, we retrieved 7 population-based HIV-1
-*pol* datasets from Genbank using the NCBI PopSet interface
-(<http://www.ncbi.nlm.nih.gov/popset>). These datasets were selected
-from the most recent uploads of substantial numbers of HIV-1 sequences
-covering the regions encoding both PR and RT, and representing a
-diversity of HIV-1 subtypes and sampling locations around the world.
-
-We scored the entirety of the genotype-treatment correlation dataset 
-released by the Stanford HIV Drug Resistance Database (HIVdb 
-[@shafer2006rationale] as of May 7 2018 with both *sierra-local* and 
-SierraPy (version 0.2.1). Validation was conducted using the HIVdb
-version 8.5 algorithm on both platforms. Because the algorithm was
-updated to version 8.6.1 during the validation experiments, we used the
-newer version for the HIV-1 integrase data sets since the update mostly
-affected the interpretation of mutations within this region. 
-Out of the 103,711 HIV-1 protease, 111,222 reverse-transcriptase, and 
-11,769 integrase sequences (total 226,702), the predicted resistance 
+[@shafer2006rationale]) on May 7 2018.  After screening for invalid data, 
+the resulting dataset contained 103,711 HIV-1 protease, 110,222 reverse 
+transcriptase and 11,769 integrase entries.  We scored these data with 
+both *sierra-local* and SierraPy (version 0.2.1) using the HIVdb version 
+8.5 algorithm on both platforms. Because the algorithm was updated to 
+version 8.6.1 during the validation experiments, we used the newer 
+version for the HIV-1 integrase data sets since the update mostly 
+affected the interpretation of mutations within this region. Out of 
+the total 226,702 sequence records, the predicted resistance 
 scores were completely identical in 226,696 (99.997%). 
 
-In addition, we ran both pipelines on six recently published sets of
-HIV-1 *pol* sequences comprising both PR and RT encoding regions. These
-data sets were selected to cover a diversity of HIV-1 subtypes and
-locations around the world.  The major HIV-1 group M subtypes A, B, C 
-and D were represented in these data, as well as several circulating 
-recombinant forms (CRFs) such as CRF07\_BC.  All resistance scores for 
-all 1,006 sequences were completely concordant between the pipelines.
+In addition, we retrieved 7 population-based HIV-1 *pol* datasets from 
+Genbank using the NCBI PopSet interface (<http://www.ncbi.nlm.nih.gov/popset>). 
+These datasets were selected from the most recent uploads of substantial 
+numbers of HIV-1 sequences covering the regions encoding both PR and RT, 
+and representing a diversity of HIV-1 subtypes and sampling locations 
+around the world.  All resistance scores for all 1,006 sequences were 
+completely concordant between the pipelines.
+
+[lrL[2in]{}rL[1in]{}r]{} Country/region & Sample & Subtypes & Sequence &
+Accession & Ref.\
+& size & & length (nt) & numbers &\
+Brazil & 103 & B (100%) & 1262.0 & MF545238 – MF545340 &\
+Ethiopia & 67 & C (97.0%), B (1.5%), A (1.5%) & 1042.1 & MH324937 –
+MH325003 & [@arimide2018hiv]\
+Guinea-Bissau & 54 & CRF02\_AG (88.9%), A (5.6%), CRF06\_cpx (1.8%) &
+1035.0 & MH605452 – MH605505 & [@wilhelmson2018prevalence]\
+Hong Kong & 284 & C (36.0%), CRF07\_BC (36.0%), CRF02\_AG (8.8%) &
+1157.8 & MH757122 – MH757405 &\
+South Africa & 212 & C (100%) & 1195.0 & MH920641 – MH920852 &
+[@rasmussen2017external]\
+Tajikistan & 146 & A (97.3%), CRF02\_AG (2.0%), CRF63\_02A1 (0.7%) &
+1351.1 & MH543115 – MH543260 &\
+Uganda & 140 & D (99.3%), CRF10\_CD (0.7%) & 864.0 & MH925538 – MH925677
+&\
 
 
 # Performance
@@ -223,17 +222,9 @@ drug resistance predictions from ASI releases in a secure environment
 and confers full control over data provenance. The ability to apply
 ASI-encoded algorithms locally (offline) also makes this part of the
 laboratory workflow robust to network availabilty may be particularly
-important for laboratories situated in resource-limited settings. 
-
-The emulation of an established genotype interpretation system to process 
-unaligned nucleotide sequences andproduce identical resistance 
-predictions and data summaries in a small, standalone package was not 
-a trivial undertaking. Despite the relative simplificity of the rules-
-based HIVdb algorithm, there were a large number of pre-processing and 
-post-processing steps that were necessary to adapt to maximize 
-concordance with the original system.  We hope releasing 
-our lightweight, open-source implementation of the HIVdb ASI will 
-further democratize HIV drug resistance genotyping across providers of 
+important for laboratories situated in resource-limited settings. We 
+hope this lightweight, open-source implementation of the HIVdb ASI 
+will further democratize HIV drug resistance genotyping across providers of 
 HIV care.
 
 
