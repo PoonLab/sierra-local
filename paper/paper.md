@@ -171,18 +171,9 @@ Genbank using the NCBI PopSet interface (<http://www.ncbi.nlm.nih.gov/popset>).
 These datasets were selected from the most recent uploads of substantial 
 numbers of HIV-1 sequences covering the regions encoding both PR and RT, 
 and representing a diversity of HIV-1 subtypes and sampling locations 
-around the world.  All resistance scores for all 1,006 sequences were 
-completely concordant between the pipelines.
-
-| Country/<br/>region | Sample<br/>size | Subtypes | Sequence<br/> length (nt) | Accession<br/>number | Ref. |
-|----------------|-------------|----------|----------------------|---------------|------|
-| Brazil         | 103         | B (100%) | 1262.0               | MF545238 – MF545340 | |
-| Ethiopia       | 67          | C (97.0%),<br/>B (1.5%),<br/>A (1.5%) | 1042.1 | MH324937 – MH325003 | [@arimide2018hiv] |
-| Guinea-Bissau  | 54          | CRF02\_AG (88.9%),<br/>A (5.6%),<br/>CRF06\_cpx (1.8%) | 1035.0 | MH605452 – MH605505 | [@wilhelmson2018prevalence] |
-| Hong Kong      | 284  | C (36.0%),<br/>CRF07\_BC (36.0%),<br/>CRF02\_AG (8.8%) | 1157.8 | MH757122 – MH757405 | |
-| South Africa   | 212  | C (100%) | 1195.0 | MH920641 – MH920852 | [@rasmussen2017external] |
-| Tajikistan     | 146  | A (97.3%),<br/>CRF02\_AG (2.0%),<br/>CRF63\_02A1 (0.7%) | 1351.1 | MH543115 – MH543260 | |
-| Uganda         | 140  | D (99.3%),<br/>CRF10\_CD (0.7%) | 864.0 | MH925538 – MH925677 | |
+around the world [@arimide2018hiv; @wilhelmson2018prevalence; @rasmussen2017external].  
+All resistance scores for all 1,006 sequences were completely concordant between the pipelines.
+Further details are provided in @ho2018sierra.
 
 
 # Performance
