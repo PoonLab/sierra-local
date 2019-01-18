@@ -171,7 +171,7 @@ Genbank using the NCBI PopSet interface (<http://www.ncbi.nlm.nih.gov/popset>).
 These datasets were selected from the most recent uploads of substantial 
 numbers of HIV-1 sequences covering the regions encoding both PR and RT, 
 and representing a diversity of HIV-1 subtypes and sampling locations 
-around the world [@arimide2018hiv; @wilhelmson2018prevalence; @rasmussen2017external].  
+around the world [@arimide2018hiv; @wilhelmson2018prevalence; @rasmussen2017external]. 
 All resistance scores for all 1,006 sequences were completely concordant between the pipelines.
 Further details are provided in @ho2018sierra.
 
