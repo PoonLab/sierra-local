@@ -11,10 +11,11 @@ If you would like to contribute to the development and maintenance of *sierra-lo
 ## How to report issues
 
 * We use the GitHub issue tracker to report and coordinate work on issues.  
-* If you encounter a bug, please search the issue tracker for related issues before creating a new issue.
+* If you encounter a bug, please search the issue tracker for related issues before creating a new issue.  Mark the issue with a *bug* tag.
 * Please provide the following information:
   * the *sierra-local* release version number or commit
   * operating system
   * Python version
   * a brief description of the problem
   * if appropriate, an informative excerpt of traceback or error messages returned by the program, enclosed in triple ticks.
+* If you are requesting a new feature, please create a new issue and mark it with an *enhancement* tag.
