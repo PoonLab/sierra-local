@@ -158,7 +158,7 @@ available through the Stanford HIV Drug Resistance Database (HIVdb
 [@shafer2006rationale]) on May 7 2018.  After screening for invalid data, 
 the resulting dataset contained 103,711 HIV-1 protease, 110,222 reverse 
 transcriptase and 11,769 integrase entries.  We scored these data with 
-both *sierra-local* and SierraPy (version 0.2.1) using the HIVdb version 
+both *sierra-local* and SierraPy (version 0.2.1, https://github.com/hivdb/sierra-client) using the HIVdb version 
 8.5 algorithm on both platforms. Because the algorithm was updated to 
 version 8.6.1 during the validation experiments, we used the newer 
 version for the HIV-1 integrase data sets since the update mostly 
