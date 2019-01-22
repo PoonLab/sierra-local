@@ -5,6 +5,7 @@ If you would like to contribute to the development and maintenance of *sierra-lo
 * Use a block quote at the top of a new script to briefly describe its purpose.
 * Indent with 4 spaces.
 * Variable names should use lowercase and underscores.
+* Constants are named with uppercase and underscores, *e.g.*, `SEQUENCE_SHRINKAGE_WINDOW`
 * Function names use camelCase.
 * Functions should have a block quote in the first few lines to provide a description and to list input parameters and return values.
 
