@@ -22,5 +22,6 @@ If you would like to contribute to the development and maintenance of *sierra-lo
 * If you are requesting a new feature, please create a new issue and mark it with an *enhancement* tag.
 
 ## How to get help
+* Check the [issue tracker](https://github.com/PoonLab/sierra-local/issues).  It is quite likely that one of us has encountered the same problem you're facing before!
 * If you have a [GitHub account](https://github.com/join), you are welcome to post an issue on the [sierra-local issue tracker](https://github.com/PoonLab/sierra-local/issues).  
 * If you are an end-user at an academic organization or clinical laboratory, you can contact [Art](https://www.schulich.uwo.ca/pathol/people/bios/faculty/poon_art.html) (currently package maintainer) at his work e-mail (see `AUTHORS` file).
