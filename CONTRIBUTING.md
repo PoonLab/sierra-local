@@ -23,4 +23,4 @@ If you would like to contribute to the development and maintenance of *sierra-lo
 
 ## How to get help
 * If you have a [GitHub account](https://github.com/join), you are welcome to post an issue on the [sierra-local issue tracker](https://github.com/PoonLab/sierra-local/issues).  
-* If you are an end-user at an academic organization or clinical laboratory, you can contact [Art](https://www.schulich.uwo.ca/pathol/people/bios/faculty/poon_art.html) (currently package maintainer) at his work e-mail (see linked faculty webpage).
+* If you are an end-user at an academic organization or clinical laboratory, you can contact [Art](https://www.schulich.uwo.ca/pathol/people/bios/faculty/poon_art.html) (currently package maintainer) at his work e-mail (see `AUTHORS` file).
