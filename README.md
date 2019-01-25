@@ -1,5 +1,6 @@
 
 [![PyPI](https://img.shields.io/pypi/v/sierralocal.svg)](https://pypi.org/project/sierralocal/)
+[![DOI](http://joss.theoj.org/papers/10.21105/joss.01186/status.svg)](https://doi.org/10.21105/joss.01186)
 
 # sierra-local
 sierra-local is a Python 3 implementation of the [Stanford University HIV Drug Resistance Database](https://hivdb.stanford.edu/) (HIVdb) [Sierra web service](https://hivdb.stanford.edu/page/webservice/) for generating drug resistance predictions from HIV-1 sequence data. This Python package enables laboratories to run this prediction algorithm without needing to transmit patient data over the network, and confers full control over [data provenance](https://en.wikipedia.org/wiki/Data_lineage#Data_Provenance) and security.
@@ -140,8 +141,12 @@ python3 gui.py
 ## About Us
 This project was developed at the [Poon lab](http://github.com/PoonLab) within the [Department of Pathology and Laboratory Medicine](https://www.schulich.uwo.ca/pathol/), Schulich School of Medicine and Dentistry, [Western University](http://uwo.ca), London, Ontario.  The developers were supported in part by a grant from the [Canadian Institutes of Health Research](http://www.cihr-irsc.gc.ca/e/193.html) (PJT-156178).
 
-If you cite this package, please use the following reference:
-### sierra-local: A lightweight standalone application for secure HIV-1 drug resistance prediction
-Jasper C Ho, Garway T Ng, Mathias Renaud, Art FY Poon
+If you use *sierra-local* for your work, please cite the following paper:
+* **sierra-local: A lightweight standalone application for drug resistance prediction.**
+  Jasper C Ho, Garway T Ng, Mathias Renaud, Art FY Poon, (2019). 
+  *Journal of Open Source Software*, 4(33), 1186, https://doi.org/10.21105/joss.01186
 
-*bioRxiv* 393207; doi: https://doi.org/10.1101/393207
+If you want to reference the validation of *sierra-local* on HIV-1 *pol* data, please cite the following preprint:
+* **sierra-local: A lightweight standalone application for secure HIV-1 drug resistance prediction.**
+  Jasper C Ho, Garway T Ng, Mathias Renaud, Art FY Poon.
+  *bioRxiv* 393207; doi: https://doi.org/10.1101/393207
