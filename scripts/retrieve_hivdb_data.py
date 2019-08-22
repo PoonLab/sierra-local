@@ -28,7 +28,8 @@ args = parser.parse_args()
 
 
 # Stanford University HIV Drug Resistance Database, Genotype-Rx Datasets
-base_url = 'https://hivdb.stanford.edu/modules/lookUpFiles/geno-rx-datasets'
+#base_url = 'https://hivdb.stanford.edu/modules/lookUpFiles/geno-rx-datasets'
+base_url = 'https://hivdb.stanford.edu/download/GenoRxDatasets'
 
 handle = request.urlopen('{}/{}.txt'.format(base_url, args.gene))
 rows = DictReader(codecs.iterdecode(handle, 'utf-8'), delimiter='\t')
