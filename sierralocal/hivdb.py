@@ -1,8 +1,10 @@
 import xml.etree.ElementTree as xml
-import glob, os
+import glob
+import os
 from pathlib import Path
 import re
 import sys
+
 
 class HIVdb():
     """
@@ -29,8 +31,7 @@ class HIVdb():
         self.algname = self.root.find('ALGNAME').text
         self.version = self.root.find('ALGVERSION').text
         self.version_date = self.root.find('ALGDATE').text
-        print("HIVdb version",self.version)
-
+        print("HIVdb version", self.version)
 
     def set_hivdb_xml(self, path):
         file_found = False
@@ -55,8 +56,8 @@ class HIVdb():
                     self.xml_filename = file
                     break
                 except:
-                    print('Failed to parse XML file. Please post an issue at http://github.com/'
-                          'PoonLab/sierra-local/issues.')
+                    print('Failed to parse XML file. Please post an issue at '
+                          'http://github.com/PoonLab/sierra-local/issues.')
                     raise
         else:
             # The user has specified XML path
@@ -70,20 +71,20 @@ class HIVdb():
                 except:
                     raise
             else:
-                print("HIVDB XML cannot be found at user specified path {}".format(path))
+                print("HIVDB XML cannot be found at user specified "
+                      "path {}".format(path))
                 raise
 
         # Parseable XML file not found. Update from web
         if not file_found:
             print("Error: could not find local copy of HIVDB XML.")
-            print("Manually download from https://hivdb.stanford.edu/page/release-notes/"
-                  "#algorithm.updates")
+            print("Manually download from https://hivdb.stanford.edu/page/"
+                  "release-notes/#algorithm.updates")
             sys.exit()
-            #self.xml_filename = updater.update_HIVDB()
-
+            # self.xml_filename = updater.update_HIVDB()
 
     def set_apobec_tsv(self, path):
-        """ 
+        """
         Attempt to locate a local APOBEC DRM file (tsv format)
         """
         if path is None:
@@ -102,16 +103,19 @@ class HIVdb():
 
         # if we end up here, no local files found
         print("Error: could not locate local APOBEC DRM data file.")
-        print("Manually download from https://hivdb.stanford.edu/page/release-notes/#data.files")
+        print("Manually download from https://hivdb.stanford.edu/page/"
+              "release-notes/#data.files")
         sys.exit()
-        #self.tsv_filename = updater.updateAPOBEC()
-
+        # self.tsv_filename = updater.updateAPOBEC()
 
     def parse_definitions(self, root):
-        """ parse_definitions function meant to assemble definitions into nested dictionary and return
+        """
+        parse_definitions function meant to assemble definitions into nested dictionary
+        and return
 
-            @param root: algorithm root
-            @return definitions: dictionary of gene, level, druglcass, globalrange, and comment dictionaries
+        @param root: algorithm root
+        @return definitions: dictionary of gene, level, druglcass, globalrange, and comment
+        dictionaries
         """
         self.definitions = {
             'gene': {},  # gene target names and drug classes
@@ -128,9 +132,6 @@ class HIVdb():
 
         definitions = root.getchildren()[def_ind]
         comment_definitions = definitions.getchildren()[-1]  # TODO: swap out hard-coded index with variable
-
-        globalrange = definitions.find('GLOBALRANGE').text.split(',')
-        default_grange = self.parse_globalrange(self.definitions['globalrange'], globalrange)
 
         for element in definitions.getchildren():
             if element.tag == 'GENE_DEFINITION':
@@ -208,7 +209,7 @@ class HIVdb():
                 cond_dict = self.parse_condition(condition)                 # dictionary of parsed drug conditions
 
                 scorerange = list(element.find('RULE').find('ACTIONS').find('SCORERANGE'))[0]
-                if scorerange.find('USE_GLOBALRANGE') == None:
+                if scorerange.find('USE_GLOBALRANGE') is None:
                     self.drugs[drug] = self.drugs[fullname] = (cond_dict, self.definitions['globalrange'])    #default
                 else:
                     sep_dict = {}
@@ -295,7 +296,8 @@ class HIVdb():
 
                     for rule in gene.findall('RULE'):
                         condition = rule.find('CONDITION').text
-                        reference = rule.find('ACTIONS').find('COMMENT').get('ref')
+                        reference = rule.find('ACTIONS').find('COMMENT')\
+                            .get('ref')
                         gene_dict.update({condition: reference})
 
                     self.comments.update({name: gene_dict})
@@ -303,13 +305,9 @@ class HIVdb():
         return(self.comments)
 
 
-    #def retrieve_comment(self, genetype, condition, reference):
-        #if condition.contains('i') or condition.contains('d'):
-            # condition can include an insertion or deletion
-
-
 def main():
-    hivdb = HIVdb()
+    # simply attempt to load XML and TSV files
+    HIVdb()
 
 if __name__ == "__main__":
     main()

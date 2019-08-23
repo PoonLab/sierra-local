@@ -10,8 +10,10 @@ import os
 
 BASE_URL = 'https://hivdb.stanford.edu'
 
+# this needs to be modified to point Python to your local chromedriver binary
 mod_path = Path(os.path.dirname(__file__))
 driver_path = mod_path.parent / 'bin/chromedriver'
+
 options = Options()
 options.add_argument('--headless')
 browser = webdriver.Chrome(executable_path=str(driver_path), chrome_options=options)
