@@ -130,7 +130,8 @@ We have a GUI in development that uses the Python Tkinter framework.  To use thi
 python3 gui.py
 ```
 
-### Updating the algorithm
+
+## Updating the algorithm
 
 The Stanford HIVdb database regularly updates its resistance genotyping algorithm and publishes the associated ASI2 XML file on their website.  In previous versions of *sierra-local*, we used Python to automatically query this website and download the newest version if it was not already present on the user's computer.  Subsequent changes to the Stanford HIVdb website, however, meant that users would have to install several additional dependencies in order for Python to locate the required files.  As a result, we decided to make the `updater.py` script an optional step of the pipeline.
 
@@ -138,6 +139,8 @@ To run `updater.py`, you need to install the following requirements:
 * [Google Chrome](https://www.google.com/chrome/)
 * The appropriate [chromedriver](https://chromedriver.chromium.org/) for your operating system *and* [version of Google Chrome](https://chromedriver.chromium.org/downloads/version-selection).
 * The Python module [Selenium](https://pypi.org/project/selenium/)
+
+You'll also need to be working with a local clone or download of this code repository, because you will probably need to modify a line of the `updater.py` script.
 
 Next, you need to locate your `chromedriver` binary.  For the purpose of demonstration, I happened to leave this binary in my `~/Downloads` folder.  Use this information to modify the following lines in `updater.py`:
 ```python
