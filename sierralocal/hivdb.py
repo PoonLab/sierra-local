@@ -1,11 +1,8 @@
 import xml.etree.ElementTree as xml
-import requests
-import urllib.request
 import glob, os
 from pathlib import Path
 import re
-import sierralocal.updater as updater
-
+import sys
 
 class HIVdb():
     """
@@ -13,16 +10,30 @@ class HIVdb():
     webserver, to retrieve the rules-based prediction algorithm as ASI XML,
     and convert this information into Python objects.
     """
-    def __init__(self, path=None, forceupdate=False):
-        file_found = False
-        file_newest = False  # FIXME: this appears to be unused
+    def __init__(self, asi2=None, apobec=None, forceupdate=False):
         self.xml_filename = None
+        self.tsv_filename = None
         self.BASE_URL = 'https://hivdb.stanford.edu'
 
-        # args force update flag is TRUE
         if forceupdate:
+            # DEPRECATED, requires selenium, chrome and chromedriver
+            import sierralocal.updater as updater
             self.xml_filename = updater.update_HIVDB()
+            self.tsv_filename = updater.updateAPOBEC()
+        else:
+            self.set_hivdb_xml(asi2)
+            self.set_apobec_tsv(apobec)
 
+        # Set algorithm metadata
+        self.root = xml.parse(str(self.xml_filename)).getroot()
+        self.algname = self.root.find('ALGNAME').text
+        self.version = self.root.find('ALGVERSION').text
+        self.version_date = self.root.find('ALGDATE').text
+        print("HIVdb version",self.version)
+
+
+    def set_hivdb_xml(self, path):
+        file_found = False
         if path is None:
             # If user has not specified XML path
             # Iterate over possible HIVdb ASI files matching the glob pattern
@@ -44,7 +55,8 @@ class HIVdb():
                     self.xml_filename = file
                     break
                 except:
-                    print('Failed to parse XML file. Please post an issue at http://github.com/PoonLab/sierra-local/issues.')
+                    print('Failed to parse XML file. Please post an issue at http://github.com/'
+                          'PoonLab/sierra-local/issues.')
                     raise
         else:
             # The user has specified XML path
@@ -63,21 +75,36 @@ class HIVdb():
 
         # Parseable XML file not found. Update from web
         if not file_found:
-            print("Error: could not find local copy of HIVDB XML, attempting download...")
-            self.xml_filename = updater.update_HIVDB()
+            print("Error: could not find local copy of HIVDB XML.")
+            print("Manually download from https://hivdb.stanford.edu/page/release-notes/"
+                  "#algorithm.updates")
+            sys.exit()
+            #self.xml_filename = updater.update_HIVDB()
 
-        dest = str(Path(os.path.dirname(__file__))/'data'/'apobec.tsv')
-        print(dest)
-        if not os.path.isfile(dest):
-            print("Error: could not retrieve APOBEC DRM data")
-            updater.updateAPOBEC()
 
-        # Set algorithm metadata
-        self.root = xml.parse(str(self.xml_filename)).getroot()
-        self.algname = self.root.find('ALGNAME').text
-        self.version = self.root.find('ALGVERSION').text
-        self.version_date = self.root.find('ALGDATE').text
-        print("HIVdb version",self.version)
+    def set_apobec_tsv(self, path):
+        """ 
+        Attempt to locate a local APOBEC DRM file (tsv format)
+        """
+        if path is None:
+            dest = str(Path(os.path.dirname(__file__))/'data'/'apobec*.tsv')
+            print("searching path {}".format(dest))
+            files = glob.glob(dest)
+            for file in files:
+                # no version numbering, take first hit
+                # TODO: some basic format check on TSV file
+                if os.path.isfile(file):
+                    self.tsv_filename = file
+                    return
+        else:
+            self.tsv_filename = path
+            return
+
+        # if we end up here, no local files found
+        print("Error: could not locate local APOBEC DRM data file.")
+        print("Manually download from https://hivdb.stanford.edu/page/release-notes/#data.files")
+        sys.exit()
+        #self.tsv_filename = updater.updateAPOBEC()
 
 
     def parse_definitions(self, root):

@@ -17,7 +17,7 @@ class NucAminoAligner():
     """
     Initialize NucAmino for a specific input fasta file
     """
-    def __init__(self, binary=None):
+    def __init__(self, algorithm, binary=None):
         """
 
         :param binary:  Absolute path to nucamino binary
@@ -52,7 +52,8 @@ class NucAminoAligner():
 
         self.tripletTable = self.generateTable()
 
-        with open(str(Path(os.path.dirname(__file__))/'data'/'apobec.tsv'), 'r') as csvfile:
+        #with open(str(Path(os.path.dirname(__file__))/'data'/'apobec.tsv'), 'r') as csvfile:
+        with open(algorithm.tsv_filename) as csvfile:
             self.ApobecDRMs = list(csv.reader(csvfile, delimiter='\t'))
 
         self.PI_dict = self.prevalence_parser('PIPrevalences.tsv')
@@ -560,7 +561,9 @@ class NucAminoAligner():
 
 
 if __name__ == '__main__':
-    test = NucAminoAligner()
+    from sierralocal.hivdb import HIVdb
+    algorithm = HIVdb()
+    test = NucAminoAligner(algorithm)
     """
     assert test.translateNATriplet("YTD") == "LF"
     assert test.isStopCodon("TAG") == True

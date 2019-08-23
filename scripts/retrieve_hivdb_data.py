@@ -20,9 +20,9 @@ parser.add_argument('gene', choices=['PR', 'RT', 'INT'],
 parser.add_argument('outfile', type=argparse.FileType('w'),
                     help='Destination file for sequences.')
 parser.add_argument('-size', type=int, default=100,
-                    help='Number of sequences to retrieve.')
+                    help='Number of sequences to retrieve. Defaults to 100.')
 parser.add_argument('-step', type=int, default=10,
-                    help='Interval size between output sequences.')
+                    help='Interval size between output sequences. Defaults to 10.')
 
 args = parser.parse_args()
 

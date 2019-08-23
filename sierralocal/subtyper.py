@@ -168,12 +168,14 @@ def main():
         sys.exit()
 
     # not running as package, so circular dependency is not an issue
+    from sierralocal.hivdb import HIVdb
     from sierralocal.nucaminohook import NucAminoAligner
+    algorithm = HIVdb()
     subtyper = Subtyper()
 
     # call nucamino
     input_file = sys.argv[1]
-    aligner = NucAminoAligner()
+    aligner = NucAminoAligner(algorithm)
     records = aligner.align_file(input_file)
 
     for record in records:

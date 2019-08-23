@@ -4,22 +4,19 @@ import os
 import argparse
 from sierralocal.nucaminohook import NucAminoAligner
 from sierralocal.jsonwriter import JSONWriter
-from sierralocal.utils import get_input_sequences
-from pathlib import Path
 import time
 import sys
 
 
-def score(filename, xml_path=None, forceupdate=False):
+def score(filename, xml_path=None, tsv_path=None, forceupdate=False):
     """
-    Functionality as a Python module. Can import this function from sierralocal
+    Functionality as a Python module. Can import this function from sierralocal.
+    @param filename:  Path to FASTA file containing sequences
+    @param xml_path:  Path to ASI2 XML file
+    @param tsv_path:  Path to tab-separated APOBEC DRM file
+    @param forceupdate:  DEPRECATED. Uses Selenium to retrieve ASI2 and TSV files.
     """
-
-    algorithm = HIVdb(xml_path, forceupdate)
-    definitions = algorithm.parse_definitions(algorithm.root)
-    database = algorithm.parse_drugs(algorithm.root)
-    comments = algorithm.parse_comments(algorithm.root)
-
+    algorithm = HIVdb(asi2=xml_path, apobec=tsv_path, forceupdate=forceupdate)
     time_start = time.time()
 
     sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, \
@@ -33,7 +30,8 @@ def score(filename, xml_path=None, forceupdate=False):
     writer.write_to_json(output_file, sequence_headers, sequence_scores, file_genes,
                          ordered_mutation_list, sequence_lengths, file_trims, subtypes)
     time_end = time.time()
-    print("Time elapsed: {:{prec}} seconds ({:{prec}} it/s)".format(time_end - time_start, count/(time_end - time_start), prec='.5'))
+    print("Time elapsed: {:{prec}} seconds ({:{prec}} it/s)".format(
+        time_end - time_start, count/(time_end - time_start), prec='.5'))
     # cleanup is default action
     #os.remove(os.path.splitext(filename)[0] + '.tsv')
 
@@ -41,11 +39,11 @@ def score(filename, xml_path=None, forceupdate=False):
 def scorefile(input_file, algorithm):
     '''
     Returns a set of corresponding names, scores, and ordered mutations for a given FASTA file containing pol sequences
-    :param file: the FASTA file name containing arbitrary number of sequences and headers
-    :param database: the HIVdb drug scores and notations
+    :param input_file: the FASTA file name containing arbitrary number of sequences and headers
+    :param algorithm: the HIVdb drug scores and notations
     :return: list of names, list of scores, list of ordered mutations
     '''
-    aligner = NucAminoAligner()
+    aligner = NucAminoAligner(algorithm)
     result = aligner.align_file(input_file)
 
     print('Aligned '+input_file)
@@ -89,7 +87,7 @@ def scorefile(input_file, algorithm):
            sequence_lengths, file_trims, subtypes
 
 
-def sierralocal(fasta, outfile, xml=None, cleanup=False, forceupdate=False):
+def sierralocal(fasta, outfile, xml=None, tsv=None, cleanup=False, forceupdate=False):
     """
     Contains all initializing and processing calls.
 
@@ -97,6 +95,7 @@ def sierralocal(fasta, outfile, xml=None, cleanup=False, forceupdate=False):
                    passed as a list object
     :param outfile:  file path to write JSON results
     :param xml:  <optional> path to local copy of HIVdb algorithm XML file
+    :param tsv: <optional> path to local copy of HIVdb algorithm APOBEC DRM file
     :param skipalign:  <optional> to save time, skip NucAmino alignment step (reuse TSV output)
     :param forceupdate:  <optional> forces sierralocal to update its local copy of the HIVdb algorithm
 
@@ -105,10 +104,7 @@ def sierralocal(fasta, outfile, xml=None, cleanup=False, forceupdate=False):
 
     # initialize algorithm and jsonwriter
     time0 = time.time()
-    algorithm = HIVdb(path=xml, forceupdate=forceupdate)
-    definitions = algorithm.parse_definitions(algorithm.root)
-    database = algorithm.parse_drugs(algorithm.root)
-    comments = algorithm.parse_comments(algorithm.root)
+    algorithm = HIVdb(asi2=xml, apobec=tsv, forceupdate=forceupdate)
     writer = JSONWriter(algorithm)
     time_elapsed = time.time() - time0
 
@@ -155,7 +151,9 @@ def parse_args():
     parser.add_argument('fasta', nargs='+', type=str, help='List of input files.')
     parser.add_argument('-o', dest='outfile', default=None, type=str, help='Output filename.')
     parser.add_argument('-xml', default=None,
-                        help='Path to HIVDB algorithm XML file, which can be downloaded using the provided script updater.py')
+                        help='<optional> Path to HIVdb ASI2 XML file')
+    parser.add_argument('-tsv', default=None,
+                        help='<optional> Path to tab-delimited (tsv) HIVdb APOBEC DRM file')
     parser.add_argument('--cleanup', action='store_true',
                         help='Deletes NucAmino alignment file after processing.')
     parser.add_argument('--forceupdate', action='store_true',
@@ -177,7 +175,7 @@ def main():
             sys.exit()
 
     time_start = time.time()
-    count, time_elapsed = sierralocal(args.fasta, args.outfile, args.xml,
+    count, time_elapsed = sierralocal(args.fasta, args.outfile, xml=args.xml, tsv=args.tsv,
                                       cleanup=args.cleanup, forceupdate=args.forceupdate)
     time_diff = time.time() - time_start
 

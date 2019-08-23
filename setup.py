@@ -50,7 +50,9 @@ setup(
             'data/genotype-properties.*.csv',
             'data/genotype-references.*.fasta',
             'data/*Prevalences.tsv',
-            'data/*-comments.csv'
+            'data/*-comments.csv',
+            'data/HIVDB_8.8.a126e04c.xml',
+            'data/apobec-drms.221b0330.tsv'
     ]},
     cmdclass={'install': OverrideInstall},
     #include_package_data=True

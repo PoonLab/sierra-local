@@ -1,18 +1,29 @@
-import urllib.request
 import requests
+
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+
 from pathlib import Path
 import re
 import os
 
-mod_path = Path(os.path.dirname(__file__))
+
 BASE_URL = 'https://hivdb.stanford.edu'
+
+mod_path = Path(os.path.dirname(__file__))
+driver_path = mod_path.parent / 'bin/chromedriver'
+options = Options()
+options.add_argument('--headless')
+browser = webdriver.Chrome(executable_path=str(driver_path), chrome_options=options)
+
 
 def updateAPOBEC():
     # UPDATE APOBEC DRMS
     try:
         release_notes = 'https://hivdb.stanford.edu/page/release-notes/'
-        response = urllib.request.urlopen(release_notes)
-        html = response.read().decode('utf-8')
+        browser.get(release_notes)
+        html = browser.page_source
+
         apobec_url = BASE_URL + re.search(u"\/assets\/media\/apobec\-drms.*?tsv",html).group(0)
         r = requests.get(apobec_url, allow_redirects=True)
         apobec_path = mod_path/'data'/'apobec.tsv'
@@ -30,8 +41,9 @@ def update_HIVDB():
     """
     URL = 'https://hivdb.stanford.edu/page/algorithm-updates'
     try:
-        response = urllib.request.urlopen(URL)
-        html = response.read().decode('utf-8')
+        #response = urllib.request.urlopen(URL)
+        browser.get(URL)
+        html = browser.page_source
 
         # search HTML contents for links to XML files, extract link for most recent version
         matches = re.findall(u"(/assets/media/HIVDB_[0-9a-z.]+\.xml)", html)
