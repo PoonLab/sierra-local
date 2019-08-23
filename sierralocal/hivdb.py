@@ -133,6 +133,9 @@ class HIVdb():
         definitions = root.getchildren()[def_ind]
         comment_definitions = definitions.getchildren()[-1]  # TODO: swap out hard-coded index with variable
 
+        globalrange = definitions.find('GLOBALRANGE').text.split(',')
+        default_grange = self.parse_globalrange(self.definitions['globalrange'], globalrange)
+
         for element in definitions.getchildren():
             if element.tag == 'GENE_DEFINITION':
                 gene = element.find('NAME').text

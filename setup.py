@@ -32,7 +32,7 @@ setup(
                      "service) for local execution.",
 
 	packages = ['sierralocal'],
-	version = '0.2.0',
+	version = '0.2.1',
 	author = 'Jasper Ho',
 	author_email = 'jasperchho@gmail.com',
 	url = 'https://github.com/PoonLab/sierra-local',
