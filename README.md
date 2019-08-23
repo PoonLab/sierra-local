@@ -38,18 +38,15 @@ To run a quick example, use the following sequence of commands:
 art@Jesry:~/git/sierra-local$ python3 scripts/retrieve_hivdb_data.py RT RT.fa
 art@Jesry:~/git/sierra-local$ sierralocal RT.fa
 searching path /usr/local/lib/python3.6/dist-packages/sierralocal/data/HIVDB*.xml
-Error: could not find local copy of HIVDB XML, attempting download...
-Updated HIVDB XML from https://hivdb.stanford.edu/assets/media/HIVDB_8.7.9e470b87.xml into /usr/local/lib/python3.6/dist-packages/sierralocal/data/HIVDB_8.7.9e470b87.xml
-/usr/local/lib/python3.6/dist-packages/sierralocal/data/apobec.tsv
-Error: could not retrieve APOBEC DRM data
-Updated APOBEC DRMs from https://hivdb.stanford.edu/assets/media/apobec-drms.5b7e1215.tsv into /usr/local/lib/python3.6/dist-packages/sierralocal/data/apobec.tsv
-HIVdb version 8.7
+searching path /usr/local/lib/python3.6/dist-packages/sierralocal/data/apobec*.tsv
+HIVdb version 8.8
 Found NucAmino binary /usr/local/lib/python3.6/dist-packages/sierralocal/bin/nucamino-linux-amd64
 Aligned RT.fa
 100 sequences found in file RT.fa.
 Writing JSON to file RT_results.json
-Time elapsed: 7.476 seconds (17.803 it/s)
+Time elapsed: 5.2538 seconds (19.149 it/s)
 ```
+
 `retrieve_hivdb_data.py` is a Python script that we provided to download small samples of HIV-1 sequence data from the Stanford HIVdb database.  In this case, we have retrieved 100 reverse transcriptase (RT) sequences and processsed them with the *sierra-local* pipeline.  By default, the results are written to the file `[FASTA basename]_results.json`:
 ```console
 art@Jesry:~/git/sierra-local$ head RT_results.json 
@@ -117,17 +114,13 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>> from sierralocal.main import sierralocal
 >>> sierralocal('RT.fa', 'RT.json')
 searching path /home/art/git/sierra-local/sierralocal/data/HIVDB*.xml
-Error: could not find local copy of HIVDB XML, attempting download...
-Updated HIVDB XML from https://hivdb.stanford.edu/assets/media/HIVDB_8.7.9e470b87.xml into /home/art/git/sierra-local/sierralocal/data/HIVDB_8.7.9e470b87.xml
-/home/art/git/sierra-local/sierralocal/data/apobec.tsv
-Error: could not retrieve APOBEC DRM data
-Updated APOBEC DRMs from https://hivdb.stanford.edu/assets/media/apobec-drms.5b7e1215.tsv into /home/art/git/sierra-local/sierralocal/data/apobec.tsv
-HIVdb version 8.7
+searching path /home/art/git/sierra-local/sierralocal/data/apobec*.tsv
+HIVdb version 8.8
 Found NucAmino binary /home/art/git/sierra-local/sierralocal/bin/nucamino-linux-amd64
 Aligned RT.fa
 100 sequences found in file RT.fa.
 Writing JSON to file RT.json
-(100, 1.9369409084320068)
+(100, 0.04676532745361328)
 ```
 Note that this doesn't require any `sudo` privileges.
 
@@ -137,9 +130,53 @@ We have a GUI in development that uses the Python Tkinter framework.  To use thi
 python3 gui.py
 ```
 
+### Updating the algorithm
+
+The Stanford HIVdb database regularly updates its resistance genotyping algorithm and publishes the associated ASI2 XML file on their website.  In previous versions of *sierra-local*, we used Python to automatically query this website and download the newest version if it was not already present on the user's computer.  Subsequent changes to the Stanford HIVdb website, however, meant that users would have to install several additional dependencies in order for Python to locate the required files.  As a result, we decided to make the `updater.py` script an optional step of the pipeline.
+
+To run `updater.py`, you need to install the following requirements:
+* [Google Chrome](https://www.google.com/chrome/)
+* The appropriate [chromedriver](https://chromedriver.chromium.org/) for your operating system *and* [version of Google Chrome](https://chromedriver.chromium.org/downloads/version-selection).
+* The Python module [Selenium](https://pypi.org/project/selenium/)
+
+Next, you need to locate your `chromedriver` binary.  For the purpose of demonstration, I happened to leave this binary in my `~/Downloads` folder.  Use this information to modify the following lines in `updater.py`:
+```python
+# this needs to be modified to point Python to your local chromedriver binary
+mod_path = Path(os.path.dirname(__file__))
+driver_path = mod_path.parent / 'bin/chromedriver'
+```
+Otherwise, Python will be unable to locate the Chrome browser binary and throws a `WebDriverException`:
+```console
+art@orolo:~/git/sierra-local$ python3 sierralocal/updater.py
+...
+Traceback (most recent call last):
+  File "sierralocal/updater.py", line 19, in <module>
+    browser = webdriver.Chrome(executable_path=str(driver_path), chrome_options=options)
+  File "/home/art/.local/lib/python3.6/site-packages/selenium/webdriver/chrome/webdriver.py", line 73, in __init__
+    self.service.start()
+  File "/home/art/.local/lib/python3.6/site-packages/selenium/webdriver/common/service.py", line 83, in start
+    os.path.basename(self.path), self.start_error_message)
+selenium.common.exceptions.WebDriverException: Message: 'chromedriver' executable needs to be in PATH. Please see https://sites.google.com/a/chromium.org/chromedriver/home
+```
+
+For my system running Ubuntu, I modified the `updater.py` script as follows:
+```python
+#driver_path = mod_path.parent / 'bin/chromedriver'
+driver_path = Path('/home/art/Downloads/chromedriver')
+```
+
+Manually running the script enabled me to grab the most recent versions of the ASI2 and APOBEC files from the HIVdb webserver:
+```console
+art@orolo:~/git/sierra-local$ sudo python3 sierralocal/updater.py 
+Updated HIVDB XML from https://hivdb.stanford.edu/assets/media/HIVDB_8.8.a126e04c.xml into sierralocal/data/HIVDB_8.8.a126e04c.xml
+Updated APOBEC DRMs from https://hivdb.stanford.edu/assets/media/apobec-drms.221b0330.tsv into sierralocal/data/apobec.tsv
+```
+
+Now of course, it would be much simpler to manually point your browser to the Stanford HIVdb website and download these files yourself, but in some applications there may be a benefit to automating this step.
+
 
 ## About Us
-This project was developed at the [Poon lab](http://github.com/PoonLab) within the [Department of Pathology and Laboratory Medicine](https://www.schulich.uwo.ca/pathol/), Schulich School of Medicine and Dentistry, [Western University](http://uwo.ca), London, Ontario.  The developers were supported in part by a grant from the [Canadian Institutes of Health Research](http://www.cihr-irsc.gc.ca/e/193.html) (PJT-156178).
+This project was developed at the [Poon lab](http://github.com/PoonLab) within the [Department of Pathology and Laboratory Medicine](https://www.schulich.uwo.ca/pathol/), Schulich School of Medicine and Dentistry, [Western University](http://uwo.ca), London, Ontario.  Development of *sierra-local* was supported in part by a grant from the [Canadian Institutes of Health Research](http://www.cihr-irsc.gc.ca/e/193.html) (PJT-156178).
 
 If you use *sierra-local* for your work, please cite the following paper:
 * **sierra-local: A lightweight standalone application for drug resistance prediction.**
