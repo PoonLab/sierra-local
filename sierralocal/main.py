@@ -8,7 +8,7 @@ import time
 import sys
 
 
-def score(filename, xml_path=None, tsv_path=None, forceupdate=False):
+def score(filename, xml_path=None, tsv_path=None, forceupdate=False, do_subtype=False):
     """
     Functionality as a Python module. Can import this function from sierralocal.
     @param filename:  Path to FASTA file containing sequences
@@ -20,7 +20,7 @@ def score(filename, xml_path=None, tsv_path=None, forceupdate=False):
     time_start = time.time()
 
     sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, \
-    file_trims, subtypes = scorefile(filename, algorithm)
+    file_trims, subtypes = scorefile(filename, algorithm, do_subtype)
 
     count = len(sequence_headers)
 
@@ -36,7 +36,7 @@ def score(filename, xml_path=None, tsv_path=None, forceupdate=False):
     #os.remove(os.path.splitext(filename)[0] + '.tsv')
 
 
-def scorefile(input_file, algorithm):
+def scorefile(input_file, algorithm, do_subtype=False):
     '''
     Returns a set of corresponding names, scores, and ordered mutations for a given FASTA file containing pol sequences
     :param input_file: the FASTA file name containing arbitrary number of sequences and headers
@@ -48,7 +48,7 @@ def scorefile(input_file, algorithm):
 
     print('Aligned '+input_file)
     sequence_headers, file_genes, file_mutations, file_trims, subtypes = \
-        aligner.get_mutations(result)
+        aligner.get_mutations(result, do_subtype=do_subtype)
 
     ordered_mutation_list = []
     sequence_scores = []

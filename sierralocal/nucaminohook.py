@@ -246,7 +246,7 @@ class NucAminoAligner():
         return genes
 
 
-    def get_mutations(self, records):
+    def get_mutations(self, records, do_subtype=False):
         '''
         From the tsv output of NucAmino, parses and adjusts indices and returns as lists.
 
@@ -265,7 +265,6 @@ class NucAminoAligner():
         '''
         file_mutations = []
         file_genes = []
-        file_firstlastNA = []
         file_trims = []
         sequence_headers = []
         subtypes = []
@@ -277,10 +276,12 @@ class NucAminoAligner():
             polLastAA = record['LastAA']
 
             # predict subtype
-            offset = (polFirstAA-57)*3
-            if offset < 0:
-                offset = 0  # align_file() will have trimmed sequence preceding PR
-            subtype = self.typer.getClosestSubtype(record['Sequence'], offset)
+            subtype = ''
+            if do_subtype:
+                offset = (polFirstAA-57)*3
+                if offset < 0:
+                    offset = 0  # align_file() will have trimmed sequence preceding PR
+                subtype = self.typer.getClosestSubtype(record['Sequence'], offset)
 
             genes = self.get_genes(record['AlignedSites'], polFirstAA, polLastAA)
 
