@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import re
 import sys
+import subprocess
 
 
 class HIVdb():
@@ -14,14 +15,20 @@ class HIVdb():
     """
     def __init__(self, asi2=None, apobec=None, forceupdate=False):
         self.xml_filename = None
-        self.tsv_filename = None
+        self.json_filename = None
         self.BASE_URL = 'https://hivdb.stanford.edu'
 
         if forceupdate:
+            print("Updating submodule to retrieve the latest data files")
+                # update submodules
+            try:
+                subprocess.check_call("git submodule foreach git pull origin main", shell=True)
+            except:
+                print("Could not update submodules")
             # DEPRECATED, requires selenium, chrome and chromedriver
-            import sierralocal.updater as updater
-            self.xml_filename = updater.update_HIVDB()
-            self.tsv_filename = updater.updateAPOBEC()
+            # import sierralocal.updater as updater
+            # self.xml_filename = updater.update_HIVDB()
+            # self.json_filename = updater.updateAPOBEC()
         else:
             self.set_hivdb_xml(asi2)
             self.set_apobec_tsv(apobec)
@@ -88,17 +95,18 @@ class HIVdb():
         Attempt to locate a local APOBEC DRM file (tsv format)
         """
         if path is None:
-            dest = str(Path(os.path.dirname(__file__))/'data'/'apobec*.tsv')
+            # dest = str(Path(os.path.dirname(__file__))/'data'/'apobec*.tsv')
+            dest = str(Path(os.path.dirname(__file__))/'hivfacts'/'data'/'apobecs'/'apobec_*.json')
             print("searching path {}".format(dest))
             files = glob.glob(dest)
             for file in files:
                 # no version numbering, take first hit
                 # TODO: some basic format check on TSV file
                 if os.path.isfile(file):
-                    self.tsv_filename = file
+                    self.json_filename = file
                     return
         else:
-            self.tsv_filename = path
+            self.json_filename = path
             return
 
         # if we end up here, no local files found
@@ -106,7 +114,7 @@ class HIVdb():
         print("Manually download from https://hivdb.stanford.edu/page/"
               "release-notes/#data.files")
         sys.exit()
-        # self.tsv_filename = updater.updateAPOBEC()
+        # self.json_filename = updater.updateAPOBEC()
 
     def parse_definitions(self, root):
         """

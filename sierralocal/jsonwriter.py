@@ -24,9 +24,10 @@ class JSONWriter():
 
         # Load comments files stored locally. These are distributed in the repo for now.
         #dest = str(Path(os.path.dirname(__file__))/'data'/'apobec.tsv')
-        dest = algorithm.tsv_filename
+        dest = algorithm.json_filename
         with open(dest,'r') as csvfile:
-            self.ApobecDRMs = list(csv.reader(csvfile, delimiter='\t'))
+            # self.ApobecDRMs = list(csv.reader(csvfile, delimiter='\t'))
+            self.ApobecDRMs = json.load(csvfile)
 
         dest = str(Path(os.path.dirname(__file__))/'data'/'INSTI-comments.csv')
         with open(dest, 'r') as INSTI_file:

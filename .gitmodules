@@ -1,0 +1,3 @@
+[submodule "hivfacts"]
+	path = hivfacts
+	url = https://github.com/hivdb/hivfacts
