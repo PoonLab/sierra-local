@@ -259,11 +259,11 @@ class JSONWriter():
                         return details[full_mut]['1']
 
     def isApobecDRM(self, gene, consensus, position, AA):
-        ls = [row[0:3] for row in self.ApobecDRMs[1:]]
-        if [gene, consensus, str(position)] in ls:
-            i = ls.index([gene, consensus, str(position)])
+        ls = [[row['gene'], str(row['position'])] for row in self.ApobecDRMs]
+        if [gene, str(position)] in ls:
+            i = ls.index([gene, str(position)])
             for aa in AA:
-                if aa in self.ApobecDRMs[1:][i][3]:
+                if aa in self.ApobecDRMs[i]['aa']:
                     return True
         return False
 
