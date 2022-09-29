@@ -1,3 +1,3 @@
-[submodule "hivfacts"]
-	path = hivfacts
-	url = https://github.com/hivdb/hivfacts
+[submodule "sierralocal/data/hivfacts"]
+	path = sierralocal/data/hivfacts
+	url = https://github.com/hivdb/hivfacts.git

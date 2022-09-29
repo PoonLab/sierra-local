@@ -31,7 +31,7 @@ class HIVdb():
             # self.json_filename = updater.updateAPOBEC()
         else:
             self.set_hivdb_xml(asi2)
-            self.set_apobec_tsv(apobec)
+            self.set_apobec_json(apobec)
 
         # Set algorithm metadata
         self.root = xml.parse(str(self.xml_filename)).getroot()
@@ -45,14 +45,14 @@ class HIVdb():
         if path is None:
             # If user has not specified XML path
             # Iterate over possible HIVdb ASI files matching the glob pattern
-            dest = str(Path(os.path.dirname(__file__))/'data'/'HIVDB*.xml')
+            dest = str(Path(os.path.dirname(__file__))/'data'/'hivfacts'/'data'/'algorithms'/'HIVDB_*.xml')
             print("searching path " + dest)
             files = glob.glob(dest)
 
             # find the newest XML that can be parsed
             intermed = []
             for file in files:
-                version = re.search("HIVDB_([0-9]\.[0-9.]+)\.", file).group(1)
+                version = re.search("HIVDB_([0-9]\.[0-9.-]+)\.", file).group(1)
                 intermed.append((version, file))
             intermed.sort(reverse=True)
 
@@ -90,13 +90,13 @@ class HIVdb():
             sys.exit()
             # self.xml_filename = updater.update_HIVDB()
 
-    def set_apobec_tsv(self, path):
+    def set_apobec_json(self, path):
         """
-        Attempt to locate a local APOBEC DRM file (tsv format)
+        Attempt to locate a local APOBEC DRM file (json format)
         """
         if path is None:
             # dest = str(Path(os.path.dirname(__file__))/'data'/'apobec*.tsv')
-            dest = str(Path(os.path.dirname(__file__))/'hivfacts'/'data'/'apobecs'/'apobec_*.json')
+            dest = str(Path(os.path.dirname(__file__))/'data'/'hivfacts'/'data'/'apobecs'/'apobec_*.json')
             print("searching path {}".format(dest))
             files = glob.glob(dest)
             for file in files:
@@ -111,8 +111,7 @@ class HIVdb():
 
         # if we end up here, no local files found
         print("Error: could not locate local APOBEC DRM data file.")
-        print("Manually download from https://hivdb.stanford.edu/page/"
-              "release-notes/#data.files")
+        print("Manually download from https://github.com/hivdb/hivfacts/tree/main/data/")
         sys.exit()
         # self.json_filename = updater.updateAPOBEC()
 
