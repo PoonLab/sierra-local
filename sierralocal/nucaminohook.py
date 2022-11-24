@@ -246,7 +246,6 @@ class NucAminoAligner():
 
         return genes
 
-
     def get_mutations(self, records, do_subtype=False):
         '''
         From the tsv output of NucAmino, parses and adjusts indices and returns as lists.

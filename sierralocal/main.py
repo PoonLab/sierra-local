@@ -20,7 +20,7 @@ def score(filename, xml_path=None, tsv_path=None, forceupdate=False, do_subtype=
     time_start = time.time()
 
     sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, \
-    file_trims, subtypes = scorefile(filename, algorithm, do_subtype)
+    file_trims, subtypes, aligned_NA, sequence_pos = scorefile(filename, algorithm, do_subtype)
 
     count = len(sequence_headers)
 
@@ -28,7 +28,7 @@ def score(filename, xml_path=None, tsv_path=None, forceupdate=False, do_subtype=
     output_file = os.path.splitext(filename)[0] + '-local.json'
     writer = JSONWriter(algorithm)
     writer.write_to_json(output_file, sequence_headers, sequence_scores, file_genes,
-                         ordered_mutation_list, sequence_lengths, file_trims, subtypes)
+                         ordered_mutation_list, sequence_lengths, file_trims, subtypes, aligned_NA, sequence_pos)
     time_end = time.time()
     print("Time elapsed: {:{prec}} seconds ({:{prec}} it/s)".format(
         time_end - time_start, count/(time_end - time_start), prec='.5'))
@@ -53,6 +53,13 @@ def scorefile(input_file, algorithm, do_subtype=False):
     ordered_mutation_list = []
     sequence_scores = []
     sequence_lengths = []
+    aligned_NA = {}
+    sequence_positions = []
+
+    # get sequence order
+    for index, value in enumerate(result):
+        aligned_NA[value['Name']] = value['Sequence']
+        sequence_positions.append(value['AlignedSites'])
 
     # iteration over records in file
     for index, query in enumerate(sequence_headers):
@@ -84,7 +91,7 @@ def scorefile(input_file, algorithm, do_subtype=False):
         sequence_lengths.append(length_lists)
 
     return sequence_headers, sequence_scores, ordered_mutation_list, file_genes, \
-           sequence_lengths, file_trims, subtypes
+           sequence_lengths, file_trims, subtypes, aligned_NA, sequence_positions
 
 
 def sierralocal(fasta, outfile, xml=None, json=None, cleanup=False, forceupdate=False):
@@ -95,8 +102,6 @@ def sierralocal(fasta, outfile, xml=None, json=None, cleanup=False, forceupdate=
                    passed as a list object
     :param outfile:  file path to write JSON results
     :param xml:  <optional> path to local copy of HIVdb algorithm XML file
-    :param tsv: <optional> path to local copy of HIVdb algorithm APOBEC DRM file
-    :param skipalign:  <optional> to save time, skip NucAmino alignment step (reuse TSV output)
     :param forceupdate:  <optional> forces sierralocal to update its local copy of the HIVdb algorithm
 
     :return:  a tuple of (number of records processed, time elapsed initializing algorithm)
@@ -119,7 +124,7 @@ def sierralocal(fasta, outfile, xml=None, json=None, cleanup=False, forceupdate=
 
         # process and score file
         sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, \
-        file_trims, subtypes = scorefile(input_file, algorithm)
+        file_trims, subtypes, aligned_na, sequence_pos = scorefile(input_file, algorithm)
 
         count += len(sequence_headers)
         print("{} sequences found in file {}.".format(len(sequence_headers), input_file))
@@ -131,7 +136,7 @@ def sierralocal(fasta, outfile, xml=None, json=None, cleanup=False, forceupdate=
             output_file = outfile
 
         writer.write_to_json(output_file, sequence_headers, sequence_scores, file_genes, ordered_mutation_list,
-                             sequence_lengths, file_trims, subtypes)
+                             sequence_lengths, file_trims, subtypes, aligned_na, sequence_pos)
 
         if cleanup:
             # delete alignment file
