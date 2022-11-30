@@ -53,9 +53,9 @@ class NucAminoAligner():
         self.tripletTable = self.generateTable()
 
         #with open(str(Path(os.path.dirname(__file__))/'data'/'apobec.tsv'), 'r') as csvfile:
-        with open(algorithm.json_filename) as csvfile:
+        with open(algorithm.json_filename) as jsonfile:
             # self.ApobecDRMs = list(csv.reader(csvfile, delimiter='\t'))
-            self.ApobecDRMs = json.load(csvfile)
+            self.ApobecDRMs = json.load(jsonfile)
 
         self.PI_dict = self.prevalence_parser('PIPrevalences.tsv')
         self.RTI_dict = self.prevalence_parser('RTIPrevalences.tsv')
