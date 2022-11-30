@@ -15,6 +15,7 @@ class HIVdb():
     def __init__(self, asi2=None, apobec=None, forceupdate=False):
         self.xml_filename = None
         self.tsv_filename = None
+        self.tsv_filename = None
         self.BASE_URL = 'https://hivdb.stanford.edu'
 
         if forceupdate:
@@ -125,18 +126,18 @@ class HIVdb():
             'comment': {}  # maps comments to id string
         }
         # Convert list of elements from class 'xml.etree.ElementTree.Element' to type 'str'
-        element_list = list(map(lambda x: xml.tostring(x).strip().decode("utf-8"), root.getchildren()))
+        element_list = list(map(lambda x: xml.tostring(x).strip().decode("utf-8"), root))
         # Find the index of element 'DEFINITIONS' so that it's children may be iterated over to parse definitions
         def_index = [i for i, item in enumerate(element_list) if re.search('<DEFINITIONS>', item)]
         def_ind = def_index[0]  # un-list the index of 'DEFINITIONS' element
 
-        definitions = root.getchildren()[def_ind]
-        comment_definitions = definitions.getchildren()[-1]  # TODO: swap out hard-coded index with variable
+        definitions = list(root)[def_ind]
+        comment_definitions = definitions[-1]  # TODO: swap out hard-coded index with variable
 
         globalrange = definitions.find('GLOBALRANGE').text.split(',')
         default_grange = self.parse_globalrange(self.definitions['globalrange'], globalrange)
 
-        for element in definitions.getchildren():
+        for element in definitions:
             if element.tag == 'GENE_DEFINITION':
                 gene = element.find('NAME').text
                 drug_classes = element.find('DRUGCLASSLIST').text.split(',')
@@ -154,7 +155,7 @@ class HIVdb():
                 self.definitions['drugclass'].update({name: druglist})
 
             elif element.tag == 'COMMENT_DEFINITIONS':
-                for comment_str in comment_definitions.getchildren():
+                for comment_str in comment_definitions:
                     id = comment_str.attrib['id']
                     comment = comment_str.find('TEXT').text
                     sort_tag = comment_str.find('SORT_TAG').text
@@ -204,7 +205,7 @@ class HIVdb():
         """
         self.drugs = {}
 
-        for element in root.getchildren():
+        for element in root:
             if element.tag == 'DRUG':
                 drug = element.find('NAME').text                            # drug name
                 fullname = element.find('FULLNAME').text                    # drug full name
@@ -290,10 +291,10 @@ class HIVdb():
         """
         self.comments = {}
 
-        for element in root.getchildren():
+        for element in root:
             if element.tag == 'MUTATION_COMMENTS':
 
-                for gene in element.getchildren():
+                for gene in element:
                     name = gene.find('NAME').text
                     gene_dict = {}
 
