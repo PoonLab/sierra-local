@@ -58,7 +58,7 @@ def generateTable():
         for j in range(len(nas)):
             for k in range(len(nas)):
                 triplet = nas[i] + nas[j] + nas[k]
-                codons = self.enumerateCodonPossibilities(triplet)
+                codons = enumerateCodonPossibilities(triplet)
                 uniqueAAs = []
                 for codon in codons:
                     c = codonToAminoAcidMap[codon]

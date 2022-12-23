@@ -7,6 +7,7 @@ from pathlib import Path
 import sys, os
 from sierralocal.utils import generateTable, enumerateCodonPossibilities
 from sierralocal.nucaminohook import NucAminoAligner
+import hashlib
 
 
 class JSONWriter():
@@ -60,12 +61,9 @@ class JSONWriter():
                     self.rx_all_subtype_all[gene].update({pos: {}})
                 self.rx_all_subtype_all[gene][pos].update({aa: unusual})
 
-        # make dictionary for SDRM mutations
-        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'hivfacts' / 'data' / 'sdrms_hiv1.csv')
-        dest2 = str(Path(os.path.dirname(__file__)) / 'data' / 'hivfacts' / 'data' / 'sdrms_hiv2.csv')
-        with open(dest, 'r', encoding='utf-8-sig') as SDRM1_files, open(dest2, 'r') as SDRM2_files:
+        dest = str(Path(os.path.dirname(__file__)) / 'hivfacts' / 'data' / 'sdrms_hiv1.csv')
+        with open(dest, 'r', encoding='utf-8-sig') as SDRM1_files:
             SDRM1_files = csv.DictReader(SDRM1_files)
-            SDRM2_files = csv.DictReader(SDRM2_files)
             self.SDRMs = {}
             for row in SDRM1_files:
                 gene = row['gene']
@@ -74,18 +72,10 @@ class JSONWriter():
                 if gene not in self.SDRMs:
                     self.SDRMs.update({gene: {}})
                 if pos not in self.SDRMs[gene]:
-                    self.SDRMs[gene].update({pos: {aa}})
-            for row in SDRM2_files:
-                gene = row['gene']
-                pos = row['position']
-                aa = row['aa']
-                if gene not in self.SDRMs:
-                    self.SDRMs.update({gene: {}})
-                if pos not in self.SDRMs[gene]:
-                    self.SDRMs[gene].update({pos: {aa}})
+                    self.SDRMs[gene].update({pos: aa})
 
         # make dictionary for APOBEC DRMS
-        dest = str(Path(os.getcwd()) / 'sierralocal' / 'data' / 'hivfacts' / 'data' / 'apobecs' / 'apobec_drms.csv')
+        dest = str(Path(os.path.dirname(__file__)) / 'hivfacts' / 'data' / 'apobecs' / 'apobec_drms.csv')
         with open(dest, 'r', encoding='utf-8-sig') as APOBEC_file:
             APOBEC_file = csv.DictReader(APOBEC_file)
             self.isApobecDRMs = {}
@@ -99,12 +89,9 @@ class JSONWriter():
                     self.isApobecDRMs[gene].update({pos: {aa}})
 
         # make dictionary for primary type
-        dest = str(Path(os.getcwd()) / 'sierralocal' / 'data' / 'hivfacts' / 'data' / 'mutation-type-pairs_hiv1.csv')
-        dest2 = str(Path(os.getcwd()) / 'sierralocal' / 'data' / 'hivfacts' / 'data' / 'mutation-type-pairs_hiv2.csv')
-        with open(dest, 'r', encoding='utf-8-sig') as mutTypePairs1_files, open(dest2, 'r',
-                                                                                encoding='utf-8-sig') as mutTypePairs2_files:
+        dest = str(Path(os.path.dirname(__file__)) / 'hivfacts' / 'data' / 'mutation-type-pairs_hiv1.csv')
+        with open(dest, 'r', encoding='utf-8-sig') as mutTypePairs1_files:
             mutTypePairs1_files = csv.DictReader(mutTypePairs1_files)
-            mutTypePairs2_files = csv.DictReader(mutTypePairs2_files)
             self.mutTypePairs = {}
             for row in mutTypePairs1_files:
                 gene = row['gene']
@@ -116,17 +103,6 @@ class JSONWriter():
                 if pos not in self.mutTypePairs[gene]:
                     self.mutTypePairs[gene].update({pos: {}})
                 self.mutTypePairs[gene][pos].update({aa: mut})
-            for row in mutTypePairs2_files:
-                gene = row['gene']
-                pos = row['position']
-                aa = row['aas']
-                mut = row['mutationType']
-                if gene not in self.mutTypePairs:
-                    self.mutTypePairs.update({gene: {}})
-                if pos not in self.mutTypePairs[gene]:
-                    self.mutTypePairs[gene].update({pos: {}})
-                for AA in aa:
-                    self.mutTypePairs[gene][pos].update({AA: mut})
 
     def formatValidationResults(self, validated):
         """
@@ -240,9 +216,11 @@ class JSONWriter():
         dic = {}
         dic['firstAA'] = int(firstlastAA[0])
         dic['lastAA'] = int(firstlastAA[1])
-        dic['gene'] = {'name': gene, 'length': None}  # TODO: output length
+        dic['gene'] = {'name': gene, 'length': None}
         dic['mutations'] = []
         dic['SDRMs'] = []
+        mutation_line = []
+        mutation_line.extend([" - " for i in range(int(firstlastAA[0]), int(firstlastAA[1]) + 1)])
 
         for mutation in ordered_mutation_list:
             mutdict = {}
@@ -260,28 +238,26 @@ class JSONWriter():
             mutdict['hasStop'] = self.hasStop(mutation)
             mutdict['primaryType'] = self.primaryType(gene, mutation[0], mutation[1])
             mutdict['text'] = mutation[2] + str(mutation[0]) + "".join(sorted(mutation[1]))
+            if int(firstlastAA[0]) <= int(mutation[0]) <= int(firstlastAA[1]):
+                mutation_line[int(mutation[0]) - int(firstlastAA[1]) - 1] = f"{''.join(sorted(mutation[1])):^3}"
             dic['mutations'].append(mutdict)
+
         dic['alignedNAs'] = aligned_NA
+        nuc = self.prettyNAsequence(aligned_NA)
+        AAs, dic['alignedAAs'] = self.prettyAAsequence(aligned_NA)
 
-        # I'm so sorry
-        AA_dict = generateTable()
-        nuc = []
-        for index in range(0, len(aligned_NA), 3):
-            nuc.append(aligned_NA[index:index + 3])
-        aligned_NA = ''.join([i for i in aligned_NA if not i == "-"])
+        dic['prettyPairwise'] = {"positionLine": [f"{i:^3}" for i in range(int(firstlastAA[0]), int(firstlastAA[1]) + 1)],
+                                 "refAALine": AAs,
+                                 "alignedNAsLine": nuc,
+                                 "mutationLine": mutation_line
+                                }
 
-        AAs = []
-        for index in range(0, len(aligned_NA) - 3, 3):
-            AAs.append(AA_dict[aligned_NA[index:index + 3]])
-
-        dic['alignedAAs'] = ''.join(AAs)
-        dic['prettyPairwise'] = {"refAALine": AAs, "alignedNAsLine": nuc}
         return dic
 
-    def formatInputSequence(self, header):
+    def formatInputSequence(self, header, sequence):
         out = {
-            'header': header
-            # TODO: SHA512 hash of the gene sequence
+            'header': header,
+            'SHA512': hashlib.sha512(str.encode(sequence)).hexdigest()
         }
         return out
 
@@ -300,7 +276,8 @@ class JSONWriter():
             genes = file_genes[index]
 
             data = {}
-            data['inputSequence'] = self.formatInputSequence(file_headers[index])
+            data['inputSequence'] = self.formatInputSequence(file_headers[index], alignedNA[file_headers[index]])
+            data['strain'] = {"name": None}  # TODO: add strain
             data['subtypeText'] = file_subtypes[index]
 
             validation = self.validateSequence(genes, file_sequence_lengths[index], file_trims[index])
@@ -420,16 +397,43 @@ class JSONWriter():
                     if aa in self.rx_all_subtype_all[gene][position]:
                         if self.rx_all_subtype_all[gene][position][aa].lower() in "true":
                             return True
-        return False  # need to check if this is the proper "if otherwise" scenario 04/02
+        return False
 
     def primaryType(self, gene, position, AA):
         position = str(position)
         if gene in self.mutTypePairs:
             if position in self.mutTypePairs[gene]:
+                keys = self.mutTypePairs[gene][position].keys()
                 for aa in AA:
-                    if aa in self.mutTypePairs[gene][position]:
-                        return self.mutTypePairs[gene][position][aa]
+                    for key in keys:
+                        if aa in key:
+                            return self.mutTypePairs[gene][position][key]
         return "Other"
+
+    def prettyNAsequence(self, sequence):
+        """
+        param: sequence, string of NA of specific sequence
+        return: nuc, list of NA separated into codons
+        """
+        nuc = []
+        for index in range(0, len(sequence), 3):
+            nuc.append(f"{sequence[index:index + 3]:^3}")
+        return nuc
+
+    def prettyAAsequence(self, sequence):
+        """
+        takes NA, generates codon table, then converts NA to AA while accounting for deletions or insertions
+        param: sequence, NA string of strain
+        return List of AA and a string of the previous list as AAs joined
+        """
+        table = generateTable()
+        aligned_NA = ''.join(e for e in sequence if e.isalnum())
+        AAs = []
+        for index in range(0, len(aligned_NA), 3):
+            if len(aligned_NA[index:index + 3]) == 3:
+                AAs.append(f"{table[aligned_NA[index:index + 3]]:^3}")
+        return AAs, ''.join(AAs).replace(" ", "")
+
 
 if __name__ == "__main__":
     writer = JSONWriter(HIVdb())
