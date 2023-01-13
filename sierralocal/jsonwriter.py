@@ -27,10 +27,8 @@ class JSONWriter():
         self.comments = self.algorithm.parse_comments(self.algorithm.root)
 
         # Load comments files stored locally. These are distributed in the repo for now.
-        # dest = str(Path(os.path.dirname(__file__))/'data'/'apobec.tsv')
         dest = algorithm.json_filename
-        with open(dest, 'r') as csvfile:
-            # self.ApobecDRMs = list(csv.reader(csvfile, delimiter='\t'))
+        with open(dest,'r') as csvfile:
             self.ApobecDRMs = json.load(csvfile)
 
         dest = str(Path(os.path.dirname(__file__)) / 'data' / 'INSTI-comments.csv')

@@ -20,15 +20,11 @@ class HIVdb():
 
         if forceupdate:
             print("Updating submodule to retrieve the latest data files")
-                # update submodules
+            # update submodules
             try:
                 subprocess.check_call("git submodule foreach git pull origin main", shell=True)
             except:
                 print("Could not update submodules")
-            # DEPRECATED, requires selenium, chrome and chromedriver
-            # import sierralocal.updater as updater
-            # self.xml_filename = updater.update_HIVDB()
-            # self.json_filename = updater.updateAPOBEC()
         else:
             self.set_hivdb_xml(asi2)
             self.set_apobec_json(apobec)
@@ -85,17 +81,14 @@ class HIVdb():
         # Parseable XML file not found. Update from web
         if not file_found:
             print("Error: could not find local copy of HIVDB XML.")
-            print("Manually download from https://hivdb.stanford.edu/page/"
-                  "release-notes/#algorithm.updates")
+            print("Please ensure that the submodule (https://github.com/hivdb/hivfacts/tree/) has been initialized and updated")
             sys.exit()
-            # self.xml_filename = updater.update_HIVDB()
 
     def set_apobec_json(self, path):
         """
         Attempt to locate a local APOBEC DRM file (json format)
         """
         if path is None:
-            # dest = str(Path(os.path.dirname(__file__))/'data'/'apobec*.tsv')
             dest = str(Path(os.path.dirname(__file__))/'data'/'hivfacts'/'data'/'apobecs'/'apobec_*.json')
             print("searching path {}".format(dest))
             files = glob.glob(dest)
@@ -111,9 +104,8 @@ class HIVdb():
 
         # if we end up here, no local files found
         print("Error: could not locate local APOBEC DRM data file.")
-        print("Manually download from https://github.com/hivdb/hivfacts/tree/main/data/")
+        print("Please ensure that the submodule (https://github.com/hivdb/hivfacts/tree/) has been initialized and updated")
         sys.exit()
-        # self.json_filename = updater.updateAPOBEC()
 
     def parse_definitions(self, root):
         """
