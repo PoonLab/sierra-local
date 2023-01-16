@@ -170,10 +170,11 @@ class NucAminoAligner():
 
         args = [
             '{}'.format(self.nucamino_binary),  # in case of byte-string
+            "align",
             "hiv1b",
+            "pol",
             "-q",
             "-i", tf.name,
-            "-g=POL",
             '--output-format', 'json',
         ]
         p = subprocess.Popen(args, stdout=subprocess.PIPE)  #, encoding='utf8')
