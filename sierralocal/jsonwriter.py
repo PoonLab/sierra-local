@@ -44,7 +44,7 @@ class JSONWriter():
             self.RT_comments = dict(csv.reader(RT_file, delimiter='\t'))
 
         # make dictionary for isUnusual
-        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'rx-all_subtype-all.csv')
+        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'hivfacts' / 'data' / 'aapcnt' / 'rx-all_subtype-all.csv')
         with open(dest, 'r', encoding='utf-8-sig') as isUnusual_file:
             isUnusual_file = csv.DictReader(isUnusual_file)
             self.rx_all_subtype_all = {}
@@ -59,7 +59,7 @@ class JSONWriter():
                     self.rx_all_subtype_all[gene].update({pos: {}})
                 self.rx_all_subtype_all[gene][pos].update({aa: unusual})
 
-        dest = str(Path(os.path.dirname(__file__)) / 'hivfacts' / 'data' / 'sdrms_hiv1.csv')
+        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'hivfacts' / 'data' / 'sdrms_hiv1.csv')
         with open(dest, 'r', encoding='utf-8-sig') as SDRM1_files:
             SDRM1_files = csv.DictReader(SDRM1_files)
             self.SDRMs = {}
@@ -73,7 +73,7 @@ class JSONWriter():
                     self.SDRMs[gene].update({pos: aa})
 
         # make dictionary for APOBEC DRMS
-        dest = str(Path(os.path.dirname(__file__)) / 'hivfacts' / 'data' / 'apobecs' / 'apobec_drms.csv')
+        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'hivfacts' / 'data' / 'apobecs' / 'apobec_drms.csv')
         with open(dest, 'r', encoding='utf-8-sig') as APOBEC_file:
             APOBEC_file = csv.DictReader(APOBEC_file)
             self.isApobecDRMs = {}
@@ -87,7 +87,7 @@ class JSONWriter():
                     self.isApobecDRMs[gene].update({pos: {aa}})
 
         # make dictionary for primary type
-        dest = str(Path(os.path.dirname(__file__)) / 'hivfacts' / 'data' / 'mutation-type-pairs_hiv1.csv')
+        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'hivfacts' / 'data' / 'mutation-type-pairs_hiv1.csv')
         with open(dest, 'r', encoding='utf-8-sig') as mutTypePairs1_files:
             mutTypePairs1_files = csv.DictReader(mutTypePairs1_files)
             self.mutTypePairs = {}
@@ -101,6 +101,23 @@ class JSONWriter():
                 if pos not in self.mutTypePairs[gene]:
                     self.mutTypePairs[gene].update({pos: {}})
                 self.mutTypePairs[gene][pos].update({aa: mut})
+
+        # make dictionary for apobec mutations
+        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'hivfacts' / 'data' / 'apobecs' / 'apobecs.csv')
+        with open(dest, 'r', encoding='utf-8-sig') as apobec_muts:
+            apobec_muts = csv.DictReader(apobec_muts)
+            self.Apobec_Mutations = {}
+            for row in apobec_muts:
+                gene = row['gene']
+                pos = row['position']
+                aa = row['aa']
+                if gene not in self.Apobec_Mutations:
+                    self.Apobec_Mutations.update({gene: {}})
+                if pos not in self.Apobec_Mutations[gene]:
+                    self.Apobec_Mutations[gene].update({pos: ""})
+                if aa not in self.Apobec_Mutations[gene][pos]:
+                    self.Apobec_Mutations[gene][pos] = self.Apobec_Mutations[gene][pos] + aa
+
 
     def formatValidationResults(self, validated):
         """
@@ -380,8 +397,8 @@ class JSONWriter():
 
     def isApobecMutation(self, gene, position, AA):
         position = str(position)
-        if gene in self.isApobecDRMs:
-            if position in self.isApobecDRMs[gene]:
+        if gene in self.Apobec_Mutations:
+            if position in self.Apobec_Mutations[gene]:
                 for aa in AA:
                     if aa in self.isApobecDRMs[gene][position]:
                         return True
