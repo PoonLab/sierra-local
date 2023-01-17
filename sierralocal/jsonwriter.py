@@ -400,7 +400,7 @@ class JSONWriter():
         if gene in self.Apobec_Mutations:
             if position in self.Apobec_Mutations[gene]:
                 for aa in AA:
-                    if aa in self.isApobecDRMs[gene][position]:
+                    if aa in self.Apobec_Mutations[gene][position]:
                         return True
         return False
 
