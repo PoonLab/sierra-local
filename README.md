@@ -28,6 +28,7 @@ On a Linux system, you can install *sierra-local* as follows:
 ```
 git clone http://github.com/PoonLab/sierra-local
 cd sierra-local
+git submodule init; git submodule update
 sudo python3 setup.py install
 ```
 Note that you need super-user privileges to install the package by this method.  For more detailed instrucitons, please refer to the document [INSTALL.md](INSTALL.md) that should be located in the root directory of this Python package.
@@ -110,6 +111,7 @@ If you have downloaded the package source to your computer, you can also run *si
 ```console
 art@Jesry:~/git/sierra-local$ git clone http://github.com/PoonLab/sierra-local
 art@Jesry:~/git/sierra-local$ cd sierra-local
+art@Jesry:~/git/sierra-local$ git submodule init; git submodule update
 art@Jesry:~/git/sierra-local$ python3
 Python 3.6.6 (default, Sep 12 2018, 18:26:19) 
 [GCC 8.0.1 20180414 (experimental) [trunk revision 259383]] on linux
@@ -132,53 +134,6 @@ We have a GUI in development that uses the Python Tkinter framework.  To use thi
 ```
 python3 gui.py
 ```
-
-
-## Updating the algorithm
-
-The Stanford HIVdb database regularly updates its resistance genotyping algorithm and publishes the associated ASI2 XML file on their website.  In previous versions of *sierra-local*, we used Python to automatically query this website and download the newest version if it was not already present on the user's computer.  Subsequent changes to the Stanford HIVdb website, however, meant that users would have to install several additional dependencies in order for Python to locate the required files.  As a result, we decided to make the `updater.py` script an optional step of the pipeline.
-
-To run `updater.py`, you need to install the following requirements:
-* [Google Chrome](https://www.google.com/chrome/)
-* The appropriate [chromedriver](https://chromedriver.chromium.org/) for your operating system *and* [version of Google Chrome](https://chromedriver.chromium.org/downloads/version-selection).
-* The Python module [Selenium](https://pypi.org/project/selenium/)
-
-You'll also need to be working with a local clone or download of this code repository, because you will probably need to modify a line of the `updater.py` script.
-
-Next, you need to locate your `chromedriver` binary.  For the purpose of demonstration, I happened to leave this binary in my `~/Downloads` folder.  Use this information to modify the following lines in `updater.py`:
-```python
-# this needs to be modified to point Python to your local chromedriver binary
-mod_path = Path(os.path.dirname(__file__))
-driver_path = mod_path.parent / 'bin/chromedriver'
-```
-Otherwise, Python will be unable to locate the Chrome browser binary and throws a `WebDriverException`:
-```console
-art@orolo:~/git/sierra-local$ python3 sierralocal/updater.py
-...
-Traceback (most recent call last):
-  File "sierralocal/updater.py", line 19, in <module>
-    browser = webdriver.Chrome(executable_path=str(driver_path), chrome_options=options)
-  File "/home/art/.local/lib/python3.6/site-packages/selenium/webdriver/chrome/webdriver.py", line 73, in __init__
-    self.service.start()
-  File "/home/art/.local/lib/python3.6/site-packages/selenium/webdriver/common/service.py", line 83, in start
-    os.path.basename(self.path), self.start_error_message)
-selenium.common.exceptions.WebDriverException: Message: 'chromedriver' executable needs to be in PATH. Please see https://sites.google.com/a/chromium.org/chromedriver/home
-```
-
-For my system running Ubuntu, I modified the `updater.py` script as follows:
-```python
-#driver_path = mod_path.parent / 'bin/chromedriver'
-driver_path = Path('/home/art/Downloads/chromedriver')
-```
-
-Manually running the script enabled me to grab the most recent versions of the ASI2 and APOBEC files from the HIVdb webserver:
-```console
-art@orolo:~/git/sierra-local$ sudo python3 sierralocal/updater.py 
-Updated HIVDB XML from https://hivdb.stanford.edu/assets/media/HIVDB_8.8.a126e04c.xml into sierralocal/data/HIVDB_8.8.a126e04c.xml
-Updated APOBEC DRMs from https://hivdb.stanford.edu/assets/media/apobec-drms.221b0330.tsv into sierralocal/data/apobec.tsv
-```
-
-Now of course, it would be much simpler to manually point your browser to the Stanford HIVdb website and download these files yourself, but in some applications there may be a benefit to automating this step.
 
 
 ## About Us
