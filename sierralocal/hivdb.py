@@ -264,7 +264,7 @@ class HIVdb():
             @param chunk: drm_group of one of the condition types   (kinda vague...will fix)
             @param iter: index to keep track of which DRM is associated with respective index in the extracted list of scores
         """
-        scores = re.findall('([0-9]+(?=\W)|-[0-9]+(?=\W))', drm.strip())   # extract scores in same order as grouped drm tuples; stored in (indexable) list
+        scores = re.findall('([-]?[0-9]+(?=\W)|[-]?[0-9]+(?=$))', drm.strip())   # extract scores in same order as grouped drm tuples; stored in (indexable) list
         rANDr = re.findall('\d+[A-z]+[\s?AND\s?\d+\w]+', chunk)
 
         for combo_group in rANDr:
