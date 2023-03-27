@@ -19,7 +19,6 @@ We tried to minimize dependencies:
 - Python 3 (tested on [Python 3.6.5](https://www.python.org/downloads/release/python-365/))
 - Python modules (used by `updater.py` script):
   - [requests](https://pypi.org/project/requests/)
-  - [selenium](https://pypi.org/project/selenium/)
 - [NucAmino](https://github.com/hivdb/nucamino) `v0.1.3` or later (included with package).
 
 ## Installation
@@ -28,7 +27,6 @@ On a Linux system, you can install *sierra-local* as follows:
 ```
 git clone http://github.com/PoonLab/sierra-local
 cd sierra-local
-git submodule init; git submodule update
 sudo python3 setup.py install
 ```
 Note that you need super-user privileges to install the package by this method.  For more detailed instrucitons, please refer to the document [INSTALL.md](INSTALL.md) that should be located in the root directory of this Python package.
@@ -134,6 +132,22 @@ We have a GUI in development that uses the Python Tkinter framework.  To use thi
 ```
 python3 gui.py
 ```
+
+## Updating the algorithm
+
+The Stanford HIVdb database regularly updates its resistance genotyping algorithm and publishes the associated ASI2 XML file on their website.  In previous versions of *sierra-local*, we used Python to automatically query this website and download the newest version if it was not already present on the user's computer.  Subsequent changes to the Stanford HIVdb website, however, meant that users would have to install several additional dependencies in order for Python to locate the required files.  As a result, we decided to make the `updater.py` script an optional step of the pipeline.
+
+
+Manually running the script enabled me to grab the most recent versions of the ASI2 and APOBEC files from the HIVdb webserver:
+```console
+art@orolo:~/git/sierra-local$ python3 sierralocal/updater.py 
+Downloading the latest HIVDB XML File
+Updated HIVDB XML into sierralocal/data/HIVDB_9.4.xml
+Downloading the latest APOBEC DRMS File
+Updated APOBEC DRMs into sierralocal/data/apobec_drms.json
+```
+
+Now of course, it would be much simpler to manually point your browser to the Stanford HIVdb website and download these files yourself, but in some applications there may be a benefit to automating this step.
 
 
 ## About Us
