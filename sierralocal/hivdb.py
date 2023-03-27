@@ -14,17 +14,15 @@ class HIVdb():
     """
     def __init__(self, asi2=None, apobec=None, forceupdate=False):
         self.xml_filename = None
-        self.tsv_filename = None
-        self.BASE_URL = 'https://hivdb.stanford.edu'
+        self.json_filename = None
 
         if forceupdate:
-            # DEPRECATED, requires selenium, chrome and chromedriver
             import sierralocal.updater as updater
             self.xml_filename = updater.update_HIVDB()
-            self.tsv_filename = updater.updateAPOBEC()
+            self.json_filename = updater.update_APOBEC()
         else:
             self.set_hivdb_xml(asi2)
-            self.set_apobec_tsv(apobec)
+            self.set_apobec_json(apobec)
 
         # Set algorithm metadata
         self.root = xml.parse(str(self.xml_filename)).getroot()
@@ -51,7 +49,7 @@ class HIVdb():
             # find the newest XML that can be parsed
             intermed = []
             for file in files:
-                version = re.search("HIVDB_([0-9]\.[0-9.]+)\.", file).group(1)
+                version = re.search("HIVDB_([0-9]\.[0-9.-]+)\.", file).group(1)
                 intermed.append((version, file))
             intermed.sort(reverse=True)
 
@@ -83,36 +81,31 @@ class HIVdb():
         # Parseable XML file not found. Update from web
         if not file_found:
             print("Error: could not find local copy of HIVDB XML.")
-            print("Manually download from https://hivdb.stanford.edu/page/"
-                  "release-notes/#algorithm.updates")
+            print("Manually download from https://github.com/hivdb/hivfacts")
             sys.exit()
-            # self.xml_filename = updater.update_HIVDB()
 
-    def set_apobec_tsv(self, path):
+    def set_apobec_json(self, path):
         """
-        Attempt to locate a local APOBEC DRM file (tsv format)
-        @param path: str, path to TSV file
+        Attempt to locate a local APOBEC DRM file (json format)
+        @param path: str, path to JSON file
         """
         if path is None:
-            dest = str(Path(os.path.dirname(__file__))/'data'/'apobec*.tsv')
+            dest = str(Path(os.path.dirname(__file__))/'data'/'apobec*.json')
             print("searching path {}".format(dest))
             files = glob.glob(dest)
             for file in files:
                 # no version numbering, take first hit
-                # TODO: some basic format check on TSV file
                 if os.path.isfile(file):
-                    self.tsv_filename = file
+                    self.json_filename = file
                     return
         else:
-            self.tsv_filename = path
+            self.json_filename = path
             return
 
         # if we end up here, no local files found
         print("Error: could not locate local APOBEC DRM data file.")
-        print("Manually download from https://hivdb.stanford.edu/page/"
-              "release-notes/#data.files")
+        print("Manually download from https://github.com/hivdb/hivfacts")
         sys.exit()
-        # self.tsv_filename = updater.updateAPOBEC()
 
     def parse_definitions(self, root):
         """

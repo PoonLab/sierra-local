@@ -87,7 +87,7 @@ def scorefile(input_file, algorithm, do_subtype=False):
            sequence_lengths, file_trims, subtypes
 
 
-def sierralocal(fasta, outfile, xml=None, tsv=None, cleanup=False, forceupdate=False):
+def sierralocal(fasta, outfile, xml=None, json=None, cleanup=False, forceupdate=False):
     """
     Contains all initializing and processing calls.
 
@@ -104,7 +104,7 @@ def sierralocal(fasta, outfile, xml=None, tsv=None, cleanup=False, forceupdate=F
 
     # initialize algorithm and jsonwriter
     time0 = time.time()
-    algorithm = HIVdb(asi2=xml, apobec=tsv, forceupdate=forceupdate)
+    algorithm = HIVdb(asi2=xml, apobec=json, forceupdate=forceupdate)
     writer = JSONWriter(algorithm)
     time_elapsed = time.time() - time0
 
@@ -152,8 +152,8 @@ def parse_args():
     parser.add_argument('-o', dest='outfile', default=None, type=str, help='Output filename.')
     parser.add_argument('-xml', default=None,
                         help='<optional> Path to HIVdb ASI2 XML file')
-    parser.add_argument('-tsv', default=None,
-                        help='<optional> Path to tab-delimited (tsv) HIVdb APOBEC DRM file')
+    parser.add_argument('-json', default=None,
+                        help='<optional> Path to JSON HIVdb APOBEC DRM file')
     parser.add_argument('--cleanup', action='store_true',
                         help='Deletes NucAmino alignment file after processing.')
     parser.add_argument('--forceupdate', action='store_true',
@@ -175,7 +175,7 @@ def main():
             sys.exit()
 
     time_start = time.time()
-    count, time_elapsed = sierralocal(args.fasta, args.outfile, xml=args.xml, tsv=args.tsv,
+    count, time_elapsed = sierralocal(args.fasta, args.outfile, xml=args.xml, json=args.json,
                                       cleanup=args.cleanup, forceupdate=args.forceupdate)
     time_diff = time.time() - time_start
 

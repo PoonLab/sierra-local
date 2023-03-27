@@ -23,10 +23,9 @@ class JSONWriter():
         self.comments = self.algorithm.parse_comments(self.algorithm.root)
 
         # Load comments files stored locally. These are distributed in the repo for now.
-        #dest = str(Path(os.path.dirname(__file__))/'data'/'apobec.tsv')
-        dest = algorithm.tsv_filename
+        dest = algorithm.json_filename
         with open(dest,'r') as csvfile:
-            self.ApobecDRMs = list(csv.reader(csvfile, delimiter='\t'))
+            self.ApobecDRMs = json.load(csvfile)
 
         dest = str(Path(os.path.dirname(__file__))/'data'/'INSTI-comments.csv')
         with open(dest, 'r') as INSTI_file:
@@ -258,11 +257,11 @@ class JSONWriter():
                         return details[full_mut]['1']
 
     def isApobecDRM(self, gene, consensus, position, AA):
-        ls = [row[0:3] for row in self.ApobecDRMs[1:]]
-        if [gene, consensus, str(position)] in ls:
-            i = ls.index([gene, consensus, str(position)])
+        ls = [[row['gene'], str(row['position'])] for row in self.ApobecDRMs]
+        if [gene, str(position)] in ls:
+            i = ls.index([gene, str(position)])
             for aa in AA:
-                if aa in self.ApobecDRMs[1:][i][3]:
+                if aa in self.ApobecDRMs[i]['aa']:
                     return True
         return False
 
