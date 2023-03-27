@@ -109,7 +109,6 @@ If you have downloaded the package source to your computer, you can also run *si
 ```console
 art@Jesry:~/git/sierra-local$ git clone http://github.com/PoonLab/sierra-local
 art@Jesry:~/git/sierra-local$ cd sierra-local
-art@Jesry:~/git/sierra-local$ git submodule init; git submodule update
 art@Jesry:~/git/sierra-local$ python3
 Python 3.6.6 (default, Sep 12 2018, 18:26:19) 
 [GCC 8.0.1 20180414 (experimental) [trunk revision 259383]] on linux
