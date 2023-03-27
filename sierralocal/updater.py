@@ -1,10 +1,8 @@
 import requests
-
 from pathlib import Path
-import re
 import os
 
-# this needs to be modified to point Python to your local chromedriver binary
+
 mod_path = Path(os.path.dirname(__file__))
 
 
