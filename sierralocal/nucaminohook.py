@@ -4,10 +4,8 @@ from pathlib import Path
 import csv
 import re
 from sierralocal.subtyper import Subtyper
-from sierralocal.utils import get_input_sequences
 import sys
 import platform
-from csv import DictReader
 import json
 import codecs
 import tempfile
@@ -84,22 +82,22 @@ class NucAminoAligner():
         :return:  Dictionary of position-consensus-mutation-subtype keys to %prevalence in naive
                   populations
         '''
-        handle = open(str(Path(os.path.dirname(__file__))/'data'/filename), 'r')
-        table = csv.DictReader(handle, delimiter='\t')
+        with open(str(Path(os.path.dirname(__file__))/'data'/filename), 'r') as handle:
+            table = csv.DictReader(handle, delimiter='\t')
 
-        keys = [fn for fn in table.fieldnames if fn.endswith(':%')]
-        result = {}
-        for row in table:
-            for key in keys:
-                value = float(row[key])
-                subtype = key.split(':')[0]
-                label = row['Pos'] + row['Cons'] + row['Mut'] + subtype
-                if label in result and result[label] < value:
-                    # take the greater percentage of naive or experienced groups
-                    result[label] = value
-                else:
-                    result.update({label: value})
-        return result
+            keys = [fn for fn in table.fieldnames if fn.endswith(':%')]
+            result = {}
+            for row in table:
+                for key in keys:
+                    value = float(row[key])
+                    subtype = key.split(':')[0]
+                    label = row['Pos'] + row['Cons'] + row['Mut'] + subtype
+                    if label in result and result[label] < value:
+                        # take the greater percentage of naive or experienced groups
+                        result[label] = value
+                    else:
+                        result.update({label: value})
+            return result
 
 
     def get_aligned_seq(self, nuc, sites):
@@ -178,8 +176,12 @@ class NucAminoAligner():
             '--output-format', 'json',
         ]
         p = subprocess.Popen(args, stdout=subprocess.PIPE)  #, encoding='utf8')
-
         result = json.load(self.reader(p.stdout))
+
+        p.stdout.close()
+        p.kill()
+        p.wait()
+
         records = []
 
         for record in result['POL']:

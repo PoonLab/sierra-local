@@ -29,14 +29,14 @@ class Subtyper():
         """
         # FIXME: this is a hard-coded data filename
         filepath = Path(os.path.dirname(__file__))/'data'/'genotype-references.9c610d61.fasta'
-        handle = open(str(filepath))
-        result = get_input_sequences(handle, return_dict=True)
-        for label, seq in result.items():
-            subtype = label.split('|')[1]
-            if subtype not in self.simple_subtypes:
-                self.simple_subtypes.update({subtype: []})
-            self.simple_subtypes[subtype].append(label)
-        return result
+        with open(str(filepath)) as handle:
+            result = get_input_sequences(handle, return_dict=True)
+            for label, seq in result.items():
+                subtype = label.split('|')[1]
+                if subtype not in self.simple_subtypes:
+                    self.simple_subtypes.update({subtype: []})
+                self.simple_subtypes[subtype].append(label)
+            return result
 
     def uncorrectedDistance(self, seq, ref):
         """
