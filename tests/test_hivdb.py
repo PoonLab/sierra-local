@@ -1,6 +1,6 @@
 import os
-from math import inf
 import unittest
+from math import inf
 from xml.etree.ElementTree import parse, ParseError
 
 from sierralocal.hivdb import HIVdb
@@ -27,24 +27,23 @@ class TestHIVDb(unittest.TestCase):
         with self.assertRaises(FileNotFoundError) as err:
             invalid_path = r'does\not\exist.txt'
             algorithm = HIVdb(asi2=invalid_path)
-            self.assertEqual(err.exception, f"HIVDB XML cannot be found at user specified \npath {invalid_path}")
-
+        
         with self.assertRaises(ParseError):
             invalid_xml = r'sierralocal\data\RT-comments.csv'
             algorithm = HIVdb(asi2=invalid_xml)
 
-    def testSetApobecTsv(self):
-        exp_tsv_filename = os.path.abspath(r'sierralocal\data\apobec-drms.221b0330.tsv')
-        res_tsv_filename = os.path.abspath(self.algorithm.tsv_filename)
-        self.assertEqual(exp_tsv_filename, res_tsv_filename)
+    def testSetApobecJson(self):
+        exp_json_filename = os.path.abspath(r'sierralocal\data\apobec_drms.c9583ac2.json')
+        res_json_filename = os.path.abspath(self.algorithm.json_filename)
+        self.assertEqual(exp_json_filename, res_json_filename)
 
         # Setting params
-        tsv_path = r'sierralocal\data\PIPrevalences.tsv'
+        json_path = r'sierralocal\data\apobec_drms.c9583ac2.json'
 
-        algorithm = HIVdb(apobec=tsv_path)
-        exp_tsv_filename = os.path.abspath(tsv_path)
-        res_tsv_filename = os.path.abspath(algorithm.tsv_filename)
-        self.assertEqual(exp_tsv_filename, res_tsv_filename)
+        algorithm = HIVdb(apobec=json_path)
+        exp_json_filename = os.path.abspath(json_path)
+        res_json_filename = os.path.abspath(algorithm.json_filename)
+        self.assertEqual(exp_json_filename, res_json_filename)
 
     def testParseDefinitions(self):
         exp_def_dict = \
@@ -1692,6 +1691,8 @@ class TestHIVDb(unittest.TestCase):
         self.assertEqual(res_grange_dict, exp_grange_dict)
 
     def testParseDrugs(self):
+        self.definitions = self.algorithm.parse_definitions(self.root)
+
         exp_drugs = \
             {'3TC': ([{'group': [(62, 'V')], 'value': 5},
                       [{'group': [(65, 'N')], 'value': 15},
@@ -4446,12 +4447,13 @@ class TestHIVDb(unittest.TestCase):
                              4: {'max': 59, 'min': 30},
                              5: {'max': inf, 'min': 60}})}
         
-        self.definitions = self.algorithm.parse_definitions(self.root)
         res_drugs = self.algorithm.parse_drugs(self.root)
 
         self.assertEqual(exp_drugs, res_drugs)
 
     def testParseCondition(self):
+        # Setting params
+        condition = self.root.find('.//CONDITION').text
         exp_drms = \
             [{'group': [(41, 'L')], 'value': 5},
              {'group': [(62, 'V')], 'value': 5},
@@ -4516,7 +4518,6 @@ class TestHIVDb(unittest.TestCase):
              [{'group': [(41, 'L'), (215, 'ACDEILNSV')], 'value': 5},
               {'group': [(41, 'L'), (215, 'FY')], 'value': 15}]]
         
-        condition = self.root.find('.//CONDITION').text
         res_drms = self.algorithm.parse_condition(condition)
 
         self.assertEqual(exp_drms, res_drms)
@@ -4535,8 +4536,9 @@ class TestHIVDb(unittest.TestCase):
         # if iter parameter is set to anything greater than 1
         with self.assertRaises(IndexError) as err: 
             self.algorithm._parse_scores(drm_lib, drm, chunk, 3)
+
+        with self.assertRaises(IndexError) as err: 
             self.algorithm._parse_scores(drm_lib, drm, chunk, 2)
-            self.assertEqual(err.exception, 'List index out of range')
 
         # Setting params
         drm_lib = []
@@ -4551,8 +4553,9 @@ class TestHIVDb(unittest.TestCase):
         # if iter parameter is set to anything greater than 0
         with self.assertRaises(IndexError) as err: 
             self.algorithm._parse_scores(drm_lib, drm, chunk, 1)
+
+        with self.assertRaises(IndexError) as err: 
             self.algorithm._parse_scores(drm_lib, drm, chunk, 2)
-            self.assertEqual(err.exception, 'List index out of range')
 
     def testParseComments(self):
         exp_comments = \

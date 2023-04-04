@@ -21,7 +21,8 @@ class TestGetInputSequences(unittest.TestCase):
              'shift2': 'TCAGGTCACTCTTTGGCAACGACCCCTCGTCACAATAAAGATAGGGGGGCAACTAAAGGAAGCTCTATTAGATACAGGAGCAGATGATACAGTATTAGAAGAAATGAGTTTGCCAGGAAGATGGAAACCAAAAATGATAGGGGGAATTGGAGGTTTTATCAAAGTAAGACAGTATGATCAGATACTCATAGAAATCTGTGGACATAAAGCTATAGGTACAGTATTAGTAGGACCTACACCTGTCAACATAATTGGAAGAAATCTGTTGACTCAGATTGGTTGCACTTTAAATTTT'}
 
     def testGetInputSequences(self):
-        input_file = r'testss\hxb2-pr.fa'
+        # Setting params
+        input_file = r'tests\hxb2-pr.fa'
         
         with open(input_file) as handle:
             list_result = get_input_sequences(handle=handle)
@@ -30,7 +31,7 @@ class TestGetInputSequences(unittest.TestCase):
         with open(input_file) as handle:
             dict_result = get_input_sequences(handle=handle, return_dict=True)
             self.assertDictEqual(self.expected_dict, dict_result)
-        
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -59,7 +59,7 @@ class HIVdb():
                     file_found = True  # if no exception thrown
                     self.xml_filename = file
                     break
-                except:
+                except: # pragma: no cover
                     print('Failed to parse XML file. Please post an issue at '
                           'http://github.com/PoonLab/sierra-local/issues.')
                     raise
@@ -79,7 +79,7 @@ class HIVdb():
                         "path {}".format(path))
 
         # Parseable XML file not found. Update from web
-        if not file_found:
+        if not file_found: # pragma: no cover
             print("Error: could not find local copy of HIVDB XML.")
             print("Manually download from https://github.com/hivdb/hivfacts")
             sys.exit()
@@ -103,8 +103,8 @@ class HIVdb():
             return
 
         # if we end up here, no local files found
-        print("Error: could not locate local APOBEC DRM data file.")
-        print("Manually download from https://github.com/hivdb/hivfacts")
+        print("Error: could not locate local APOBEC DRM data file.") # pragma: no cover
+        print("Manually download from https://github.com/hivdb/hivfacts") # pragma: no cover
         sys.exit()
 
     def parse_definitions(self, root):
@@ -223,8 +223,6 @@ class HIVdb():
                 condition = element.find('RULE/CONDITION').text  # drug conditions
                 cond_dict = self.parse_condition(condition)      # dictionary of parsed drug conditions
 
-                # scorerange = list(element.find('RULE').find('ACTIONS').find('SCORERANGE'))[0]
-                # same as above but PEP 8 compliant
                 scorerange = list(element.find('RULE/ACTIONS/SCORERANGE'))[0]
                 if scorerange.find('USE_GLOBALRANGE') is None:
                     self.drugs[drug] = self.drugs[fullname] = \
@@ -327,7 +325,7 @@ class HIVdb():
         return self.comments
 
 
-def main():
+def main(): # pragma: no cover
     # simply attempt to load XML and TSV files
     HIVdb()
 
