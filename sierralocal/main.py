@@ -1,20 +1,22 @@
+import os
+import sys
+import time
+import argparse
+
 from sierralocal import score_alg
 from sierralocal.hivdb import HIVdb
-import os
-import argparse
-from sierralocal.nucaminohook import NucAminoAligner
 from sierralocal.jsonwriter import JSONWriter
-import time
-import sys
+from sierralocal.nucaminohook import NucAminoAligner
 
 
-def score(filename, xml_path=None, tsv_path=None, forceupdate=False, do_subtype=False):
+def score(filename, xml_path=None, tsv_path=None, forceupdate=False, do_subtype=False): # pragma: no cover
     """
     Functionality as a Python module. Can import this function from sierralocal.
-    @param filename:  Path to FASTA file containing sequences
-    @param xml_path:  Path to ASI2 XML file
-    @param tsv_path:  Path to tab-separated APOBEC DRM file
-    @param forceupdate:  DEPRECATED. Uses Selenium to retrieve ASI2 and TSV files.
+    @param filename: str, Path to FASTA file containing sequences
+    @param xml_path: str <optional>, Path to ASI2 XML file
+    @param tsv_path: (optional) str, Path to tab-separated APOBEC DRM file
+    @param forceupdate: bool, DEPRECATED. Uses Selenium to retrieve ASI2 and TSV files.
+    @param do_subtype: bool, ???
     """
     algorithm = HIVdb(asi2=xml_path, apobec=tsv_path, forceupdate=forceupdate)
     time_start = time.time()
@@ -37,16 +39,19 @@ def score(filename, xml_path=None, tsv_path=None, forceupdate=False, do_subtype=
 
 
 def scorefile(input_file, algorithm, do_subtype=False):
-    '''
-    Returns a set of corresponding names, scores, and ordered mutations for a given FASTA file containing pol sequences
-    :param input_file: the FASTA file name containing arbitrary number of sequences and headers
-    :param algorithm: the HIVdb drug scores and notations
-    :return: list of names, list of scores, list of ordered mutations
-    '''
+    """
+    Returns a set of corresponding names, scores, and ordered 
+    mutations for a given FASTA file containing pol sequences
+    @param input_file: str, the FASTA file name containing arbitrary 
+    number of sequences and headers
+    @param algorithm: sierralocal.hivdb.HIVdb, the HIVdb drug scores and notations
+    @param do_subtype: bool <optional>, ???
+    @return: list of names, list of scores, list of ordered mutations
+    """
     aligner = NucAminoAligner(algorithm)
     result = aligner.align_file(input_file)
 
-    print('Aligned '+input_file)
+    print('Aligned ' + input_file)
     sequence_headers, file_genes, file_mutations, file_trims, subtypes = \
         aligner.get_mutations(result, do_subtype=do_subtype)
 
@@ -65,9 +70,9 @@ def scorefile(input_file, algorithm, do_subtype=False):
 
         # iterate by gene
         for idx, gene_info in enumerate(genes):
-            gene, firstAA, lastAA, firstNA, lastNA = gene_info
+            gene, first_aa, last_aa, first_na, last_na = gene_info
 
-            length_lists.append(lastNA - firstNA + 1)
+            length_lists.append(last_na - first_na + 1)
 
             # convert format
             mutation_lists.append(
@@ -77,29 +82,31 @@ def scorefile(input_file, algorithm, do_subtype=False):
                     [x[0] for x in mutations[idx].values()]   # wt
                 ))
             )
-            scores.append(score_alg.score_drugs(algorithm, gene, mutations[idx]))
+            scores.append(score_alg.score_drugs(algorithm,
+                                                gene,
+                                                mutations[idx]))
 
         ordered_mutation_list.append(mutation_lists)
         sequence_scores.append(scores)
         sequence_lengths.append(length_lists)
 
-    return sequence_headers, sequence_scores, ordered_mutation_list, file_genes, \
-           sequence_lengths, file_trims, subtypes
+    return sequence_headers, sequence_scores, ordered_mutation_list, \
+           file_genes, sequence_lengths, file_trims, subtypes
 
 
-def sierralocal(fasta, outfile, xml=None, json=None, cleanup=False, forceupdate=False):
+def sierralocal(fasta, outfile, xml=None, json=None,
+                cleanup=False, forceupdate=False): # pragma: no cover
     """
     Contains all initializing and processing calls.
 
-    :param fasta:  relative or absolute paths to FASTA file to process; multiple files may be
+    @param fasta:  relative or absolute paths to FASTA file to process; multiple files may be
                    passed as a list object
-    :param outfile:  file path to write JSON results
-    :param xml:  <optional> path to local copy of HIVdb algorithm XML file
-    :param tsv: <optional> path to local copy of HIVdb algorithm APOBEC DRM file
-    :param skipalign:  <optional> to save time, skip NucAmino alignment step (reuse TSV output)
-    :param forceupdate:  <optional> forces sierralocal to update its local copy of the HIVdb algorithm
-
-    :return:  a tuple of (number of records processed, time elapsed initializing algorithm)
+    @param outfile:  file path to write JSON results
+    @param xml: <optional> str, path to local copy of HIVdb algorithm XML file
+    @param json: <optional> str, path to local copy of HIVdb algorithm APOBEC DRM file
+    @param cleanup:  <optional> bool, to delete alignment file
+    @param forceupdate: <optional> bool, forces sierralocal to update its local copy of the HIVdb algorithm
+    @return: tuple, a tuple of (number of records processed, time elapsed initializing algorithm)
     """
 
     # initialize algorithm and jsonwriter
@@ -140,7 +147,7 @@ def sierralocal(fasta, outfile, xml=None, json=None, cleanup=False, forceupdate=
     return count, time_elapsed
 
 
-def parse_args():
+def parse_args(): # pragma: no cover
     """
     CLI argument parser. Current options include input FASTA files only
     :return: args object
@@ -162,7 +169,7 @@ def parse_args():
     return args
 
 
-def main():
+def main(): # pragma: no cover
     """
     Main function called from CLI.
     """
