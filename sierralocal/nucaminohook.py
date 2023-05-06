@@ -4,7 +4,7 @@ from pathlib import Path
 import csv
 import re
 from sierralocal.subtyper import Subtyper
-from sierralocal.utils import get_input_sequences
+from sierralocal.utils import *
 import sys
 import platform
 from csv import DictReader
@@ -13,49 +13,48 @@ import codecs
 import tempfile
 
 
+
 class NucAminoAligner():
     """
     Initialize NucAmino for a specific input fasta file
     """
-    def __init__(self, algorithm, binary=None):
+    def __init__(self, algorithm):
         """
 
         :param binary:  Absolute path to nucamino binary
         """
         self.cwd = os.path.curdir
         self.reader = codecs.getreader('utf-8')  # for parsing byte strings from json in align_file()
-
-        if binary is None:
-            target = 'nucamino-{}-{}'.format(
-                platform.system().lower(),
-                'amd64' if platform.architecture()[0]=='64bit' else '386'
-            )
-
-            # autodetect nucamino binary
-            bin_dir = Path(os.path.dirname(__file__)).joinpath('bin')
-            items = os.listdir(str(bin_dir))
-            self.nucamino_binary = None
-            for name in items:
-                fn = os.path.splitext(name)[0]
-                if fn == target:
-                    self.nucamino_binary = bin_dir.joinpath(name)
-                    break
-
-            if self.nucamino_binary is None:
-                sys.exit('Failed to locate expected NucAmino binary {}. '.format(target) +
-                         'Please download binary from ' +
-                         'http://github.com/hivdb/nucamino/releases')
-
-            print("Found NucAmino binary", self.nucamino_binary)
-        else:
-            self.nucamino_binary = binary
+        # if binary is None:
+        #     target = 'nucamino-{}-{}'.format(
+        #         platform.system().lower(),
+        #         'amd64' if platform.architecture()[0]=='64bit' else '386'
+        #     )
+        #
+        #     # autodetect nucamino binary
+        #     bin_dir = Path(os.path.dirname(__file__)).joinpath('bin')
+        #     items = os.listdir(str(bin_dir))
+        #     self.nucamino_binary = None
+        #     for name in items:
+        #         fn = os.path.splitext(name)[0]
+        #         if fn == target:
+        #             self.nucamino_binary = bin_dir.joinpath(name)
+        #             break
+        #
+        #     if self.nucamino_binary is None:
+        #         sys.exit('Failed to locate expected NucAmino binary {}. '.format(target) +
+        #                  'Please download binary from ' +
+        #                  'http://github.com/hivdb/nucamino/releases')
+        #
+        #     print("Found NucAmino binary", self.nucamino_binary)
+        # else:
+        #     self.nucamino_binary = binary
 
         self.tripletTable = self.generateTable()
 
         #with open(str(Path(os.path.dirname(__file__))/'data'/'apobec.tsv'), 'r') as csvfile:
-        with open(algorithm.json_filename) as jsonfile:
-            # self.ApobecDRMs = list(csv.reader(csvfile, delimiter='\t'))
-            self.ApobecDRMs = json.load(jsonfile)
+        with open(algorithm.tsv_filename) as csvfile:
+            self.ApobecDRMs = list(csv.reader(csvfile, delimiter='\t'))
 
         self.PI_dict = self.prevalence_parser('PIPrevalences.tsv')
         self.RTI_dict = self.prevalence_parser('RTIPrevalences.tsv')
@@ -144,22 +143,7 @@ class NucAminoAligner():
 
         return aligned
 
-
     def align_file(self, filename):
-        '''
-        Using subprocess to call NucAmino, generates an output .tsv containing mutation
-        data for each sequence in the FASTA file.
-        Reconstitute aligned codon sequence from NucAmino output.
-        For each codon in NucleicAcidsLine:
-        - if LengthNA < 3, the codon has a deletion
-        - if LengthNA == 3+n where n>0, the following n bases are insertions to be removed
-
-        @param filename:  Path to FASTA file to process
-        '''
-
-        #TODO: check that file is FASTA format
-
-        # remove illegal characters
         tf = tempfile.NamedTemporaryFile(mode='w', delete=False)
         with open(filename) as handle:
             for line in handle:
@@ -167,43 +151,105 @@ class NucAminoAligner():
                     line = line.replace('~', '').replace('-', '').replace('.', '')
                 tf.write(line)
         tf.close()
+        # still need to check that the input file is a fasta file
 
-        args = [
-            '{}'.format(self.nucamino_binary),  # in case of byte-string
-            "align",
-            "hiv1b",
-            "pol",
-            "-q",
-            "-i", tf.name,
-            '--output-format', 'json',
-        ]
-        p = subprocess.Popen(args, stdout=subprocess.PIPE)  #, encoding='utf8')
+        # use local config file instead of requests
+        with open(str(Path(os.path.dirname(__file__))/'data'/'alignment-config_hiv1.json'), 'r') as f:
+            config = json.load(f)
 
-        result = json.load(self.reader(p.stdout))
-        records = []
+        MIN_MATCH_PCNT = getConfigField(config=config, field='minMatchPcnt')
+        MIN_NUM_OF_AA = getConfigField(config=config, field='minNumOfAA')
+        FROM_FRAGMENT = getConfigField(config=config, field='fromFragment')
+        GENE = getConfigField(config=config, field='geneName')
+        REF_RANGES = getConfigField(config=config, field='refRanges')
+        REF_SEQUENCE = getConfigField(config=config, field='refSequence')
+        POST_PROCESSORS = getConfigField(config=config, field='postProcessors')
+        MINIMAP2_OPTS = getConfigField(config=config, field='minimap2Opts')
 
-        for record in result['POL']:
-            try:
-                sites = record['Report']['AlignedSites']
-            except:
-                print(record)
-                raise
-            nuc = record['Report']['NucleicAcidsLine']
+        for refFragmentName in REF_SEQUENCE:
+            refSeqFile = REF_SEQUENCE[refFragmentName]
+            cmd = [
+                'postalign',
+                '-i', filename,
+                '-o', 'tempPostOut.json',  # TODO: remove the tempPostOut.json file after organizing it
+                '-f', 'MINIMAP2',
+                '-r', refSeqFile
+            ]
 
-            records.append({
-                'Name': record['Name'],
-                'FirstAA': record['Report']['FirstAA'],  # relative to start of pol
-                'LastAA': record['Report']['LastAA'],
-                'FirstNA': record['Report']['FirstNA'],
-                'LastNA': record['Report']['LastNA'],
-                'Mutations': record['Report']['Mutations'],
-                'Frameshifts': record['Report']['FrameShifts'],
-                'AlignedSites': sites,
-                'Sequence': self.get_aligned_seq(nuc, sites)
-            })
+            if refFragmentName in MINIMAP2_OPTS:
+                cmd.append('--minimap2-opts')
+                cmd.append(MINIMAP2_OPTS[refFragmentName][0])
 
-        return records
+            for op in POST_PROCESSORS[refFragmentName][0]:
+                cmd.append(op)
 
+            cmd.append('save-json')
+            for fragmentName in FROM_FRAGMENT.keys():
+                if FROM_FRAGMENT[fragmentName][0] == refFragmentName:
+                    cmd.append(fragmentName)
+                    for range in REF_RANGES[fragmentName][0]:
+                        cmd.append(str(range[0]))
+                        cmd.append(str(range[1]))
+            # print(' '.join(cmd))
+            _ = subprocess.check_call(cmd)
+            for f in REF_SEQUENCE:
+                os.remove(REF_SEQUENCE[f])
+
+        output = []
+        with open('tempPostOut.json', 'r') as postOut:
+            postOut = json.load(postOut)
+            for sequence in postOut:
+
+                result = {'AlignedSites': [],
+                          'FirstAA': None,
+                          'FirstNA': None,
+                          'FrameShifts': [],
+                          'LastAA': None,
+                          'LastNA': None,
+                          'Mutations': [],
+                          'Name': '',
+                          'Sequence': ''
+                          }
+
+                for field, data in sequence.items():
+                    # postalign has different AlignedSites output
+                    # missing fields lastNA and firstNA
+
+                    if field == 'GeneReports':
+                        # this field holds all the fields of that of nucAMINO
+
+                        if not 'AlignedSite' in result:
+                            result['AlignedSites'] = []
+
+                        for protein in data:
+                            # sequenced if the report field is not empty
+                            if protein['Report']:
+                                for key, info in protein['Report'].items():
+                                    if key == 'AlignedSites':
+                                        for i in info:
+                                            # PosNA shows all three positions, should only show first
+                                            i['PosNAs'] = i['PosNAs'][0]
+                                            # also in nucAMINO it is PosNA and not PosNAs
+                                            # hopefully this won't break anything by not changing the key name
+
+                                        result[key] += info
+
+                                    else:
+                                        result.update({key: info})
+
+                    else:
+                        if field in result:
+                            result.update({field: data})
+
+                # manually add in the last and first NA and AA based on aligned sequences
+                result['FirstNA'] = result['AlignedSites'][0]['PosNAs']
+                result['LastNA'] = result['AlignedSites'][-1]['PosNAs']
+                result['FirstAA'] = result['AlignedSites'][0]['PosAA']
+                result['LastAA'] = result['AlignedSites'][-1]['PosAA']
+
+                output.append(result)
+
+        return output
 
     def create_gene_map(self):
         """
@@ -240,12 +286,13 @@ class NucAminoAligner():
 
             firstAA = max(polFirstAA-aaStart, 1)
             lastAA = min(polLastAA-aaStart+1, geneLength)
-            firstNA = alignedSites[0]['PosNA']
-            lastNA = alignedSites[-1]['PosNA'] - 1 + alignedSites[-1]['LengthNA']
+            firstNA = alignedSites[0]['PosNAs']
+            lastNA = alignedSites[-1]['PosNAs'] - 1 + alignedSites[-1]['LengthNA']
 
             genes.append((gene, firstAA, lastAA, firstNA, lastNA))
 
         return genes
+
 
     def get_mutations(self, records, do_subtype=False):
         '''
@@ -305,7 +352,7 @@ class NucAminoAligner():
                         continue  # mutation in other gene
                     codon = mut['CodonText']
                     gene_muts.update(
-                        {position-left: (mut['ReferenceText'], self.translateNATriplet(codon))}
+                        {position-left: (mut['RefAminoAcidText'], self.translateNATriplet(codon))}
                     )
                     codon_list.append(codon)
 
@@ -515,11 +562,11 @@ class NucAminoAligner():
         return ("*" in self.translateNATriplet(triplet))
 
     def isApobecDRM(self, gene, consensus, position, AA):
-        ls = [[row['gene'], str(row['position'])] for row in self.ApobecDRMs]
-        if [gene, str(position)] in ls:
-            i = ls.index([gene, str(position)])
+        ls = [row[0:3] for row in self.ApobecDRMs[1:]]
+        if [gene, consensus, str(position)] in ls:
+            i = ls.index([gene, consensus, str(position)])
             for aa in AA:
-                if aa in self.ApobecDRMs[i]['aa']:
+                if aa in self.ApobecDRMs[1:][i][3]:
                     return True
         return False
 
