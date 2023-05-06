@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 import re
 import sys
-import subprocess
 
 
 class HIVdb():
@@ -15,19 +14,18 @@ class HIVdb():
     """
     def __init__(self, asi2=None, apobec=None, forceupdate=False):
         self.xml_filename = None
-        self.json_filename = None
+        self.tsv_filename = None
+        self.tsv_filename = None
         self.BASE_URL = 'https://hivdb.stanford.edu'
 
         if forceupdate:
-            print("Updating submodule to retrieve the latest data files")
-            # update submodules
-            try:
-                subprocess.check_call("git submodule foreach git pull origin main", shell=True)
-            except:
-                print("Could not update submodules")
+            # DEPRECATED, requires selenium, chrome and chromedriver
+            import sierralocal.updater as updater
+            self.xml_filename = updater.update_HIVDB()
+            self.tsv_filename = updater.updateAPOBEC()
         else:
             self.set_hivdb_xml(asi2)
-            self.set_apobec_json(apobec)
+            self.set_apobec_tsv(apobec)
 
         # Set algorithm metadata
         self.root = xml.parse(str(self.xml_filename)).getroot()
@@ -41,14 +39,14 @@ class HIVdb():
         if path is None:
             # If user has not specified XML path
             # Iterate over possible HIVdb ASI files matching the glob pattern
-            dest = str(Path(os.path.dirname(__file__))/'data'/'hivfacts'/'data'/'algorithms'/'HIVDB_*.xml')
+            dest = str(Path(os.path.dirname(__file__))/'data'/'HIVDB*.xml')
             print("searching path " + dest)
             files = glob.glob(dest)
 
             # find the newest XML that can be parsed
             intermed = []
             for file in files:
-                version = re.search("HIVDB_([0-9]\.[0-9.-]+)\.", file).group(1)
+                version = re.search("HIVDB_([0-9]\.[0-9.]+)\.", file).group(1)
                 intermed.append((version, file))
             intermed.sort(reverse=True)
 
@@ -81,31 +79,35 @@ class HIVdb():
         # Parseable XML file not found. Update from web
         if not file_found:
             print("Error: could not find local copy of HIVDB XML.")
-            print("Please ensure that the submodule (https://github.com/hivdb/hivfacts/tree/) has been initialized and updated")
+            print("Manually download from https://hivdb.stanford.edu/page/"
+                  "release-notes/#algorithm.updates")
             sys.exit()
+            # self.xml_filename = updater.update_HIVDB()
 
-    def set_apobec_json(self, path):
+    def set_apobec_tsv(self, path):
         """
-        Attempt to locate a local APOBEC DRM file (json format)
+        Attempt to locate a local APOBEC DRM file (tsv format)
         """
         if path is None:
-            dest = str(Path(os.path.dirname(__file__))/'data'/'hivfacts'/'data'/'apobecs'/'apobec_*.json')
+            dest = str(Path(os.path.dirname(__file__))/'data'/'apobec*.tsv')
             print("searching path {}".format(dest))
             files = glob.glob(dest)
             for file in files:
                 # no version numbering, take first hit
                 # TODO: some basic format check on TSV file
                 if os.path.isfile(file):
-                    self.json_filename = file
+                    self.tsv_filename = file
                     return
         else:
-            self.json_filename = path
+            self.tsv_filename = path
             return
 
         # if we end up here, no local files found
         print("Error: could not locate local APOBEC DRM data file.")
-        print("Please ensure that the submodule (https://github.com/hivdb/hivfacts/tree/) has been initialized and updated")
+        print("Manually download from https://hivdb.stanford.edu/page/"
+              "release-notes/#data.files")
         sys.exit()
+        # self.tsv_filename = updater.updateAPOBEC()
 
     def parse_definitions(self, root):
         """
@@ -124,18 +126,18 @@ class HIVdb():
             'comment': {}  # maps comments to id string
         }
         # Convert list of elements from class 'xml.etree.ElementTree.Element' to type 'str'
-        element_list = list(map(lambda x: xml.tostring(x).strip().decode("utf-8"), root.getchildren()))
+        element_list = list(map(lambda x: xml.tostring(x).strip().decode("utf-8"), root))
         # Find the index of element 'DEFINITIONS' so that it's children may be iterated over to parse definitions
         def_index = [i for i, item in enumerate(element_list) if re.search('<DEFINITIONS>', item)]
         def_ind = def_index[0]  # un-list the index of 'DEFINITIONS' element
 
-        definitions = root.getchildren()[def_ind]
-        comment_definitions = definitions.getchildren()[-1]  # TODO: swap out hard-coded index with variable
+        definitions = list(root)[def_ind]
+        comment_definitions = definitions[-1]  # TODO: swap out hard-coded index with variable
 
         globalrange = definitions.find('GLOBALRANGE').text.split(',')
         default_grange = self.parse_globalrange(self.definitions['globalrange'], globalrange)
 
-        for element in definitions.getchildren():
+        for element in definitions:
             if element.tag == 'GENE_DEFINITION':
                 gene = element.find('NAME').text
                 drug_classes = element.find('DRUGCLASSLIST').text.split(',')
@@ -153,7 +155,7 @@ class HIVdb():
                 self.definitions['drugclass'].update({name: druglist})
 
             elif element.tag == 'COMMENT_DEFINITIONS':
-                for comment_str in comment_definitions.getchildren():
+                for comment_str in comment_definitions:
                     id = comment_str.attrib['id']
                     comment = comment_str.find('TEXT').text
                     sort_tag = comment_str.find('SORT_TAG').text
@@ -203,7 +205,7 @@ class HIVdb():
         """
         self.drugs = {}
 
-        for element in root.getchildren():
+        for element in root:
             if element.tag == 'DRUG':
                 drug = element.find('NAME').text                            # drug name
                 fullname = element.find('FULLNAME').text                    # drug full name
@@ -289,10 +291,9 @@ class HIVdb():
         """
         self.comments = {}
 
-        for element in root.getchildren():
+        for element in root:
             if element.tag == 'MUTATION_COMMENTS':
-
-                for gene in element.getchildren():
+                for gene in element:
                     name = gene.find('NAME').text
                     gene_dict = {}
 
