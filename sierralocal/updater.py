@@ -6,7 +6,7 @@ import os
 mod_path = Path(os.path.dirname(__file__))
 
 
-def update_APOBEC():
+def update_apobec():
     """
     Update the APOBEC DRMS file from the Github page
     :return: absolute path to the apobec drms JSON file
@@ -21,13 +21,13 @@ def update_APOBEC():
         with open(filepath, 'wb') as file:
             file.write(request.content)
         print("Updated APOBEC DRMs into {}".format(filepath))
-    except:
+    except: # pragma: no cover
         print("Unable to update APOBEC DRMs. Try manually downloading the APOBEC DRM JSON into data/apobec_drms.json")
 
     return filepath
 
 
-def update_HIVDB():
+def update_hivdb():
     """
     Query the HIVdb Github page for new ASI (algorithm specification interface)
     XML files.
@@ -46,7 +46,7 @@ def update_HIVDB():
 
         print("Updated HIVDB XML into {}".format(filepath))
 
-    except Exception as e:
+    except Exception as e: # pragma: no cover
         print("Unable to update HIVDB XML. Try manually downloading the HIVdb ASI2.")
         print(e)
         return None
@@ -54,9 +54,9 @@ def update_HIVDB():
     return filepath
 
 
-def main():
-    update_HIVDB()
-    update_APOBEC()
+def main(): # pragma: no cover
+    update_hivdb()
+    update_apobec()
 
 
 if __name__ == '__main__':

@@ -21,8 +21,8 @@ def score(filename, xml_path=None, tsv_path=None, forceupdate=False, do_subtype=
     algorithm = HIVdb(asi2=xml_path, apobec=tsv_path, forceupdate=forceupdate)
     time_start = time.time()
 
-    sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, \
-    file_trims, subtypes = scorefile(filename, algorithm, do_subtype)
+    sequence_headers, sequence_scores, ordered_mutation_list, file_genes, \
+    sequence_lengths, file_trims, subtypes = scorefile(filename, algorithm, do_subtype)
 
     count = len(sequence_headers)
 
@@ -125,19 +125,20 @@ def sierralocal(fasta, outfile, xml=None, json=None,
         prefix = os.path.splitext(input_file)[0]
 
         # process and score file
-        sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, \
-        file_trims, subtypes = scorefile(input_file, algorithm)
+        sequence_headers, sequence_scores, ordered_mutation_list, file_genes, \
+        sequence_lengths, file_trims, subtypes = scorefile(input_file, algorithm)
 
         count += len(sequence_headers)
         print("{} sequences found in file {}.".format(len(sequence_headers), input_file))
 
         # output results for the file
         if outfile == None:
-            output_file = prefix+'_results.json'
+            output_file = prefix + '_results.json'
         else:
             output_file = outfile
 
-        writer.write_to_json(output_file, sequence_headers, sequence_scores, file_genes, ordered_mutation_list,
+        writer.write_to_json(output_file, sequence_headers, sequence_scores,
+                             file_genes, ordered_mutation_list,
                              sequence_lengths, file_trims, subtypes)
 
         if cleanup:
@@ -182,8 +183,9 @@ def main(): # pragma: no cover
             sys.exit()
 
     time_start = time.time()
-    count, time_elapsed = sierralocal(args.fasta, args.outfile, xml=args.xml, json=args.json,
-                                      cleanup=args.cleanup, forceupdate=args.forceupdate)
+    count, time_elapsed = sierralocal(args.fasta, args.outfile, xml=args.xml,
+                                      json=args.json, cleanup=args.cleanup,
+                                      forceupdate=args.forceupdate)
     time_diff = time.time() - time_start
 
     print("Time elapsed: {:{prec}} seconds ({:{prec}} it/s)".format(

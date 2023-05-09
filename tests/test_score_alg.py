@@ -37,6 +37,7 @@ class TestScoreAlg(unittest.TestCase):
         seq_mutations = {51: ['F', 'Y'], 66: ['N', 'K']}
 
         exp_dict = {'BIC': (25, [10, 15], [['F51Y'], ['N66K']]),
+                    'CAB': (35, [15, 20], [['F51Y'], ['N66K']]),
                     'DTG': (25, [10, 15], [['F51Y'], ['N66K']]),
                     'EVG': (75, [15, 60], [['F51Y'], ['N66K']]),
                     'RAL': (75, [15, 60], [['F51Y'], ['N66K']])}
