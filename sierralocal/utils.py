@@ -1,3 +1,6 @@
+import tempfile
+import os
+
 def get_input_sequences(handle, return_dict=False):
     """
     Parse open file as FASTA, return a list of sequences.
@@ -29,3 +32,6 @@ def get_input_sequences(handle, return_dict=False):
     sequences.append(sequence)
 
     return dict(zip(headers, sequences)) if return_dict else sequences
+
+
+
