@@ -4,7 +4,6 @@ from pathlib import Path
 import csv
 import re
 from sierralocal.subtyper import Subtyper
-from sierralocal.utils import *
 import sys
 import platform
 from csv import DictReader
@@ -18,7 +17,7 @@ class NucAminoAligner():
     Initialize NucAmino for a specific input fasta file
     """
 
-    def __init__(self, algorithm, binary=None):
+    def __init__(self, algorithm, binary=None, program='post'):
         """
 
         :param binary:  Absolute path to nucamino binary
@@ -26,30 +25,33 @@ class NucAminoAligner():
         self.cwd = os.path.curdir
         self.reader = codecs.getreader('utf-8')  # for parsing byte strings from json in align_file()
 
-        if binary is None:
-            target = 'nucamino-{}-{}'.format(
-                platform.system().lower(),
-                'amd64' if platform.architecture()[0] == '64bit' else '386'
-            )
+        if program == 'post':
+            pass  # TODO include post align as a submodule
+        else:  # get necessary binaries for nucAmino
+            if binary is None:
+                target = 'nucamino-{}-{}'.format(
+                    platform.system().lower(),
+                    'amd64' if platform.architecture()[0] == '64bit' else '386'
+                )
 
-            # autodetect nucamino binary
-            bin_dir = Path(os.path.dirname(__file__)).joinpath('bin')
-            items = os.listdir(str(bin_dir))
-            self.nucamino_binary = None
-            for name in items:
-                fn = os.path.splitext(name)[0]
-                if fn == target:
-                    self.nucamino_binary = bin_dir.joinpath(name)
-                    break
+                # autodetect nucamino binary
+                bin_dir = Path(os.path.dirname(__file__)).joinpath('bin')
+                items = os.listdir(str(bin_dir))
+                self.nucamino_binary = None
+                for name in items:
+                    fn = os.path.splitext(name)[0]
+                    if fn == target:
+                        self.nucamino_binary = bin_dir.joinpath(name)
+                        break
 
-            if self.nucamino_binary is None:
-                sys.exit('Failed to locate expected NucAmino binary {}. '.format(target) +
-                         'Please download binary from ' +
-                         'http://github.com/hivdb/nucamino/releases')
+                if self.nucamino_binary is None:
+                    sys.exit('Failed to locate expected NucAmino binary {}. '.format(target) +
+                             'Please download binary from ' +
+                             'http://github.com/hivdb/nucamino/releases')
 
-            print("Found NucAmino binary", self.nucamino_binary)
-        else:
-            self.nucamino_binary = binary
+                print("Found NucAmino binary", self.nucamino_binary)
+            else:
+                self.nucamino_binary = binary
 
         self.tripletTable = self.generateTable()
 
@@ -211,12 +213,14 @@ class NucAminoAligner():
             POST_PROCESSORS = self.getConfigField(config=config, field='postProcessors')
             MINIMAP2_OPTS = self.getConfigField(config=config, field='minimap2Opts')
 
+            # hold the output of postalign
+            tfPostOut = tempfile.NamedTemporaryFile(mode='w', delete=False)
             for refFragmentName in REF_SEQUENCE:
                 refSeqFile = REF_SEQUENCE[refFragmentName]
                 cmd = [
                     'postalign',
                     '-i', filename,
-                    '-o', 'tempPostOut.json',  # TODO: remove the tempPostOut.json file after organizing it
+                    '-o', tfPostOut.name,
                     '-f', 'MINIMAP2',
                     '-r', refSeqFile
                 ]
@@ -241,7 +245,7 @@ class NucAminoAligner():
                     os.remove(REF_SEQUENCE[f])
 
             output = []
-            with open('tempPostOut.json', 'r') as postOut:
+            with open(tfPostOut.name, 'r') as postOut:
                 postOut = json.load(postOut)
                 for sequence in postOut:
                     result = {'AlignedSites': [],
@@ -294,7 +298,6 @@ class NucAminoAligner():
                         result['LastNA'] = result['AlignedSites'][-1]['PosNA']
                         result['FirstAA'] = result['AlignedSites'][0]['PosAA']
                         result['LastAA'] = result['AlignedSites'][-1]['PosAA']
-                    print(result['Mutations'])
                     output.append(result)
             return output
 
