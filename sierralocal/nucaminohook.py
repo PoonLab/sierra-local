@@ -268,7 +268,8 @@ class NucAminoAligner():
                             for protein in data:
 
                                 # sequenced if the report field is not empty
-                                if not protein['Error'] and protein['Report']:
+                                # NucAmino is positioned on POL
+                                if not protein['Error'] and protein['Report'] and 'pol' in protein['Gene']:
                                     for key, info in protein['Report'].items():
                                         if key == 'AlignedSites':
                                             for i in info:
@@ -293,12 +294,15 @@ class NucAminoAligner():
                                 result.update({field: data})
                     # manually add in the last and first NA and AA based on aligned sequences
                     # in the case it finds no genes, it will report no AlignedSites
+
+                    result['AlignedSites'] = sorted(result['AlignedSites'], key=lambda x: x['PosAA'])
+                    # result['Mutations'] = sorted(result['Mutations'], key=lambda x:x['Position'])
+
                     if result['AlignedSites']:
                         result['FirstNA'] = result['AlignedSites'][0]['PosNA']
                         result['LastNA'] = result['AlignedSites'][-1]['PosNA']
-                        result['FirstAA'] = result['AlignedSites'][0]['PosAA']
-                        result['LastAA'] = result['AlignedSites'][-1]['PosAA']
                     output.append(result)
+            os.remove(tfPostOut.name), os.remove(tf.name)
             return output
 
         else:  # call nucAmino instead of post-align
@@ -334,7 +338,7 @@ class NucAminoAligner():
                     'AlignedSites': sites,
                     'Sequence': self.get_aligned_seq(nuc, sites)
                 })
-
+            os.remove(tf.name)
             return records
 
     def create_gene_map(self):

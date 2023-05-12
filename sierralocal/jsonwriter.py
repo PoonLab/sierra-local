@@ -131,7 +131,7 @@ class JSONWriter():
         drugResistance['drugScores'] = drugScores
         return drugResistance
 
-    def formatAlignedGeneSequences(self, ordered_mutation_list, gene, firstlastAA):
+    def formatAlignedGeneSequences(self, ordered_mutation_list, gene, firstlastAA, program='post'):
         """
         Main function to format mutations into dictionary for results output
         @param ordered_mutation_list: ordered list of mutations in the query sequence relative to reference
@@ -147,7 +147,10 @@ class JSONWriter():
         for mutation in ordered_mutation_list:
             mutdict = {}
             mutdict['consensus'] = mutation[2]
-            mutdict['position'] = int(mutation[0])
+            if program == 'post':
+                mutdict['position'] = int(mutation[0] + 1)
+            else:
+                mutdict['position'] = int(mutation[0])
             mutdict['AAs'] = mutation[1]
             mutdict['isInsertion'] = mutation[1] == '_'
             mutdict['isDeletion'] = mutation[1] == '-'
@@ -163,7 +166,7 @@ class JSONWriter():
         return out
 
     def write_to_json(self, filename, file_headers, file_scores, file_genes, file_mutation_lists,
-                      file_sequence_lengths, file_trims, file_subtypes):
+                      file_sequence_lengths, file_trims, file_subtypes, program='post'):
         '''
         The main function to write passed result to a JSON file
         :param filename: the filename to write the JSON to
@@ -171,6 +174,8 @@ class JSONWriter():
         :param scores: list of sequence scores
         :param genes: list of single genes in queries
         :param ordered_mutation_list: ordered list of mutations in the query sequence relative to reference
+        :param program: postalign seems to give position of mutation 1 lower than expected. This is a temp fix
+        to the problem between switching between nucAmino and postalign
         '''
         out = []
         for index, scores in enumerate(file_scores):
@@ -191,7 +196,7 @@ class JSONWriter():
                     omlist = file_mutation_lists[index][idx]
                     nalist = (firstAA, lastAA)
                     data['alignedGeneSequences'].append(
-                        self.formatAlignedGeneSequences(omlist, gene, nalist)
+                        self.formatAlignedGeneSequences(omlist, gene, nalist, program)
                     )
                     data['drugResistance'].append(self.formatDrugResistance(scores[idx], gene))
 
