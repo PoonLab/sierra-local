@@ -36,15 +36,15 @@ def score(filename, xml_path=None, tsv_path=None, forceupdate=False, do_subtype=
     #os.remove(os.path.splitext(filename)[0] + '.tsv')
 
 
-def scorefile(input_file, algorithm, do_subtype=False):
+def scorefile(input_file, algorithm, do_subtype=False, program='post'):
     '''
     Returns a set of corresponding names, scores, and ordered mutations for a given FASTA file containing pol sequences
     :param input_file: the FASTA file name containing arbitrary number of sequences and headers
     :param algorithm: the HIVdb drug scores and notations
     :return: list of names, list of scores, list of ordered mutations
     '''
-    aligner = NucAminoAligner(algorithm)
-    result = aligner.align_file(input_file)
+    aligner = NucAminoAligner(algorithm, program=program)
+    result = aligner.align_file(input_file, program=program)
 
     print('Aligned '+input_file)
     sequence_headers, file_genes, file_mutations, file_trims, subtypes = \
@@ -87,7 +87,7 @@ def scorefile(input_file, algorithm, do_subtype=False):
            sequence_lengths, file_trims, subtypes
 
 
-def sierralocal(fasta, outfile, xml=None, tsv=None, cleanup=False, forceupdate=False):
+def sierralocal(fasta, outfile, xml=None, tsv=None, cleanup=False, forceupdate=False, program='post'):
     """
     Contains all initializing and processing calls.
 
@@ -119,7 +119,7 @@ def sierralocal(fasta, outfile, xml=None, tsv=None, cleanup=False, forceupdate=F
 
         # process and score file
         sequence_headers, sequence_scores, ordered_mutation_list, file_genes, sequence_lengths, \
-        file_trims, subtypes = scorefile(input_file, algorithm)
+        file_trims, subtypes = scorefile(input_file, algorithm, program=program)
 
         count += len(sequence_headers)
         print("{} sequences found in file {}.".format(len(sequence_headers), input_file))
@@ -158,6 +158,8 @@ def parse_args():
                         help='Deletes NucAmino alignment file after processing.')
     parser.add_argument('--forceupdate', action='store_true',
                         help='Forces update of HIVdb algorithm. Requires network connection.')
+    parser.add_argument('-alignment', default='post',
+                        help='Alignment program to use, "post" for postalign on default, else nucAmino')
     args = parser.parse_args()
     return args
 
@@ -176,7 +178,7 @@ def main():
 
     time_start = time.time()
     count, time_elapsed = sierralocal(args.fasta, args.outfile, xml=args.xml, tsv=args.tsv,
-                                      cleanup=args.cleanup, forceupdate=args.forceupdate)
+                                      cleanup=args.cleanup, forceupdate=args.forceupdate, program=args.alignment)
     time_diff = time.time() - time_start
 
     print("Time elapsed: {:{prec}} seconds ({:{prec}} it/s)".format(

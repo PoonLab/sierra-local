@@ -26,6 +26,7 @@ class NucAminoAligner():
         self.reader = codecs.getreader('utf-8')  # for parsing byte strings from json in align_file()
 
         if program == 'post':
+            print('Aligning using post-align')
             pass  # TODO include post align as a submodule
         else:  # get necessary binaries for nucAmino
             if binary is None:
@@ -198,6 +199,7 @@ class NucAminoAligner():
                     name = line[1:].strip()
                     inputSequences.update({name: ''})
                 tf.write(line)
+        tf.close()
 
         if program == 'post':
             # incorporate config file as apart of sierralocal
@@ -219,12 +221,11 @@ class NucAminoAligner():
                 refSeqFile = REF_SEQUENCE[refFragmentName]
                 cmd = [
                     'postalign',
-                    '-i', filename,
+                    '-i', tf.name,
                     '-o', tfPostOut.name,
                     '-f', 'MINIMAP2',
                     '-r', refSeqFile
                 ]
-
                 if refFragmentName in MINIMAP2_OPTS:
                     cmd.append('--minimap2-opts')
                     cmd.append(MINIMAP2_OPTS[refFragmentName][0])
@@ -239,7 +240,6 @@ class NucAminoAligner():
                         for range in REF_RANGES[fragmentName][0]:
                             cmd.append(str(range[0]))
                             cmd.append(str(range[1]))
-                # print(' '.join(cmd))
                 _ = subprocess.check_call(cmd)
                 for f in REF_SEQUENCE:
                     os.remove(REF_SEQUENCE[f])
