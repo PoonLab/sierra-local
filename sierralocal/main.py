@@ -8,7 +8,7 @@ import time
 import sys
 
 
-def score(filename, xml_path=None, tsv_path=None, forceupdate=False, do_subtype=False):
+def score(filename, xml_path=None, tsv_path=None, forceupdate=False, do_subtype=False, program='post'):
     """
     Functionality as a Python module. Can import this function from sierralocal.
     @param filename:  Path to FASTA file containing sequences
@@ -28,7 +28,7 @@ def score(filename, xml_path=None, tsv_path=None, forceupdate=False, do_subtype=
     output_file = os.path.splitext(filename)[0] + '-local.json'
     writer = JSONWriter(algorithm)
     writer.write_to_json(output_file, sequence_headers, sequence_scores, file_genes,
-                         ordered_mutation_list, sequence_lengths, file_trims, subtypes)
+                         ordered_mutation_list, sequence_lengths, file_trims, subtypes, program)
     time_end = time.time()
     print("Time elapsed: {:{prec}} seconds ({:{prec}} it/s)".format(
         time_end - time_start, count/(time_end - time_start), prec='.5'))

@@ -171,7 +171,7 @@ class NucAminoAligner():
 
     def align_file(self, filename, program='post'):
         '''
-        Using subprocess to call NucAmino, generates an output .tsv containing mutation
+        Using subprocess to call NucAmino or postalign, generates an output .tsv containing mutation
         data for each sequence in the FASTA file.
         Reconstitute aligned codon sequence from NucAmino output.
         For each codon in NucleicAcidsLine:
@@ -181,13 +181,11 @@ class NucAminoAligner():
         @param filename:  Path to FASTA file to process
         program: 'post' indicates running postalign, anything else goes to nucamino
         '''
-        counter = 1
         # TODO: check that file is FASTA format
 
         # postalign doesn't have the aligned sequence in its output or the input sequence
         # making a dictionary to keep track of the needed sequence so we can align it like we did with nucAmino
         inputSequences = {}
-
         # remove illegal characters
         tf = tempfile.NamedTemporaryFile(mode='w', delete=False)
         with open(filename) as handle:
@@ -276,6 +274,7 @@ class NucAminoAligner():
                                                 # PosNA shows all three positions, should only show first
                                                 i['PosNA'] = i['PosNAs'][0]
                                                 i.pop('PosNAs')
+                                                i['PosAA'] = i['PosAA'] + 1
 
                                             result['AlignedSites'] += info
 
@@ -283,6 +282,7 @@ class NucAminoAligner():
                                             for mutation in info:
                                                 mutation['ReferenceText'] = mutation['RefAminoAcidText']
                                                 mutation.pop('RefAminoAcidText')
+                                                mutation['Position'] += 1
                                             result['Mutations'] += info
 
                                         else:
@@ -292,17 +292,22 @@ class NucAminoAligner():
                         else:
                             if field in result:
                                 result.update({field: data})
-                    # manually add in the last and first NA and AA based on aligned sequences
+                    # manually add in the last and first NA based on aligned sequences
                     # in the case it finds no genes, it will report no AlignedSites
-
-                    result['AlignedSites'] = sorted(result['AlignedSites'], key=lambda x: x['PosAA'])
-                    # result['Mutations'] = sorted(result['Mutations'], key=lambda x:x['Position'])
-
                     if result['AlignedSites']:
+                        result['AlignedSites'] = sorted(result['AlignedSites'], key=lambda x: x['PosAA'])
                         result['FirstNA'] = result['AlignedSites'][0]['PosNA']
                         result['LastNA'] = result['AlignedSites'][-1]['PosNA']
+                        result['FirstAA'] = result['AlignedSites'][0]['PosAA']
+                        result['LastAA'] = result['AlignedSites'][-1]['PosAA']
+                        result['Sequence'] = self.get_aligned_seq(inputSequences[result['Name']], result['AlignedSites'])
                     output.append(result)
-            os.remove(tfPostOut.name), os.remove(tf.name)
+            # os.remove(tfPostOut.name)
+            os.remove(tf.name)
+
+            with open('org2.json', 'w') as out:
+                json.dump(result, out, indent=4, sort_keys=True)
+
             return output
 
         else:  # call nucAmino instead of post-align
@@ -366,20 +371,24 @@ class NucAminoAligner():
         for gene, bounds in self.gene_map.items():
             aaStart, aaEnd = bounds
             geneLength = aaEnd - aaStart + 1
-            overlap = min(aaEnd, polLastAA) - max(aaStart, polFirstAA)
-            if overlap < min_overlap[gene]:
-                # discard alignment of this gene, too short
-                continue
+            try:
+                overlap = min(aaEnd, polLastAA) - max(aaStart, polFirstAA)
+                if overlap < min_overlap[gene]:
+                    # discard alignment of this gene, too short
+                    continue
+                alignedSites = filter(lambda x: x['PosAA'] >= aaStart and x['PosAA'] <= aaEnd, polAlignedSites)
+                alignedSites = list(alignedSites)
 
-            alignedSites = filter(lambda x: x['PosAA'] >= aaStart and x['PosAA'] <= aaEnd, polAlignedSites)
-            alignedSites = list(alignedSites)
+                firstAA = max(polFirstAA - aaStart, 1)
+                lastAA = min(polLastAA - aaStart + 1, geneLength)
+                firstNA = alignedSites[0]['PosNA']
+                lastNA = alignedSites[-1]['PosNA'] - 1 + alignedSites[-1]['LengthNA']
 
-            firstAA = max(polFirstAA - aaStart, 1)
-            lastAA = min(polLastAA - aaStart + 1, geneLength)
-            firstNA = alignedSites[0]['PosNA']
-            lastNA = alignedSites[-1]['PosNA'] - 1 + alignedSites[-1]['LengthNA']
-
-            genes.append((gene, firstAA, lastAA, firstNA, lastNA))
+                genes.append((gene, firstAA, lastAA, firstNA, lastNA))
+            except:
+                # if post-align returns nothing, need to raise the message
+                # "There were no PR, RT, and IN genes found, refuse to process."
+                pass
 
         return genes
 
@@ -464,7 +473,6 @@ class NucAminoAligner():
 
         assert len(file_mutations) == len(sequence_headers), \
             "error: length of mutations dicts is not the same as length of names"
-
         return sequence_headers, file_genes, file_mutations, file_trims, subtypes
 
     # BELOW is an implementation of sierra's Java algorithm for determining codon ambiguity
