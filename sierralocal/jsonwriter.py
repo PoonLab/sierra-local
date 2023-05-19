@@ -85,9 +85,9 @@ class JSONWriter():
                 if gene not in self.isApobecDRMs:
                     self.isApobecDRMs.update({gene: {}})
                 if pos not in self.isApobecDRMs[gene]:
-                    self.isApobecDRMs[gene].update({pos: {aa}})
+                    self.isApobecDRMs[gene].update({pos: aa})
                 else:
-                    self.isApobecDRMs[gene][pos].add(aa)
+                    self.isApobecDRMs[gene][pos] += aa
 
         # make dictionary for primary type
         dest = str(Path(os.path.dirname(__file__)) / 'data' / 'mutation-type-pairs_hiv1.csv')
@@ -359,6 +359,7 @@ class JSONWriter():
                         return details[full_mut]['1']
 
     def isApobecDRM(self, gene, consensus, position, AA):
+        position = str(position)
         if gene in self.isApobecDRMs:
             if position in self.isApobecDRMs[gene]:
                 for aa in AA:
@@ -413,4 +414,5 @@ class JSONWriter():
 if __name__ == "__main__":
     writer = JSONWriter(HIVdb())
     assert (writer.isApobecDRM("IN", "G", 163, "TRAG")) == True
+    assert (writer.isApobecDRM("RT", "N", 67, "N")) == True
     assert (writer.isUnusual('RT', 'D', '6', 'D')) == True
