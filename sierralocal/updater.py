@@ -1,77 +1,63 @@
 import requests
-
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-
 from pathlib import Path
-import re
 import os
 
 
-BASE_URL = 'https://hivdb.stanford.edu'
-
-# this needs to be modified to point Python to your local chromedriver binary
 mod_path = Path(os.path.dirname(__file__))
-driver_path = mod_path.parent / 'bin/chromedriver'
-
-options = Options()
-options.add_argument('--headless')
-browser = webdriver.Chrome(executable_path=str(driver_path), chrome_options=options)
 
 
-def updateAPOBEC():
-    # UPDATE APOBEC DRMS
-    try:
-        release_notes = 'https://hivdb.stanford.edu/page/release-notes/'
-        browser.get(release_notes)
-        html = browser.page_source
-
-        apobec_url = BASE_URL + re.search(u"\/assets\/media\/apobec\-drms.*?tsv",html).group(0)
-        r = requests.get(apobec_url, allow_redirects=True)
-        apobec_path = mod_path/'data'/'apobec.tsv'
-        open(str(apobec_path), 'wb').write(r.content)
-        print("Updated APOBEC DRMs from", apobec_url, "into {}".format(apobec_path))
-    except:
-        print("Unable to update APOBEC DRMs. Try manually downloading the APOBEC DRM TSV into data/apobec.tsv")
-
-
-def update_HIVDB():
+def update_apobec():
     """
-    Query the HIVdb website for new ASI (algorithm specification interface)
+    Update the APOBEC DRMS file from the Github page
+    :return: absolute path to the apobec drms JSON file
+    """
+    # UPDATE APOBEC DRMS
+    print('Downloading the latest APOBEC DRMS File')
+
+    try:
+        url = 'https://raw.githubusercontent.com/hivdb/hivfacts/main/data/apobecs/apobec_drms.json'
+        filepath = os.path.join(mod_path, "data", "apobec_drms.json")
+        request = requests.get(url, allow_redirects=True)
+        with open(filepath, 'wb') as file:
+            file.write(request.content)
+        print("Updated APOBEC DRMs into {}".format(filepath))
+    except: # pragma: no cover
+        print("Unable to update APOBEC DRMs. Try manually downloading the APOBEC DRM JSON into data/apobec_drms.json")
+
+    return filepath
+
+
+def update_hivdb():
+    """
+    Query the HIVdb Github page for new ASI (algorithm specification interface)
     XML files.
     :return: absolute path to new XML file
     """
-    URL = 'https://hivdb.stanford.edu/page/algorithm-updates'
+    print('Downloading the latest HIVDB XML File')
     try:
-        #response = urllib.request.urlopen(URL)
-        browser.get(URL)
-        html = browser.page_source
+        url = requests.get('https://raw.githubusercontent.com/hivdb/hivfacts/main/data/algorithms/HIVDB_latest.xml')
+        file = url.text
 
-        # search HTML contents for links to XML files, extract link for most recent version
-        matches = re.findall(u"(/assets/media/HIVDB_[0-9a-z.]+\.xml)", html)
-        versions = map(lambda x: re.search(u"_([0-9]+\.[0-9.]+)\.", x).group(1), matches)
-        intermed = [(v, i) for i, v in enumerate(versions)]
-        intermed.sort(reverse=True)  # descending order
-        xml_url = BASE_URL + matches[intermed[0][1]]
+        filepath = os.path.join(mod_path, "data", file)
+        hivdb_latest = 'https://raw.githubusercontent.com/hivdb/hivfacts/main/data/algorithms/{}'.format(file)
+        request = requests.get(hivdb_latest, allow_redirects=True)
+        with open(filepath, 'wb') as file:
+            file.write(request.content)
 
-        # download the XML file
-        r = requests.get(xml_url, allow_redirects=True)
-        xml_filename = mod_path/'data'/os.path.basename(xml_url)
-        with open(str(xml_filename), 'wb') as file:
-            file.write(r.content)
+        print("Updated HIVDB XML into {}".format(filepath))
 
-        print("Updated HIVDB XML from {} into {}".format(xml_url, xml_filename))
-
-    except Exception as e:
+    except Exception as e: # pragma: no cover
         print("Unable to update HIVDB XML. Try manually downloading the HIVdb ASI2.")
         print(e)
         return None
 
-    return(xml_filename)
+    return filepath
 
-def main():
-    update_HIVDB()
-    updateAPOBEC()
+
+def main(): # pragma: no cover
+    update_hivdb()
+    update_apobec()
+
 
 if __name__ == '__main__':
     main()

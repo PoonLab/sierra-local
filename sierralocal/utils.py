@@ -4,10 +4,11 @@ import os
 def get_input_sequences(handle, return_dict=False):
     """
     Parse open file as FASTA, return a list of sequences.
-
-    :param handle:  Open stream to FASTA file in read mode
-    :param return_dict:  Option to return a dictionary of sequences keyed by header
-    :return:  if return_dict is True, returns dictionary; else a list of sequences
+    @param handle: _io.TextIOWrapper, Open stream to FASTA file in read mode
+    @param return_dict: bool, Option to return a dictionary of sequences keyed
+    by header
+    @return: dict or list, if return_dict is True, returns dictionary; else a list
+    of sequences
     """
     headers = []
     sequences = []
