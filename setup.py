@@ -9,9 +9,27 @@ from setuptools import find_packages
 if sys.version_info.major < 3:
     sys.exit('Sorry, sierra-local requires Python 3.x or above')
 
-path = pathlib.Path(__file__).parent
+# check to see if dependencies are met
+install_needs=[
+    'cython==0.29.32',
+    'postalign @ git+ssh://git@github.com/example_org//post-align.git'
+]
 
-# submodule update and setup from https://oak-tree.tech/blog/python-packaging-primer
+missing = []
+for package in install_needs:
+    package_name = package.split('==')[0]  # Extract the package name
+
+    if '@' in package_name:
+        package_name = package_name.split(' @')[0]
+
+    try:
+        __import__(package_name)
+    except ImportError:
+        missing.append(package)
+
+if missing:
+    missing_packages = ', '.join(missing)
+    raise SystemExit(f"Missing required dependencies: {missing_packages}")
 
 # adapted from
 # https://stackoverflow.com/questions/5932804/set-file-permissions-in-setup-py-file/25761434
@@ -35,11 +53,8 @@ setup(
     long_description="Lightweight implementation of the Stanford HIVdb "
                      "resistance genotyping algorithm (Sierra web "
                      "service) for local execution.",
-    install_requires=[
-        'cython==0.29.32',
-        'postalign @ git+ssh://git@github.com/example_org//post-align.git'
-    ],
     packages=find_packages(),
+    install_requires=install_needs,
     version='0.2.1',
     author='Jasper Ho',
     author_email='jasperchho@gmail.com',
