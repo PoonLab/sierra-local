@@ -3,7 +3,6 @@ from distutils.core import setup
 from setuptools.command.install import install
 from distutils import log
 import os
-from subprocess import check_call
 import pathlib
 from setuptools import find_packages
 
@@ -37,7 +36,8 @@ setup(
                      "resistance genotyping algorithm (Sierra web "
                      "service) for local execution.",
     install_requires=[
-        'cython==0.29.32'
+        'cython==0.29.32',
+        'postalign @ git+ssh://git@github.com/example_org//post-align.git'
     ],
     packages=find_packages(),
     version='0.2.1',
