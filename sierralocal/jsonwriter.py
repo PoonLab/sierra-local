@@ -282,16 +282,16 @@ class JSONWriter():
             dic['mutations'].append(mutdict)
         return dic
 
-    def format_input_sequence(self, header):
+    def format_input_sequence(self, header, sequence):
         out = {
-            'header': header
-            # TODO: SHA512 hash of the gene sequence
+            'header': header,
+            'SHA512': hashlib.sha512(str.encode(sequence)).hexdigest()
         }
         return out
 
     def write_to_json(self, filename, file_headers, file_scores,
                       file_genes, file_mutation_lists, file_sequence_lengths,
-                      file_trims, file_subtypes):
+                      file_trims, file_subtypes, na_sequence):
         """
         The main function to write passed result to a JSON file
         @param filename: str, the file path to write the JSON to
@@ -311,7 +311,7 @@ class JSONWriter():
             genes = file_genes[index]
 
             data = {}
-            data['inputSequence'] = self.format_input_sequence(file_headers[index])
+            data['inputSequence'] = self.format_input_sequence(file_headers[index], na_sequence[file_headers[index]])
             data['subtypeText'] = file_subtypes[index]
 
             validation = self.validate_sequence(genes,

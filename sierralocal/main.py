@@ -22,7 +22,7 @@ def score(filename, xml_path=None, tsv_path=None, forceupdate=False, do_subtype=
     time_start = time.time()
 
     sequence_headers, sequence_scores, ordered_mutation_list, file_genes, \
-    sequence_lengths, file_trims, subtypes = scorefile(filename, algorithm, do_subtype)
+    sequence_lengths, file_trims, subtypes, na_sequence = scorefile(filename, algorithm, do_subtype)
 
     count = len(sequence_headers)
 
@@ -46,7 +46,7 @@ def scorefile(input_file, algorithm, do_subtype=False, program='post'):
     number of sequences and headers
     @param algorithm: sierralocal.hivdb.HIVdb, the HIVdb drug scores and notations
     @param do_subtype: bool <optional>, ???
-    @return: list of names, list of scores, list of ordered mutations
+    @return: list of names, list of scores, list of ordered mutations, list of NA sequence
     """
     aligner = NucAminoAligner(algorithm, program=program)
     result = aligner.align_file(input_file, program=program)
@@ -58,6 +58,10 @@ def scorefile(input_file, algorithm, do_subtype=False, program='post'):
     ordered_mutation_list = []
     sequence_scores = []
     sequence_lengths = []
+    na_sequence = {}
+
+    for index, value in enumerate(result):
+        na_sequence[value['Name']] = value['Sequence']
 
     # iteration over records in file
     for index, query in enumerate(sequence_headers):
@@ -91,7 +95,7 @@ def scorefile(input_file, algorithm, do_subtype=False, program='post'):
         sequence_lengths.append(length_lists)
 
     return sequence_headers, sequence_scores, ordered_mutation_list, \
-           file_genes, sequence_lengths, file_trims, subtypes
+           file_genes, sequence_lengths, file_trims, subtypes, na_sequence
 
 def sierralocal(fasta, outfile, xml=None, json=None,
                 cleanup=False, forceupdate=False, program='post'): # pragma: no cover
@@ -125,10 +129,10 @@ def sierralocal(fasta, outfile, xml=None, json=None,
 
         # process and score file
         sequence_headers, sequence_scores, ordered_mutation_list, file_genes, \
-        sequence_lengths, file_trims, subtypes = scorefile(input_file, algorithm, program=program)
+        sequence_lengths, file_trims, subtypes, na_sequence = scorefile(input_file, algorithm, program=program)
 
         count += len(sequence_headers)
-        print("{} sequences found in file {}.".format(len(sequence_headers), input_file))
+        print("{} sequences found in file {}.".format(len(sequence_headers), input_file, na_sequence))
 
         # output results for the file
         if outfile == None:
@@ -137,8 +141,8 @@ def sierralocal(fasta, outfile, xml=None, json=None,
             output_file = outfile
 
         writer.write_to_json(output_file, sequence_headers, sequence_scores,
-                             file_genes, ordered_mutation_list,
-                             sequence_lengths, file_trims, subtypes)
+                             file_genes, ordered_mutation_list, sequence_lengths,
+                             file_trims, subtypes, na_sequence)
 
         if cleanup:
             # delete alignment file
