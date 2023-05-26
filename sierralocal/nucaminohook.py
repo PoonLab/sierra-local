@@ -52,7 +52,7 @@ class NucAminoAligner():
                 self.nucamino_binary = binary
         self.triplet_table = self.generate_table()
 
-        #with open(str(Path(os.path.dirname(__file__))/'data'/'apobec.tsv'), 'r') as csvfile:
+        # with open(str(Path(os.path.dirname(__file__))/'data'/'apobec.tsv'), 'r') as csvfile:
         with open(algorithm.json_filename) as jsonfile:
             # self.apobec_drms = list(csv.reader(csvfile, delimiter='\t'))
             self.apobec_drms = json.load(jsonfile)
@@ -85,7 +85,7 @@ class NucAminoAligner():
         @return: dict, Dictionary of position-consensus-mutation-subtype 
                 keys to %prevalence in naive populations
         """
-        with open(str(Path(os.path.dirname(__file__))/'data'/filename), 'r') as handle:
+        with open(str(Path(os.path.dirname(__file__)) / 'data' / filename), 'r') as handle:
             handle = open(str(Path(os.path.dirname(__file__)) / 'data' / filename), 'r')
             table = csv.DictReader(handle, delimiter='\t')
 
@@ -285,7 +285,6 @@ class NucAminoAligner():
 
                                         else:
                                             result.update({key: info})
-                                        # print(result['AlignedSites'])
 
                         else:
                             if field in result:
@@ -298,13 +297,11 @@ class NucAminoAligner():
                         result['LastNA'] = result['AlignedSites'][-1]['PosNA']
                         result['FirstAA'] = result['AlignedSites'][0]['PosAA']
                         result['LastAA'] = result['AlignedSites'][-1]['PosAA']
-                        result['Sequence'] = self.get_aligned_seq(inputSequences[result['Name']], result['AlignedSites'])
+                        result['Sequence'] = self.get_aligned_seq(inputSequences[result['Name']],
+                                                                  result['AlignedSites'])
                     output.append(result)
             # os.remove(tfPostOut.name)
             os.remove(tf.name)
-
-            with open('org2.json', 'w') as out:
-                json.dump(result, out, indent=4, sort_keys=True)
 
             return output
 
@@ -357,18 +354,19 @@ class NucAminoAligner():
             pol_aa_map[key] = (convert(val[0]), convert(val[1]))
         return pol_aa_map
 
-
     def get_genes(self, pol_aligned_sites, pol_first_aa, pol_last_aa):
         """
         Determines the first POL gene that is present in 
         the query sequence, by virtue of gene breakpoints
         TODO: sierra uses different minimum numbers of sites per gene
         (40, 60 and 30 for PR, RT and IN)
-        @param pol_aligned_sites: list, ???
-        @param pol_first_aa: int, ???
-        @param pol_last_aa: int, ???
-        @return: list, list of length 1 with a string of the gene in 
-        the sequence
+        @param pol_aligned_sites: list, sublist holds alignment program
+        output aligned POL sites
+        @param pol_first_aa: int, location of first amino acid in pol
+        @param pol_last_aa: int, location of last amino acid in pol
+        @return: list, list of length 1
+        [gene, first aa position in pol, last aa position in pol
+         first na position in pol, last na position in pol]
         """
         # good here
         min_overlap = {'PR': 40, 'RT': 60, 'IN': 30}
@@ -386,8 +384,8 @@ class NucAminoAligner():
                                        pol_aligned_sites)
                 aligned_sites = list(aligned_sites)
 
-                first_aa = max(pol_first_aa-aa_start, 1)
-                last_aa = min(pol_last_aa-aa_start + 1, geneLength)
+                first_aa = max(pol_first_aa - aa_start, 1)
+                last_aa = min(pol_last_aa - aa_start + 1, geneLength)
                 first_na = aligned_sites[0]['PosNA']
                 last_na = aligned_sites[-1]['PosNA'] - 1 + aligned_sites[-1]['LengthNA']
 
@@ -412,7 +410,12 @@ class NucAminoAligner():
           'IsInsertion': False, 'Position': 93, 'CodonText': 'AGT'}]
         @param records: list, output of align_file function
         @param do_subtype: bool, ???
-        @return: ???
+        @return: sequence_header, list of gene names
+        @return: file_genes, output of get_genes() per each input sequence in input file
+        @return: file_mutations, list, holds list of amino acid mutations based on position of POL
+        [[consensus, aa, translated aa (text field)]]
+        @return: file_trims, ???
+        @return: subtypes, ???
         """
         file_mutations = []
         file_genes = []
@@ -455,8 +458,10 @@ class NucAminoAligner():
                         continue  # mutation in other gene
                     codon = mut['CodonText']
                     gene_muts.update(
-                        {position - left: (mut['ReferenceText'],
-                                           self.translate_na_triplet(codon))}
+                        {position - left: (mut['ReferenceText'],  # consensus
+                                           mut['AminoAcidText'],  # AAs line in output
+                                           self.translate_na_triplet(codon)  # Text line in the output
+                                           )}
                     )
                     codon_list.append(codon)
 
@@ -566,7 +571,7 @@ class NucAminoAligner():
                 for p3 in ambiguity_map[pos3]:
                     codon_possibilities.append(p1 + p2 + p3)
         return codon_possibilities
-    
+
     def trim_low_qualities(self, codon_list, shift, first_aa, last_aa, mutations, frameshifts, gene, subtype):
         """
         Filters low-quality leading and trailing nucleotides from a query.
@@ -590,9 +595,6 @@ class NucAminoAligner():
         SEQUENCE_SHRINKAGE_WINDOW = 15
         SEQUENCE_SHRINKAGE_BAD_QUALITY_MUT_PREVALENCE = 0.1
 
-        # print(mutations)
-        # print(codon_list)
-
         bad_pcnt = 0
         problem_sites = 0
         since_last_bad_quality = 0
@@ -603,7 +605,7 @@ class NucAminoAligner():
 
         # account for invalid sites
         for j, position in enumerate(mutations):
-            idx = position - first_aa #+ shift
+            idx = position - first_aa  # + shift
             if not self.is_unsequenced(codon_list[j]):
                 highest_prev = self.get_highest_mut_prevalance(
                     (position, mutations[position]),
@@ -613,13 +615,13 @@ class NucAminoAligner():
                 is_weird = (highest_prev < SEQUENCE_SHRINKAGE_BAD_QUALITY_MUT_PREVALENCE)
                 is_ambig = (mutations[position][1] == 'X')
                 is_apobec = self.is_apobec_drm(gene,
-                                             mutations[position][0],
-                                             position,
-                                             mutations[position][1])
+                                               mutations[position][0],
+                                               position,
+                                               mutations[position][1])
                 is_stop_codon = self.is_stop_codon(codon_list[j])
                 reasons = [is_weird, is_ambig, is_apobec, is_stop_codon]
                 if any(reasons):
-                    #print(idx, position, reasons, highest_prev, subtype, position, mutations[position], gene)
+                    # print(idx, position, reasons, highest_prev, subtype, position, mutations[position], gene)
                     invalid_sites[idx] = True
 
         # for fs in frameshifts:
@@ -644,7 +646,7 @@ class NucAminoAligner():
         trim_left = candidates[-1] if len(candidates) > 0 else 0
         candidates = []
 
-        #backward scan for trimming right
+        # backward scan for trimming right
         problem_sites = 0
         since_last_bad_quality = 0
         for idx in range(protien_size - 1, -1, -1):
@@ -668,12 +670,12 @@ class NucAminoAligner():
         Determines whether a triplet is unsequenced (has more than one N or
         deletion). "NNN", "NN-", "NNG" should be considered as unsequenced region.
         """
-        return (triplet.replace("-", "N").count("N") > 1) #TODO: incorporate !isInsertion &&
+        return (triplet.replace("-", "N").count("N") > 1)  # TODO: incorporate !isInsertion &&
 
     def is_stop_codon(self, triplet):
         return ("*" in self.translate_na_triplet(triplet))
 
-    def is_apobec_drm(self, gene, consensus, position, AA): # pragma: no cover
+    def is_apobec_drm(self, gene, consensus, position, AA):  # pragma: no cover
         ls = [[row['gene'], str(row['position'])] for row in self.apobec_drms]
         if [gene, str(position)] in ls:
             i = ls.index([gene, str(position)])
@@ -694,7 +696,7 @@ class NucAminoAligner():
         at this position within the subtype alignment
         """
         position, aa_seq = mutation
-        cons, aas = aa_seq
+        cons, aas, text = aa_seq
         aas = aas.replace(cons, '')  # ignore consensus
         aas = aas.replace('*', '')  # remove stop codons
 
@@ -710,7 +712,6 @@ class NucAminoAligner():
         ???
         """
         key2 = str(position) + str(cons) + str(aa) + subtype
-        #print(key2)
 
         if gene == 'IN' and key2 in self.ini_dict:
             return self.ini_dict[key2]

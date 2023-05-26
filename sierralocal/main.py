@@ -30,7 +30,7 @@ def score(filename, xml_path=None, tsv_path=None, forceupdate=False, do_subtype=
     output_file = os.path.splitext(filename)[0] + '-local.json'
     writer = JSONWriter(algorithm)
     writer.write_to_json(output_file, sequence_headers, sequence_scores, file_genes,
-                         ordered_mutation_list, sequence_lengths, file_trims, subtypes, program)
+                         ordered_mutation_list, sequence_lengths, file_trims, subtypes, na_sequence)
     time_end = time.time()
     print("Time elapsed: {:{prec}} seconds ({:{prec}} it/s)".format(
         time_end - time_start, count/(time_end - time_start), prec='.5'))
@@ -83,7 +83,8 @@ def scorefile(input_file, algorithm, do_subtype=False, program='post'):
                 sorted(zip(
                     mutations[idx].keys(),  # position
                     [x[1] for x in mutations[idx].values()],  # aa
-                    [x[0] for x in mutations[idx].values()]   # wt
+                    [x[0] for x in mutations[idx].values()],  # wt
+                    [x[2] for x in mutations[idx].values()]   # text
                 ))
             )
             scores.append(score_alg.score_drugs(algorithm,

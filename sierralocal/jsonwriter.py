@@ -45,17 +45,17 @@ class JSONWriter():
         dest = str(Path(os.path.dirname(__file__)) / 'data' / 'rx-all_subtype-all.csv')
         with open(dest, 'r', encoding='utf-8-sig') as is_unusual_file:
             is_unusual_file = csv.DictReader(is_unusual_file)
-            self.rx_all_subtype_all_dic = {}
+            self.is_unusual_dic = {}
             for row in is_unusual_file:
                 gene = row['gene']
                 pos = row['position']
                 aa = row['aa']
                 unusual = row['isUnusual']
-                if gene not in self.rx_all_subtype_all_dic:
-                    self.rx_all_subtype_all_dic.update({gene: {}})
-                if pos not in self.rx_all_subtype_all_dic[gene]:
-                    self.rx_all_subtype_all_dic[gene].update({pos: {}})
-                self.rx_all_subtype_all_dic[gene][pos].update({aa: unusual})
+                if gene not in self.is_unusual_dic:
+                    self.is_unusual_dic.update({gene: {}})
+                if pos not in self.is_unusual_dic[gene]:
+                    self.is_unusual_dic[gene].update({pos: {}})
+                self.is_unusual_dic[gene][pos].update({aa: unusual})
 
         dest = str(Path(os.path.dirname(__file__)) / 'data' / 'sdrms_hiv1.csv')
         with open(dest, 'r', encoding='utf-8-sig') as sdrm_files:
@@ -248,7 +248,7 @@ class JSONWriter():
         mutation_line = []
         mutation_line.extend([" - " for i in range(int(first_last_aa[0]), int(first_last_aa[1]) + 1)])
 
-        for mutation in ordered_mutation_list:
+        for idx, mutation in enumerate(ordered_mutation_list):
             mutdict = {}
             mutdict['consensus'] = mutation[2]
             mutdict['position'] = int(mutation[0])
@@ -271,12 +271,15 @@ class JSONWriter():
             if self.is_sdrm(gene,
                             mutation[0],
                             mutation[1]):
-                dic['SDRMs'].append({'text': mutation[2] + str(mutation[0]) + "".join(sorted(mutation[1]))})
+                dic['SDRMs'].append({'text': mutation[2] + str(mutation[0]) + mutation[3]})
             mutdict['hasStop'] = self.has_stop(mutation)
             mutdict['primaryType'] = self.primary_type(gene,
                                                        mutation[0],
                                                        mutation[1])
-            mutdict['text'] = mutation[2] + str(mutation[0]) + "".join(sorted(mutation[1]))
+            if mutdict['AAs'] == '-':
+                mutdict['text'] = mutation[2] + str(mutation[0]) + 'del'
+            else:
+                mutdict['text'] = mutation[2] + str(mutation[0]) + mutation[3]
             if int(first_last_aa[0]) <= int(mutation[0]) <= int(first_last_aa[1]):
                 mutation_line[int(mutation[0]) - int(first_last_aa[1]) - 1] = f"{''.join(sorted(mutation[1])):^3}"
             dic['mutations'].append(mutdict)
@@ -304,7 +307,8 @@ class JSONWriter():
         @param file_sequence_lengths: list, list of lists of ints denoting
         sequence lengths
         @param file_trims: list, list of lists of tuples of ints 
-        @param file_subtypes: list, list of subtype strings 
+        @param file_subtypes: list, list of subtype strings
+        @param na_sequence: dict, {sequence name: associated NA sequence}
         """
         out = []
         for index, scores in enumerate(file_scores):
@@ -321,6 +325,7 @@ class JSONWriter():
 
             data['alignedGeneSequences'] = []
             data['drugResistance'] = []
+
             if not 'CRITICAL' in validation:
                 for idx, gene_info in enumerate(genes):
                     gene, first_aa, last_aa, first_na, last_na = gene_info
@@ -415,6 +420,14 @@ class JSONWriter():
                         return details[full_mut]['1']
 
     def is_apobec_drm(self, gene, consensus, position, AA):
+        """
+        see if specific amino acid mutation is an apobec drm through checking hivbd facts
+        @param gene: str, RT, IN, PR
+        @param consensus: str, consensus amino acid
+        @param position: int, position of mutation relative to POL
+        @param AA: new amino acid
+        @return: bool
+        """
         position = str(position)
         if gene in self.apobec_drm_dic:
             if position in self.apobec_drm_dic[gene]:
@@ -424,6 +437,13 @@ class JSONWriter():
         return False
 
     def is_sdrm(self, gene, position, AA):
+        """
+        see if specific amino acid mutation is a sdrm through checking hivbd facts
+        @param gene: str, RT, IN, PR
+        @param position: int, position of mutation relative to POL
+        @param AA: new amino acid
+        @return: bool
+        """
         position = str(position)
         if gene in self.sdrm_dic:
             if position in self.sdrm_dic[gene]:
@@ -433,11 +453,23 @@ class JSONWriter():
         return False
 
     def has_stop(self, ordered_mut_list_index):
+        """
+        see if specific amino acid mutation results in nonsense mutation
+        @param: ordered_mut_list_index, list, mutations of specific NA sequence
+        @return: bool
+        """
         if "*" in ordered_mut_list_index[1]:
             return True
         return False
 
     def is_apobec_mutation(self, gene, position, AA):
+        """
+        see if specific amino acid mutation is an apobec mutation through checking hivbd facts
+        @param gene: str, RT, IN, PR
+        @param position: int, position of mutation relative to POL
+        @param AA: new amino acid
+        @return: bool
+        """
         position = str(position)
         if gene in self.apobec_mutations_dic:
             if position in self.apobec_mutations_dic[gene]:
@@ -447,16 +479,30 @@ class JSONWriter():
         return False
 
     def is_unusual(self, gene, position, AA):
+        """
+        see if specific amino acid mutation 'is unusual' through checking hivbd facts
+        @param gene: str, RT, IN, PR
+        @param position: int, position of mutation relative to POL
+        @param AA: new amino acid
+        @return: bool
+        """
         position = str(position)
-        if gene in self.rx_all_subtype_all_dic:
-            if position in self.rx_all_subtype_all_dic[gene]:
+        if gene in self.is_unusual_dic:
+            if position in self.is_unusual_dic[gene]:
                 for aa in AA:
-                    if aa in self.rx_all_subtype_all_dic[gene][position]:
-                        if self.rx_all_subtype_all_dic[gene][position][aa].lower() == "true":
+                    if aa in self.is_unusual_dic[gene][position]:
+                        if self.is_unusual_dic[gene][position][aa].lower() == "true":
                             return True
         return False
 
     def primary_type(self, gene, position, AA):
+        """
+        see if specific amino acid's primary type through checking hivbd facts
+        @param gene: str, RT, IN, PR
+        @param position: int, position of mutation relative to POL
+        @param AA: new amino acid
+        @return: bool
+        """
         position = str(position)
         if gene in self.primary_type_dic:
             if position in self.primary_type_dic[gene]:
