@@ -1,12 +1,35 @@
 import sys
 from distutils.core import setup
-#from setuptools import setup
 from setuptools.command.install import install
 from distutils import log
 import os
+import pathlib
+from setuptools import find_packages
 
 if sys.version_info.major < 3:
-    sys.exit('Sorry, sierra-local requires Python 3.x')
+    sys.exit('Sorry, sierra-local requires Python 3.x or above')
+
+# check to see if dependencies are met
+install_needs=[
+    'cython==0.29.32',
+    'postalign @ git+ssh://git@github.com/example_org//post-align.git'
+]
+
+missing = []
+for package in install_needs:
+    package_name = package.split('==')[0]  # Extract the package name
+
+    if '@' in package_name:
+        package_name = package_name.split(' @')[0]
+
+    try:
+        __import__(package_name)
+    except ImportError:
+        missing.append(package)
+
+if missing:
+    missing_packages = ', '.join(missing)
+    raise SystemExit(f"Missing required dependencies: {missing_packages}")
 
 # adapted from
 # https://stackoverflow.com/questions/5932804/set-file-permissions-in-setup-py-file/25761434
@@ -25,40 +48,40 @@ class OverrideInstall(install):
 
 
 setup(
-	name = 'sierralocal',
-    description = 'Local execution of HIVdb algorithm',
+    name='sierralocal',
+    description='Local execution of HIVdb algorithm',
     long_description="Lightweight implementation of the Stanford HIVdb "
                      "resistance genotyping algorithm (Sierra web "
                      "service) for local execution.",
-
-	packages = ['sierralocal'],
-	version = '0.2.1',
-	author = 'Jasper Ho',
-	author_email = 'jasperchho@gmail.com',
-	url = 'https://github.com/PoonLab/sierra-local',
-	classifiers = [
-		'Programming Language :: Python :: 3',
-		'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-		'Operating System :: OS Independent'
-	],
-
-	scripts=['bin/sierralocal'],
+    packages=find_packages(),
+    install_requires=install_needs,
+    version='0.2.1',
+    author='Jasper Ho',
+    author_email='jasperchho@gmail.com',
+    url='https://github.com/PoonLab/sierra-local',
+    classifiers=[
+        'Programming Language :: Python :: 3',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Operating System :: OS Independent'
+    ],
+    scripts=['bin/sierralocal'],
     options={'build_scripts': {'executable': '/usr/bin/env python3'}},
     package_data={
-        'sierralocal': [
-            'bin/nucamino-*',
-            'data/genotype-properties.*.csv',
-            'data/genotype-references.*.fasta',
-            'data/*Prevalences.tsv',
-            'data/*-comments.csv',
-            'data/HIVDB_8.8.a126e04c.xml',
-            'data/apobec_drms.c9583ac2.json',
-    ]},
-    cmdclass={'install': OverrideInstall},
-    #include_package_data=True
-    #entry_points={
-    #    'console_scripts': [
-    #        'sierralocal=sierralocal:main',
-    #    ],
-    #}
+            'sierralocal': [
+                'bin/nucamino-*',
+                'data/genotype-properties.*.csv',
+                'data/genotype-references.*.fasta',
+                'data/*Prevalences.tsv',
+                'data/*-comments.csv',
+                'data/HIVDB_8.8.a126e04c.xml',
+                'data/apobec-drms.221b0330.tsv',
+                'data/alignment-config_hiv1.json',
+                'data/apobec_drms.csv',
+                'data/apobecs.csv',
+                'data/mutation-type-pairs_hiv1.csv',
+                'data/sdrms_hiv1.csv',
+                'data/rx-all_subtype-all.csv'
+            ]},
+    cmdclass={'install': OverrideInstall
+              }
 )
