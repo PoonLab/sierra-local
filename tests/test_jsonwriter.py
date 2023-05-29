@@ -53,6 +53,7 @@ class TestJsonWriter(unittest.TestCase):
         exp_drug_resistance = \
                         {'drugScores': [{'drug': {'displayAbbr': 'BIC', 'name': 'BIC'},
                                          'drugClass': {'name': 'INSTI'},
+                                         'level': 3,
                                          'partialScores': [{'mutations': [{'comments': [{'text': 'V151I '
                                                                                                  'is '
                                                                                                  'an '
@@ -177,6 +178,7 @@ class TestJsonWriter(unittest.TestCase):
                                          'text': 'Low-Level Resistance'},
                                         {'drug': {'displayAbbr': 'CAB', 'name': 'CAB'},
                                          'drugClass': {'name': 'INSTI'},
+                                         'level': 5,
                                          'partialScores': [{'mutations': [{'comments': [{'text': 'V151I '
                                                                                                  'is '
                                                                                                  'an '
@@ -301,6 +303,7 @@ class TestJsonWriter(unittest.TestCase):
                                          'text': 'High-Level Resistance'},
                                         {'drug': {'displayAbbr': 'DTG', 'name': 'DTG'},
                                          'drugClass': {'name': 'INSTI'},
+                                         'level': 3,
                                          'partialScores': [{'mutations': [{'comments': [{'text': 'V151I '
                                                                                                  'is '
                                                                                                  'an '
@@ -425,6 +428,7 @@ class TestJsonWriter(unittest.TestCase):
                                          'text': 'Low-Level Resistance'},
                                         {'drug': {'displayAbbr': 'EVG', 'name': 'EVG'},
                                          'drugClass': {'name': 'INSTI'},
+                                         'level': 5,
                                          'partialScores': [{'mutations': [{'comments': [{'text': 'V151I '
                                                                                                  'is '
                                                                                                  'an '
@@ -549,6 +553,7 @@ class TestJsonWriter(unittest.TestCase):
                                          'text': 'High-Level Resistance'},
                                         {'drug': {'displayAbbr': 'RAL', 'name': 'RAL'},
                                          'drugClass': {'name': 'INSTI'},
+                                         'level':5,
                                          'partialScores': [{'mutations': [{'comments': [{'text': 'V151I '
                                                                                                  'is '
                                                                                                  'an '
@@ -679,8 +684,9 @@ class TestJsonWriter(unittest.TestCase):
         self.assertEqual(exp_drug_resistance, res_drug_resistance)
 
     def testFormatAlignedGeneSequences(self):
+        self.maxDiff = None
         # Setting params
-        omlist = [(3, 'V', 'I'), (37, 'S', 'N')]
+        omlist = [(3, 'V', 'I', 'V'), (37, 'S', 'N', 'S')]
         gene = 'PR'
         nalist = (1, 99)
         
@@ -688,46 +694,78 @@ class TestJsonWriter(unittest.TestCase):
                        'lastAA': 99,
                        'gene': {'name': 'PR',
                                 'length': None},
-                       'mutations': [{'consensus': 'I',
-                                      'position': 3,
-                                      'AAs': 'V',
-                                      'isInsertion': False,
-                                      'isDeletion': False,
-                                      'isApobecDRM': False},
-                                     {'consensus': 'N',
-                                      'position': 37,
-                                      'AAs': 'S',
-                                      'isInsertion': False,
-                                      'isDeletion': False,
-                                      'isApobecDRM': False}]}                              
+                       'mutations': [{"consensus": "I",
+                                      "position": 3,
+                                      "AAs": "V",
+                                      "isInsertion": False,
+                                      "isDeletion": False,
+                                      "isApobecMutation": False,
+                                      "isApobecDRM": False,
+                                      "isUnusual": False,
+                                      "isSDRM": False,
+                                      "hasStop": False,
+                                      "primaryType": "Other",
+                                      "text": "I3V"},
+                                     {"consensus": "N",
+                                      "position": 37,
+                                      "AAs": "S",
+                                      "isInsertion": False,
+                                      "isDeletion": False,
+                                      "isApobecMutation": False,
+                                      "isApobecDRM": False,
+                                      "isUnusual": False,
+                                      "isSDRM": False,
+                                      "hasStop": False,
+                                      "primaryType": "Other",
+                                      "text": "N37S"}],
+                       'SDRMs': []}
         res_records = self.writer.format_aligned_gene_sequences(omlist, gene, nalist)
         self.assertEqual(exp_records, res_records)
 
-        omlist = [(3, 'V', 'I'), (4, 'X', 'T'), (37, 'S', 'N')]
+        omlist = [(3, 'V', 'I', 'V'), (4, 'X', 'T', 'X'), (37, 'S', 'N', 'S')]
         gene = 'PR'
         nalist = (2, 99)  
         exp_records = {'firstAA': 2,
                        'lastAA': 99,
                        'gene': {'name': 'PR',
                                 'length': None},
-                       'mutations': [{'consensus': 'I',
-                                      'position': 3,
-                                      'AAs': 'V',
-                                      'isInsertion': False,
-                                      'isDeletion': False,
-                                      'isApobecDRM': False},
+                       'mutations': [{"consensus": "I",
+                                      "position": 3,
+                                      "AAs": "V",
+                                      "isInsertion": False,
+                                      "isDeletion": False,
+                                      "isApobecMutation": False,
+                                      "isApobecDRM": False,
+                                      "isUnusual": False,
+                                      "isSDRM": False,
+                                      "hasStop": False,
+                                      "primaryType": "Other",
+                                      "text": "I3V"},
                                      {'consensus': 'T',
                                       'position': 4,
                                       'AAs': 'X',
-                                      'isInsertion': False,
-                                      'isDeletion': False,
-                                      'isApobecDRM': False},
-                                     {'consensus': 'N',
-                                      'position': 37,
-                                      'AAs': 'S',
-                                      'isInsertion': False,
-                                      'isDeletion': False,
-                                      'isApobecDRM': False}]}
+                                      "isInsertion": False,
+                                      "isDeletion": False,
+                                      "isApobecMutation": False,
+                                      "isApobecDRM": False,
+                                      "isUnusual": False,
+                                      "isSDRM": False,
+                                      "hasStop": False,
+                                      "primaryType": "Other",
+                                      'text': 'T4X'},
+                                     {"consensus": "N",
+                                      "position": 37,
+                                      "AAs": "S",
+                                      "isInsertion": False,
+                                      "isDeletion": False,
+                                      "isApobecMutation": False,
+                                      "isApobecDRM": False,
+                                      "isUnusual": False,
+                                      "isSDRM": False,
+                                      "hasStop": False,
+                                      "primaryType": "Other",
+                                      "text": "N37S"}],
+                       'SDRMs': []}
         res_records = self.writer.format_aligned_gene_sequences(omlist, gene, nalist)
         self.assertEqual(exp_records, res_records)
 
@@ -736,9 +774,14 @@ class TestJsonWriter(unittest.TestCase):
         headers = ['HXB2-PR', 'shift1', 'shift2',
                   'plus1', 'plus_codon', 'del1_after_3codons',
                   'insAAA_after_3codons']
+        sha512 = 'f90ddd77e400dfe6a3fcf479b0' \
+              '0b1ee29e7015c5bb8cd70f5f15' \
+              'b4886cc339275ff553fc8a053f' \
+              '8ddc7324f45168cffaf81f8c3a' \
+              'c93996f6536eef38e5e40768'
         
         for header in headers:
-            self.assertEqual({'header': header}, self.writer.format_input_sequence(header))
+            self.assertEqual({'header': header, 'SHA512': sha512}, self.writer.format_input_sequence(header, ' '))
 
     def testWriteToJson(self):
         # Setting params
@@ -802,13 +845,13 @@ class TestJsonWriter(unittest.TestCase):
                        'NFV': (0, [], []),
                        'SQV/r': (0, [], []),
                        'TPV/r': (0, [], [])}]]
-        ordered_mutation_list = [[[(3, 'V', 'I'), (37, 'S', 'N')]],
-                                 [[(3, 'V', 'I'), (37, 'S', 'N')]],
-                                 [[(3, 'V', 'I'), (37, 'S', 'N')]],
-                                 [[(3, 'V', 'I'), (37, 'S', 'N')]],
-                                 [[(3, 'V', 'I'), (37, 'S', 'N')]],
-                                 [[(3, 'V', 'I'), (4, 'X', 'T'), (37, 'S', 'N')]],
-                                 [[(3, 'V', 'I'), (37, 'S', 'N')]]]
+        ordered_mutation_list = [[[(3, 'V', 'I', 'V'), (37, 'S', 'N', 'S')]],
+                                 [[(1, 'X', 'P', 'X'), (3, 'V', 'I', 'V'), (37, 'S', 'N', 'S')]],
+                                 [[(3, 'V', 'I', 'V'), (37, 'S', 'N', 'S')]],
+                                 [[(3, 'V', 'I', 'V'), (37, 'S', 'N', 'S')]],
+                                 [[(3, 'V', 'I', 'V'), (37, 'S', 'N', 'S')]],
+                                 [[(1, 'X', 'P', 'X'), (2, 'S', 'Q', 'S'), (3, 'G', 'I', 'G'), (4, 'P', 'T', 'P'), (37, 'S', 'N', 'S')]],
+                                 [[(1, 'Q', 'P', 'Q'), (2, 'V', 'Q', 'V'), (3, 'K', 'I', 'K'), (37, 'S', 'N', 'S')]]]
         file_genes = [[('PR', 1, 99, 1, 294)],
                       [('PR', 2, 99, 3, 293)],
                       [('PR', 2, 99, 2, 292)],
@@ -819,11 +862,19 @@ class TestJsonWriter(unittest.TestCase):
         sequence_lengths = [[294], [291], [291], [294], [297], [293], [297]]
         file_trims = [[(0, 0)], [(0, 0)], [(0, 0)], [(0, 0)], [(0, 0)], [(0, 0)], [(0, 0)]]
         subtypes = ['', '', '', '', '', '', '']
+        na_sequence = {'HXB2-PR':'',
+                       'shift1':'',
+                       'shift2':'',
+                       'plus1':'',
+                       'plus_codon': '',
+                       'del1_after_3codons': '',
+                       'insAAA_after_3codons': ''}
 
-        file_path = r'tests\hxb2-pr-local.json'
+        file_path = r'hxb2-pr-local.json'
         self.assertFalse(os.path.exists(file_path))
         self.writer.write_to_json(file_path, sequence_headers, sequence_scores, file_genes,
-                                  ordered_mutation_list, sequence_lengths, file_trims, subtypes)
+                                  ordered_mutation_list, sequence_lengths, file_trims, subtypes,
+                                  na_sequence)
         self.assertTrue(file_path)
         os.remove(file_path)
 
@@ -901,7 +952,7 @@ class TestJsonWriter(unittest.TestCase):
         amino_acids = 'TRAG'
 
         result = self.writer.is_apobec_drm(gene, consensus, position, amino_acids)
-        self.assertFalse(result)
+        self.assertTrue(result)
 
         # Setting params
         gene = 'RT'

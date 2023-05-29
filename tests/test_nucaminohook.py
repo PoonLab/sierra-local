@@ -6,7 +6,7 @@ from sierralocal.hivdb import HIVdb
 class TestNucAminoAligner(unittest.TestCase):
     def setUp(self):
         self.algorithm = HIVdb()
-        self.aligner = NucAminoAligner(self.algorithm)
+        self.aligner = NucAminoAligner(self.algorithm, program='nuc')
 
     def testPrevalenceParser(self):
         # Setting params
@@ -1041,7 +1041,7 @@ class TestNucAminoAligner(unittest.TestCase):
             'Name': 'insAAA_after_3codons',
             'Sequence': 'CCTCAGGTCACTCTTTGGCAACGACCCCTCGTCACAATAAAGATAGGGGGGCAACTAAAGGAAGCTCTATTAGATACAGGAGCAGATGATACAGTATTAGAAGAAATGAGTTTGCCAGGAAGATGGAAACCAAAAATGATAGGGGGAATTGGAGGTTTTATCAAAGTAAGACAGTATGATCAGATACTCATAGAAATCTGTGGACATAAAGCTATAGGTACAGTATTAGTAGGACCTACACCTGTCAACATAATTGGAAGAAATCTGTTGACTCAGATTGGTTGCACTTTAAAT'}]
 
-        res_records = self.aligner.align_file(filename)
+        res_records = self.aligner.align_file(filename, program='nuc')
 
         self.assertEqual(exp_records, res_records)
 
@@ -1175,11 +1175,18 @@ class TestNucAminoAligner(unittest.TestCase):
 
     def testGetMutations(self):
         # Setting params
-        records = self.aligner.align_file(r'tests\hxb2-pr.fa')
+        self.maxDiff = None
+        records = self.aligner.align_file(r'tests\hxb2-pr.fa', program='nuc')
         
         exp_sequence_headers = ['HXB2-PR', 'shift1', 'shift2', 'plus1', 'plus_codon', 'del1_after_3codons', 'insAAA_after_3codons']
         exp_file_genes = [[('PR', 1, 99, 1, 294)], [('PR', 2, 99, 3, 293)], [('PR', 2, 99, 2, 292)], [('PR', 1, 99, 2, 295)], [('PR', 1, 99, 1, 297)], [('PR', 1, 99, 1, 293)], [('PR', 1, 99, 1, 297)]]  
-        exp_file_mutations = [[{3: ('I', 'V'), 37: ('N', 'S')}], [{3: ('I', 'V'), 37: ('N', 'S')}], [{3: ('I', 'V'), 37: ('N', 'S')}], [{3: ('I', 'V'), 37: ('N', 'S')}], [{3: ('I', 'V'), 37: ('N', 'S')}], [{3: ('I', 'V'), 4: ('T', 'X'), 37: ('N', 'S')}], [{3: ('I', 'V'), 37: ('N', 'S')}]]
+        exp_file_mutations = [[{3: ('I', 'V', 'V'), 37: ('N', 'S', 'S')}],
+                              [{3: ('I', 'V', 'V'), 37: ('N', 'S', 'S')}],
+                              [{3: ('I', 'V', 'V'), 37: ('N', 'S', 'S')}],
+                              [{3: ('I', 'V', 'V'), 37: ('N', 'S', 'S')}],
+                              [{3: ('I', 'V', 'V'), 37: ('N', 'S', 'S')}],
+                              [{3: ('I', 'V', 'V'), 4: ('T', 'TPAS', 'X'), 37: ('N', 'S', 'S')}],
+                              [{3: ('I', 'V', 'V'), 37: ('N', 'S', 'S')}]]
         exp_file_trims = [[(0, 0)], [(0, 0)], [(0, 0)], [(0, 0)], [(0, 0)], [(0, 0)], [(0, 0)]]
         exp_subtypes = ['', '', '', '', '', '', '']
 
@@ -1195,7 +1202,13 @@ class TestNucAminoAligner(unittest.TestCase):
         # Setting params
         exp_sequence_headers = ['HXB2-PR', 'shift1', 'shift2', 'plus1', 'plus_codon', 'del1_after_3codons', 'insAAA_after_3codons']
         exp_file_genes = [[('PR', 1, 99, 1, 294)], [('PR', 2, 99, 3, 293)], [('PR', 2, 99, 2, 292)], [('PR', 1, 99, 2, 295)], [('PR', 1, 99, 1, 297)], [('PR', 1, 99, 1, 293)], [('PR', 1, 99, 1, 297)]]  
-        exp_file_mutations = [[{3: ('I', 'V'), 37: ('N', 'S')}], [{3: ('I', 'V'), 37: ('N', 'S')}], [{3: ('I', 'V'), 37: ('N', 'S')}], [{3: ('I', 'V'), 37: ('N', 'S')}], [{3: ('I', 'V'), 37: ('N', 'S')}], [{3: ('I', 'V'), 4: ('T', 'X'), 37: ('N', 'S')}], [{3: ('I', 'V'), 37: ('N', 'S')}]]
+        exp_file_mutations = [[{3: ('I', 'V', 'V'), 37: ('N', 'S', 'S')}],
+                              [{3: ('I', 'V', 'V'), 37: ('N', 'S', 'S')}],
+                              [{3: ('I', 'V', 'V'), 37: ('N', 'S', 'S')}],
+                              [{3: ('I', 'V', 'V'), 37: ('N', 'S', 'S')}],
+                              [{3: ('I', 'V', 'V'), 37: ('N', 'S', 'S')}],
+                              [{3: ('I', 'V', 'V'), 4: ('T', 'TPAS', 'X'), 37: ('N', 'S', 'S')}],
+                              [{3: ('I', 'V', 'V'), 37: ('N', 'S', 'S')}]]
         exp_file_trims = [[(0, 0)], [(0, 0)], [(0, 0)], [(0, 0)], [(0, 0)], [(0, 0)], [(0, 0)]]
         exp_subtypes = ['B', 'B', 'B', 'B', 'B', 'B', 'B']
 
@@ -4637,7 +4650,7 @@ class TestNucAminoAligner(unittest.TestCase):
         codon_list = ['GTC', 'AGT']
         left = 715
         gene, first_aa, last_aa, first_na, last_na = ('PR', 1, 99, 1, 294)
-        mutations = {3: ('I', 'V'), 37: ('N', 'S')}
+        mutations = {3: ('I', 'V', 'I'), 37: ('N', 'S', 'N')}
         frameshifts = []
         subtype = ''
 
@@ -4659,7 +4672,7 @@ class TestNucAminoAligner(unittest.TestCase):
         codon_list = ['GTC', 'AGT']
         left = 56
         gene, first_aa, last_aa, first_na, last_na = ('PR', 1, 99, 1, 294)
-        mutations = {3: ('I', 'V'), 37: ('N', 'S')}
+        mutations = {3: ('I', 'V', 'I'), 37: ('N', 'S', 'N')}
         frameshifts = []
         subtype = 'B'
 
@@ -4681,7 +4694,7 @@ class TestNucAminoAligner(unittest.TestCase):
         codon_list = ['GTC', 'AGT']
         left = 155
         gene, first_aa, last_aa, first_na, last_na = ('PR', 1, 99, 1, 294)
-        mutations = {3: ('I', 'V'), 37: ('N', 'S')}
+        mutations = {3: ('I', 'V', 'I'), 37: ('N', 'S', 'N')}
         frameshifts = []
         subtype = ''
 
@@ -4749,7 +4762,7 @@ class TestNucAminoAligner(unittest.TestCase):
     def testGetHighestMutPrevalence(self):
         # Setting params
         gene, first_aa, last_aa, first_na, last_na = ('PR', 1, 99, 1, 294)
-        mutations = {3: ('I', 'V'), 37: ('N', 'S')}
+        mutations = {3: ('I', 'V', 'I'), 37: ('N', 'S', 'N')}
         position = 3
         subtype = ''
 
@@ -4762,7 +4775,7 @@ class TestNucAminoAligner(unittest.TestCase):
 
         # Setting params
         gene, first_aa, last_aa, first_na, last_na = ('PR', 1, 99, 1, 294)
-        mutations = {3: ('I', 'V'), 37: ('N', 'S')}
+        mutations = {3: ('I', 'V', 'I'), 37: ('N', 'S', 'N')}
         position = 3
         subtype = ''
 

@@ -11,6 +11,8 @@ class TestScore(unittest.TestCase):
         self.drugs = self.algorithm.parse_drugs(self.root)
 
     def testScorefile(self):
+        # TODO make test for postalign
+        self.maxDiff = None
         # Setting params
         input_file = r'tests\hxb2-pr.fa'
 
@@ -73,13 +75,13 @@ class TestScore(unittest.TestCase):
                                  'NFV': (0, [], []),
                                  'SQV/r': (0, [], []),
                                  'TPV/r': (0, [], [])}]]
-        exp_ordered_mutation_list = [[[(3, 'V', 'I'), (37, 'S', 'N')]],
-                                     [[(3, 'V', 'I'), (37, 'S', 'N')]],
-                                     [[(3, 'V', 'I'), (37, 'S', 'N')]],
-                                     [[(3, 'V', 'I'), (37, 'S', 'N')]],
-                                     [[(3, 'V', 'I'), (37, 'S', 'N')]],
-                                     [[(3, 'V', 'I'), (4, 'X', 'T'), (37, 'S', 'N')]],
-                                     [[(3, 'V', 'I'), (37, 'S', 'N')]]]
+        exp_ordered_mutation_list = [[[(3, 'V', 'I', 'V'), (37, 'S', 'N', 'S')]],
+                                     [[(3, 'V', 'I', 'V'), (37, 'S', 'N', 'S')]],
+                                     [[(3, 'V', 'I', 'V'), (37, 'S', 'N', 'S')]],
+                                     [[(3, 'V', 'I', 'V'), (37, 'S', 'N', 'S')]],
+                                     [[(3, 'V', 'I', 'V'), (37, 'S', 'N', 'S')]],
+                                     [[(3, 'V', 'I', 'V'), (4, 'TPAS', 'T', 'X'), (37, 'S', 'N', 'S')]],
+                                     [[(3, 'V', 'I', 'V'), (37, 'S', 'N', 'S')]]]
         exp_file_genes = [[('PR', 1, 99, 1, 294)],
                           [('PR', 2, 99, 3, 293)],
                           [('PR', 2, 99, 2, 292)],
@@ -92,7 +94,7 @@ class TestScore(unittest.TestCase):
         exp_subtypes = ['', '', '', '', '', '', '']
 
         res_sequence_headers, res_sequence_scores, res_ordered_mutation_list, res_file_genes, \
-        res_sequence_lengths, res_file_trims, res_subtypes = scorefile(input_file=input_file, algorithm=self.algorithm)
+        res_sequence_lengths, res_file_trims, res_subtypes, na_seq = scorefile(input_file=input_file, algorithm=self.algorithm, program='nuc')
 
         self.assertEqual(exp_sequence_headers, res_sequence_headers)
         self.assertEqual(exp_sequence_scores, res_sequence_scores)
