@@ -168,6 +168,7 @@ class JSONWriter():
                 else:
                     drug_score['drug']['name'] = drug.replace('/r', '')
                 drug_score['drug']['displayAbbr'] = drug
+                drug_score['score'] = scores[drug][0]
 
                 # infer level from score of this drug
                 if scores[drug][0] < 10:
