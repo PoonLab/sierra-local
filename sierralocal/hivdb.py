@@ -121,6 +121,7 @@ class HIVdb():
             'globalrange': {},  # maps from score to level
             'comment': {}       # maps comments to id string
         }
+
         # Convert list of items of 'xml.etree.ElementTree.Element' type
         # to list of items of 'str' type
         element_list = \
@@ -136,6 +137,7 @@ class HIVdb():
 
         definitions = root.findall('./')[def_ind]
         comment_definitions = definitions.findall('./')[-1]  # TODO: swap out hard-coded index with variable
+
         globalrange = definitions.find('GLOBALRANGE').text.split(',')
         default_grange = \
             self.parse_globalrange(self.definitions['globalrange'],
