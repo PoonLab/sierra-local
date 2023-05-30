@@ -53,9 +53,20 @@ class NucAminoAligner():
         self.triplet_table = self.generate_table()
 
         # with open(str(Path(os.path.dirname(__file__))/'data'/'apobec.tsv'), 'r') as csvfile:
-        with open(algorithm.json_filename) as jsonfile:
-            # self.apobec_drms = list(csv.reader(csvfile, delimiter='\t'))
-            self.apobec_drms = json.load(jsonfile)
+        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'apobec_drms.csv')
+        with open(dest, 'r', encoding='utf-8-sig') as apobec_file:
+            apobec_file = csv.DictReader(apobec_file)
+            self.apobec_drm_dic = {}
+            for row in apobec_file:
+                gene = row['gene']
+                pos = row['position']
+                aa = row['aa']
+                if gene not in self.apobec_drm_dic:
+                    self.apobec_drm_dic.update({gene: {}})
+                if pos not in self.apobec_drm_dic[gene]:
+                    self.apobec_drm_dic[gene].update({pos: aa})
+                else:
+                    self.apobec_drm_dic[gene][pos] += aa
 
         self.pi_dict = self.prevalence_parser('PIPrevalences.tsv')
         self.rti_dict = self.prevalence_parser('RTIPrevalences.tsv')
@@ -676,13 +687,21 @@ class NucAminoAligner():
     def is_stop_codon(self, triplet):
         return ("*" in self.translate_na_triplet(triplet))
 
-    def is_apobec_drm(self, gene, consensus, position, AA):  # pragma: no cover
-        ls = [[row['gene'], str(row['position'])] for row in self.apobec_drms]
-        if [gene, str(position)] in ls:
-            i = ls.index([gene, str(position)])
-            for aa in AA:
-                if aa in self.apobec_drms[i]['aa']:
-                    return True
+    def is_apobec_drm(self, gene, consensus, position, AA):
+        """
+        see if specific amino acid mutation is an apobec drm through checking hivbd facts
+        @param gene: str, RT, IN, PR
+        @param consensus: str, consensus amino acid
+        @param position: int, position of mutation relative to POL
+        @param AA: new amino acid
+        @return: bool
+        """
+        position = str(position)
+        if gene in self.apobec_drm_dic:
+            if position in self.apobec_drm_dic[gene]:
+                for aa in AA:
+                    if aa in self.apobec_drm_dic[gene][position]:
+                        return True
         return False
 
     def get_highest_mut_prevalance(self, mutation, gene, subtype):
