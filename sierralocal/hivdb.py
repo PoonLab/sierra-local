@@ -90,7 +90,7 @@ class HIVdb():
         @param path: str, path to JSON file
         """
         if path is None:
-            dest = str(Path(os.path.dirname(__file__))/'data'/'apobec*.json')
+            dest = str(Path(os.path.dirname(__file__))/'datae'/'apobec_drms.csv')
             print("searching path {}".format(dest))
             files = glob.glob(dest)
             for file in files:
