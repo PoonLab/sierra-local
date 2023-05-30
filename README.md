@@ -19,10 +19,22 @@ We tried to minimize dependencies:
 - Python 3 (tested on [Python 3.6.5](https://www.python.org/downloads/release/python-365/))
 - Python modules (used by `updater.py` script):
   - [requests](https://pypi.org/project/requests/)
+  - [Post-Align](https://github.com/hivdb/post-align)
 - [NucAmino](https://github.com/hivdb/nucamino) `v0.1.3` or later (included with package).
+
+Post-Align is the new alignment program and requires the following dependency:
+- [Cython==0.29.32](https://pypi.org/project/Cython/)
 
 ## Installation
 
+### Setting up Post-Align
+Post-Align is the new alignment program used by sierrapy, which we've incorporated into sierra-local. After all dependcies are satisfied run:
+```
+pip install https://github.com/hivdb/post-align/archive/3f99cc81ad89d66adf3beb062c93962f0deb3352.zip
+```
+which is adapted from Post-Align's [docker script](https://github.com/hivdb/sierra/blob/main/Dockerfile#L24-L30)
+
+### Setting up Sierra-Local
 On a Linux system, you can install *sierra-local* as follows:
 ```
 git clone http://github.com/PoonLab/sierra-local
@@ -39,15 +51,28 @@ To run a quick example, use the following sequence of commands:
 ```console
 art@Jesry:~/git/sierra-local$ python3 scripts/retrieve_hivdb_data.py RT RT.fa
 art@Jesry:~/git/sierra-local$ sierralocal RT.fa
-searching path /usr/local/lib/python3.6/dist-packages/sierralocal/data/HIVDB*.xml
-searching path /usr/local/lib/python3.6/dist-packages/sierralocal/data/apobec*.tsv
-HIVdb version 8.8
-Found NucAmino binary /usr/local/lib/python3.6/dist-packages/sierralocal/bin/nucamino-linux-amd64
+searching path /root/miniconda3/envs/py395/lib/python3.10/site-packages/sierralocal/data/HIVDB*.xml
+searching path /root/miniconda3/envs/py395/lib/python3.10/site-packages/sierralocal/data/apobec*.json
+HIVdb version 9.4
+Aligning using post-align
 Aligned RT.fa
 100 sequences found in file RT.fa.
 Writing JSON to file RT_results.json
-Time elapsed: 5.2538 seconds (19.149 it/s)
+Time elapsed: 19.796 seconds (5.1555 it/s)
 ```
+To swap between running Post-Align (default) and NucAmnio, you can specifiy using `-alignment`, where inputing anything other than `post` will result in NucAmino being called
+```
+will@Jesry:~/sierra-local# sierralocal RT.fa -alignment nuc
+searching path /root/miniconda3/envs/py395/lib/python3.10/site-packages/sierralocal/data/HIVDB*.xml
+searching path /root/miniconda3/envs/py395/lib/python3.10/site-packages/sierralocal/data/apobec*.json
+HIVdb version 9.4
+Found NucAmino binary /root/miniconda3/envs/py395/lib/python3.10/site-packages/sierralocal/bin/nucamino-linux-amd64
+Aligned RT.fa
+100 sequences found in file RT.fa.
+Writing JSON to file RT_results.json
+Time elapsed: 4.1417 seconds (25.45 it/s)
+```
+
 
 `retrieve_hivdb_data.py` is a Python script that we provided to download small samples of HIV-1 sequence data from the Stanford HIVdb database.  In this case, we have retrieved 100 reverse transcriptase (RT) sequences and processsed them with the *sierra-local* pipeline.  By default, the results are written to the file `[FASTA basename]_results.json`:
 ```console
