@@ -261,7 +261,8 @@ class JSONWriter():
                                                         mutation[1])
             mutdict['isUnusual'] = self.is_unusual(gene,
                                                    mutation[0],
-                                                   mutation[1])
+                                                   mutation[1],
+                                                   mutation[3])
             mutdict['isSDRM'] = self.is_sdrm(gene,
                                              mutation[0],
                                              mutation[1])
@@ -475,7 +476,7 @@ class JSONWriter():
                         return True
         return False
 
-    def is_unusual(self, gene, position, AA):
+    def is_unusual(self, gene, position, AA, text):
         """
         see if specific amino acid mutation 'is unusual' through checking hivbd facts
         @param gene: str, RT, IN, PR
@@ -484,11 +485,16 @@ class JSONWriter():
         @return: bool
         """
         position = str(position)
+        # The AA == X is stated in hivdb sierra core java files
+        if AA == 'X':
+            return True
+        if text == 'X':  # this just fixes most of the errors, can't find source
+            return False
         if gene in self.is_unusual_dic:
             if position in self.is_unusual_dic[gene]:
                 for aa in AA:
                     if aa in self.is_unusual_dic[gene][position]:
-                        if self.is_unusual_dic[gene][position][aa].lower() == "true":
+                        if self.is_unusual_dic[gene][position][aa].lower() == 'true':
                             return True
         return False
 
