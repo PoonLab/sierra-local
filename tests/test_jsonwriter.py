@@ -872,7 +872,7 @@ class TestJsonWriter(unittest.TestCase):
                        'del1_after_3codons': '',
                        'insAAA_after_3codons': ''}
 
-        file_path = r'hxb2-pr-local.json'
+        file_path = r'tests/hxb2-pr-local.json'
         self.assertFalse(os.path.exists(file_path))
         self.writer.write_to_json(file_path, sequence_headers, sequence_scores, file_genes,
                                   ordered_mutation_list, sequence_lengths, file_trims, subtypes,
