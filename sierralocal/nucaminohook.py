@@ -294,6 +294,10 @@ class NucAminoAligner():
                                                 mutation['Position'] += 1
                                             result['Mutations'] += info
 
+                                        elif key == 'FrameShifts':
+                                            for shift in result['FrameShifts']:
+                                                shift['Position'] += 1
+
                                         else:
                                             result.update({key: info})
 
@@ -305,13 +309,15 @@ class NucAminoAligner():
                     if result['AlignedSites']:
                         result['AlignedSites'] = sorted(result['AlignedSites'], key=lambda x: x['PosAA'])
                         result['FirstNA'] = result['AlignedSites'][0]['PosNA']
-                        result['LastNA'] = result['AlignedSites'][-1]['PosNA']
+                        result['LastNA'] = result['AlignedSites'][-1]['PosNA'] + \
+                                           result['AlignedSites'][-1]["LengthNA"] - 1
                         result['FirstAA'] = result['AlignedSites'][0]['PosAA']
                         result['LastAA'] = result['AlignedSites'][-1]['PosAA']
                         result['Sequence'] = self.get_aligned_seq(inputSequences[result['Name']],
                                                                   result['AlignedSites'])
                     output.append(result)
-            # os.remove(tfPostOut.name)
+
+            os.remove(tfPostOut.name)
             os.remove(tf.name)
 
             return output

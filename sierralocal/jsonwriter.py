@@ -270,7 +270,7 @@ class JSONWriter():
                             mutation[0],
                             mutation[1]):
                 dic['SDRMs'].append({'text': mutation[2] + str(mutation[0]) + mutation[3]})
-            mutdict['hasStop'] = self.has_stop(mutation)
+            mutdict['hasStop'] = self.has_stop(mutation, mutation[3])
             mutdict['primaryType'] = self.primary_type(gene,
                                                        mutation[0],
                                                        mutation[1])
@@ -450,12 +450,16 @@ class JSONWriter():
                         return True
         return False
 
-    def has_stop(self, ordered_mut_list_index):
+    def has_stop(self, ordered_mut_list_index, text):
         """
         see if specific amino acid mutation results in nonsense mutation
         @param: ordered_mut_list_index, list, mutations of specific NA sequence
+        @param: text, str, translated amino acid from codon of mutation
         @return: bool
         """
+        if text == 'X':
+            return False
+
         if "*" in ordered_mut_list_index[1]:
             return True
         return False
