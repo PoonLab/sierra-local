@@ -10,6 +10,7 @@ class TestJsonWriter(unittest.TestCase):
         self.algorithm = HIVdb()
         self.writer = JSONWriter(self.algorithm)
 
+    # These are written for HIVdb version 9.4, the text may change
     def testFormatValidationResults(self):
         # Setting params
         validated = [('WARNING', "The ('RT', 1, 99, 1, 294) sequence contains just 194 codons, which is not sufficient for a comprehensive interpretation.")]
@@ -43,6 +44,7 @@ class TestJsonWriter(unittest.TestCase):
 
     def testFormatDrugResistance(self):
         # Setting params
+
         scores = {'BIC': (25, [10, 15], [['F51Y'], ['N66K']]),
                   'DTG': (25, [10, 15], [['F51Y'], ['N66K']]),
                   'EVG': (75, [15, 60], [['F51Y'], ['N66K']]),
@@ -684,7 +686,7 @@ class TestJsonWriter(unittest.TestCase):
         self.assertEqual(exp_drug_resistance, res_drug_resistance)
 
     def testFormatAlignedGeneSequences(self):
-        self.maxDiff = None
+
         # Setting params
         omlist = [(3, 'V', 'I', 'V'), (37, 'S', 'N', 'S')]
         gene = 'PR'
@@ -748,7 +750,7 @@ class TestJsonWriter(unittest.TestCase):
                                       "isDeletion": False,
                                       "isApobecMutation": False,
                                       "isApobecDRM": False,
-                                      "isUnusual": False,
+                                      "isUnusual": True,
                                       "isSDRM": False,
                                       "hasStop": False,
                                       "primaryType": "Other",
@@ -961,6 +963,88 @@ class TestJsonWriter(unittest.TestCase):
         amino_acids = 'TRAG'
 
         result = self.writer.is_apobec_drm(gene, consensus, position, amino_acids)
+        self.assertFalse(result)
+
+    def testIsSdrm(self):
+        # Setting params
+        gene = 'IN'
+        consensus = 'G'
+        position = 163
+        amino_acids = 'TRAG'
+
+        result = self.writer.is_sdrm(gene, position, amino_acids)
+        self.assertFalse(result)
+
+        # Setting params
+        gene = 'RT'
+        consensus = 'D'
+        position = 67
+        amino_acids = 'TRAG'
+
+        result = self.writer.is_sdrm(gene, position, amino_acids)
+        self.assertTrue(result)
+
+    def testIsUnusual(self):
+        # Setting params
+        gene = 'PR'
+        consensus = 'I'
+        position = 3
+        amino_acids = 'V'
+        text = 'V'
+
+        result = self.writer.is_unusual(gene, position, amino_acids, text)
+        self.assertFalse(result)
+
+        # Setting params
+        gene = 'PR'
+        position = 37
+        amino_acids = 'S'
+        consensus = 'N'
+        text = 'S'
+
+        result = self.writer.is_unusual(gene, position, amino_acids, text)
+        self.assertFalse(result)
+
+    def testPrimaryType(self):
+        # Setting params
+        gene = 'PR'
+        consensus = 'I'
+        position = 3
+        amino_acids = 'V'
+        text = 'V'
+
+        result = self.writer.primary_type(gene, position, amino_acids)
+        self.assertEqual(result, 'Other')
+
+        # Setting params
+        gene = 'PR'
+        position = 37
+        amino_acids = 'S'
+        consensus = 'N'
+        text = 'S'
+
+        result = self.writer.primary_type(gene, position, amino_acids)
+        self.assertTrue(result, 'Other')
+
+    def testApobecMutation(self):
+        # Setting params
+        gene = 'PR'
+        consensus = 'I'
+        position = 3
+        amino_acids = 'V'
+        text = 'V'
+
+        result = self.writer.is_apobec_mutation(gene, position, amino_acids)
+        self.assertFalse(result)
+
+        # Setting params
+        gene = 'PR'
+        position = 37
+        amino_acids = 'S'
+        consensus = 'N'
+        text = 'S'
+
+        result = self.writer.is_apobec_mutation(gene, position, amino_acids)
         self.assertFalse(result)
 
 

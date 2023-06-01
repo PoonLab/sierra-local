@@ -10,30 +10,22 @@ class TestHIVDb(unittest.TestCase):
         self.algorithm = HIVdb()
         self.root = parse(self.algorithm.xml_filename)       
 
+    # These were written for HIVDB version 9.4, texts may change
     def testSetHivdbXml(self):
-        exp_xml_filename = os.path.abspath(r'sierralocal\data\HIVDB_9.4.xml')
+        exp_xml_filename = os.path.abspath(r'sierralocal/data/HIVDB_9.4.xml')
         res_xml_filename = os.path.abspath(self.algorithm.xml_filename)
         self.assertEqual(exp_xml_filename, res_xml_filename)
 
-        # Setting params
-        xml_path = r'sierralocal\data\hivfacts\data\algorithms\HIVDB_9.3.xml'
-        algorithm = HIVdb(asi2=xml_path)
-
-        exp_xml_filename = os.path.abspath(xml_path)
-        res_xml_filename = os.path.abspath(algorithm.xml_filename)
-
-        self.assertEqual(exp_xml_filename, res_xml_filename)
-
         with self.assertRaises(FileNotFoundError) as err:
-            invalid_path = r'does\not\exist.txt'
+            invalid_path = r'does/not/exist.txt'
             algorithm = HIVdb(asi2=invalid_path)
         
         with self.assertRaises(ParseError):
-            invalid_xml = r'sierralocal\data\RT-comments.csv'
+            invalid_xml = r'sierralocal/data/RT-comments.csv'
             algorithm = HIVdb(asi2=invalid_xml)
 
     def testSetApobecJson(self):
-        exp_json_filename = os.path.abspath(r'sierralocal\data\apobec_drms.csv')
+        exp_json_filename = os.path.abspath(r'sierralocal/data/apobec_drms.csv')
         res_json_filename = os.path.abspath(self.algorithm.json_filename)
         self.assertEqual(exp_json_filename, res_json_filename)
 

@@ -7,6 +7,7 @@ class TestNucAminoAligner(unittest.TestCase):
     def setUp(self):
         self.algorithm = HIVdb()
         self.aligner = NucAminoAligner(self.algorithm, program='nuc')
+        self.postAligner = NucAminoAligner(self.algorithm)
 
     def testPrevalenceParser(self):
         # Setting params
@@ -124,9 +125,117 @@ class TestNucAminoAligner(unittest.TestCase):
 
         self.assertEqual(exp_aligned, res_aligned)
 
+    def testGetAlignedSeqPost(self):
+        filename = r'hxb2-pr.fa'
+        # Setting params
+        sites = [{'LengthNA': 3, 'PosAA': 58, 'PosNA': 4},
+                 {'LengthNA': 3, 'PosAA': 59, 'PosNA': 7},
+                 {'LengthNA': 3, 'PosAA': 60, 'PosNA': 10},
+                 {'LengthNA': 3, 'PosAA': 61, 'PosNA': 13},
+                 {'LengthNA': 3, 'PosAA': 62, 'PosNA': 16},
+                 {'LengthNA': 3, 'PosAA': 63, 'PosNA': 19},
+                 {'LengthNA': 3, 'PosAA': 64, 'PosNA': 22},
+                 {'LengthNA': 3, 'PosAA': 65, 'PosNA': 25},
+                 {'LengthNA': 3, 'PosAA': 66, 'PosNA': 28},
+                 {'LengthNA': 3, 'PosAA': 67, 'PosNA': 31},
+                 {'LengthNA': 3, 'PosAA': 68, 'PosNA': 34},
+                 {'LengthNA': 3, 'PosAA': 69, 'PosNA': 37},
+                 {'LengthNA': 3, 'PosAA': 70, 'PosNA': 40},
+                 {'LengthNA': 3, 'PosAA': 71, 'PosNA': 43},
+                 {'LengthNA': 3, 'PosAA': 72, 'PosNA': 46},
+                 {'LengthNA': 3, 'PosAA': 73, 'PosNA': 49},
+                 {'LengthNA': 3, 'PosAA': 74, 'PosNA': 52},
+                 {'LengthNA': 3, 'PosAA': 75, 'PosNA': 55},
+                 {'LengthNA': 3, 'PosAA': 76, 'PosNA': 58},
+                 {'LengthNA': 3, 'PosAA': 77, 'PosNA': 61},
+                 {'LengthNA': 3, 'PosAA': 78, 'PosNA': 64},
+                 {'LengthNA': 3, 'PosAA': 79, 'PosNA': 67},
+                 {'LengthNA': 3, 'PosAA': 80, 'PosNA': 70},
+                 {'LengthNA': 3, 'PosAA': 81, 'PosNA': 73},
+                 {'LengthNA': 3, 'PosAA': 82, 'PosNA': 76},
+                 {'LengthNA': 3, 'PosAA': 83, 'PosNA': 79},
+                 {'LengthNA': 3, 'PosAA': 84, 'PosNA': 82},
+                 {'LengthNA': 3, 'PosAA': 85, 'PosNA': 85},
+                 {'LengthNA': 3, 'PosAA': 86, 'PosNA': 88},
+                 {'LengthNA': 3, 'PosAA': 87, 'PosNA': 91},
+                 {'LengthNA': 3, 'PosAA': 88, 'PosNA': 94},
+                 {'LengthNA': 3, 'PosAA': 89, 'PosNA': 97},
+                 {'LengthNA': 3, 'PosAA': 90, 'PosNA': 100},
+                 {'LengthNA': 3, 'PosAA': 91, 'PosNA': 103},
+                 {'LengthNA': 3, 'PosAA': 92, 'PosNA': 106},
+                 {'LengthNA': 3, 'PosAA': 93, 'PosNA': 109},
+                 {'LengthNA': 3, 'PosAA': 94, 'PosNA': 112},
+                 {'LengthNA': 3, 'PosAA': 95, 'PosNA': 115},
+                 {'LengthNA': 3, 'PosAA': 96, 'PosNA': 118},
+                 {'LengthNA': 3, 'PosAA': 97, 'PosNA': 121},
+                 {'LengthNA': 3, 'PosAA': 98, 'PosNA': 124},
+                 {'LengthNA': 3, 'PosAA': 99, 'PosNA': 127},
+                 {'LengthNA': 3, 'PosAA': 100, 'PosNA': 130},
+                 {'LengthNA': 3, 'PosAA': 101, 'PosNA': 133},
+                 {'LengthNA': 3, 'PosAA': 102, 'PosNA': 136},
+                 {'LengthNA': 3, 'PosAA': 103, 'PosNA': 139},
+                 {'LengthNA': 3, 'PosAA': 104, 'PosNA': 142},
+                 {'LengthNA': 3, 'PosAA': 105, 'PosNA': 145},
+                 {'LengthNA': 3, 'PosAA': 106, 'PosNA': 148},
+                 {'LengthNA': 3, 'PosAA': 107, 'PosNA': 151},
+                 {'LengthNA': 3, 'PosAA': 108, 'PosNA': 154},
+                 {'LengthNA': 3, 'PosAA': 109, 'PosNA': 157},
+                 {'LengthNA': 3, 'PosAA': 110, 'PosNA': 160},
+                 {'LengthNA': 3, 'PosAA': 111, 'PosNA': 163},
+                 {'LengthNA': 3, 'PosAA': 112, 'PosNA': 166},
+                 {'LengthNA': 3, 'PosAA': 113, 'PosNA': 169},
+                 {'LengthNA': 3, 'PosAA': 114, 'PosNA': 172},
+                 {'LengthNA': 3, 'PosAA': 115, 'PosNA': 175},
+                 {'LengthNA': 3, 'PosAA': 116, 'PosNA': 178},
+                 {'LengthNA': 3, 'PosAA': 117, 'PosNA': 181},
+                 {'LengthNA': 3, 'PosAA': 118, 'PosNA': 184},
+                 {'LengthNA': 3, 'PosAA': 119, 'PosNA': 187},
+                 {'LengthNA': 3, 'PosAA': 120, 'PosNA': 190},
+                 {'LengthNA': 3, 'PosAA': 121, 'PosNA': 193},
+                 {'LengthNA': 3, 'PosAA': 122, 'PosNA': 196},
+                 {'LengthNA': 3, 'PosAA': 123, 'PosNA': 199},
+                 {'LengthNA': 3, 'PosAA': 124, 'PosNA': 202},
+                 {'LengthNA': 3, 'PosAA': 125, 'PosNA': 205},
+                 {'LengthNA': 3, 'PosAA': 126, 'PosNA': 208},
+                 {'LengthNA': 3, 'PosAA': 127, 'PosNA': 211},
+                 {'LengthNA': 3, 'PosAA': 128, 'PosNA': 214},
+                 {'LengthNA': 3, 'PosAA': 129, 'PosNA': 217},
+                 {'LengthNA': 3, 'PosAA': 130, 'PosNA': 220},
+                 {'LengthNA': 3, 'PosAA': 131, 'PosNA': 223},
+                 {'LengthNA': 3, 'PosAA': 132, 'PosNA': 226},
+                 {'LengthNA': 3, 'PosAA': 133, 'PosNA': 229},
+                 {'LengthNA': 3, 'PosAA': 134, 'PosNA': 232},
+                 {'LengthNA': 3, 'PosAA': 135, 'PosNA': 235},
+                 {'LengthNA': 3, 'PosAA': 136, 'PosNA': 238},
+                 {'LengthNA': 3, 'PosAA': 137, 'PosNA': 241},
+                 {'LengthNA': 3, 'PosAA': 138, 'PosNA': 244},
+                 {'LengthNA': 3, 'PosAA': 139, 'PosNA': 247},
+                 {'LengthNA': 3, 'PosAA': 140, 'PosNA': 250},
+                 {'LengthNA': 3, 'PosAA': 141, 'PosNA': 253},
+                 {'LengthNA': 3, 'PosAA': 142, 'PosNA': 256},
+                 {'LengthNA': 3, 'PosAA': 143, 'PosNA': 259},
+                 {'LengthNA': 3, 'PosAA': 144, 'PosNA': 262},
+                 {'LengthNA': 3, 'PosAA': 145, 'PosNA': 265},
+                 {'LengthNA': 3, 'PosAA': 146, 'PosNA': 268},
+                 {'LengthNA': 3, 'PosAA': 147, 'PosNA': 271},
+                 {'LengthNA': 3, 'PosAA': 148, 'PosNA': 274},
+                 {'LengthNA': 3, 'PosAA': 149, 'PosNA': 277},
+                 {'LengthNA': 3, 'PosAA': 150, 'PosNA': 280},
+                 {'LengthNA': 3, 'PosAA': 151, 'PosNA': 283},
+                 {'LengthNA': 3, 'PosAA': 152, 'PosNA': 286},
+                 {'LengthNA': 3, 'PosAA': 153, 'PosNA': 289},
+                 {'LengthNA': 3, 'PosAA': 154, 'PosNA': 292},
+                 {'LengthNA': 3, 'PosAA': 155, 'PosNA': 295}]
+        nuc = 'CCTCAGGTCACTCTTTGGCAACGACCCCTCGTCACAATAAAGATAGGGGGGCAACTAAAGGAAGCTCTATTAGATACAGGAGCAGATGATACAGTATTAGAAGAAATGAGTTTGCCAGGAAGATGGAAACCAAAAATGATAGGGGGAATTGGAGGTTTTATCAAAGTAAGACAGTATGATCAGATACTCATAGAAATCTGTGGACATAAAGCTATAGGTACAGTATTAGTAGGACCTACACCTGTCAACATAATTGGAAGAAATCTGTTGACTCAGATTGGTTGCACTTTAAATTTT'
+
+        exp_aligned = 'CCTCAGGTCACTCTTTGGCAACGACCCCTCGTCACAATAAAGATAGGGGGGCAACTAAAGGAAGCTCTATTAGATACAGGAGCAGATGATACAGTATTAGAAGAAATGAGTTTGCCAGGAAGATGGAAACCAAAAATGATAGGGGGAATTGGAGGTTTTATCAAAGTAAGACAGTATGATCAGATACTCATAGAAATCTGTGGACATAAAGCTATAGGTACAGTATTAGTAGGACCTACACCTGTCAACATAATTGGAAGAAATCTGTTGACTCAGATTGGTTGCACTTTAAAT'
+        res_aligned = self.postAligner.get_aligned_seq(nuc, sites)
+
+        self.assertEqual(exp_aligned, res_aligned)
+
     def testAlignFile(self):
         # Setting params
-        filename = r'tests\hxb2-pr.fa'
+        filename = r'hxb2-pr.fa'
 
         exp_records = \
             [{'AlignedSites': [{'LengthNA': 3, 'PosAA': 57, 'PosNA': 1},
@@ -1045,6 +1154,3819 @@ class TestNucAminoAligner(unittest.TestCase):
 
         self.assertEqual(exp_records, res_records)
 
+    def testAlignFilePost(self):
+        # Setting params
+        filename = r'hxb2-pr.fa'
+
+        exp_records = \
+            [
+                {
+                    "AlignedSites": [
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 57,
+                            "PosNA": 1
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 58,
+                            "PosNA": 4
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 59,
+                            "PosNA": 7
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 60,
+                            "PosNA": 10
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 61,
+                            "PosNA": 13
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 62,
+                            "PosNA": 16
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 63,
+                            "PosNA": 19
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 64,
+                            "PosNA": 22
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 65,
+                            "PosNA": 25
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 66,
+                            "PosNA": 28
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 67,
+                            "PosNA": 31
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 68,
+                            "PosNA": 34
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 69,
+                            "PosNA": 37
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 70,
+                            "PosNA": 40
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 71,
+                            "PosNA": 43
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 72,
+                            "PosNA": 46
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 73,
+                            "PosNA": 49
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 74,
+                            "PosNA": 52
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 75,
+                            "PosNA": 55
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 76,
+                            "PosNA": 58
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 77,
+                            "PosNA": 61
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 78,
+                            "PosNA": 64
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 79,
+                            "PosNA": 67
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 80,
+                            "PosNA": 70
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 81,
+                            "PosNA": 73
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 82,
+                            "PosNA": 76
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 83,
+                            "PosNA": 79
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 84,
+                            "PosNA": 82
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 85,
+                            "PosNA": 85
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 86,
+                            "PosNA": 88
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 87,
+                            "PosNA": 91
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 88,
+                            "PosNA": 94
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 89,
+                            "PosNA": 97
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 90,
+                            "PosNA": 100
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 91,
+                            "PosNA": 103
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 92,
+                            "PosNA": 106
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 93,
+                            "PosNA": 109
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 94,
+                            "PosNA": 112
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 95,
+                            "PosNA": 115
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 96,
+                            "PosNA": 118
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 97,
+                            "PosNA": 121
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 98,
+                            "PosNA": 124
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 99,
+                            "PosNA": 127
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 100,
+                            "PosNA": 130
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 101,
+                            "PosNA": 133
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 102,
+                            "PosNA": 136
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 103,
+                            "PosNA": 139
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 104,
+                            "PosNA": 142
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 105,
+                            "PosNA": 145
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 106,
+                            "PosNA": 148
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 107,
+                            "PosNA": 151
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 108,
+                            "PosNA": 154
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 109,
+                            "PosNA": 157
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 110,
+                            "PosNA": 160
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 111,
+                            "PosNA": 163
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 112,
+                            "PosNA": 166
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 113,
+                            "PosNA": 169
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 114,
+                            "PosNA": 172
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 115,
+                            "PosNA": 175
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 116,
+                            "PosNA": 178
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 117,
+                            "PosNA": 181
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 118,
+                            "PosNA": 184
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 119,
+                            "PosNA": 187
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 120,
+                            "PosNA": 190
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 121,
+                            "PosNA": 193
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 122,
+                            "PosNA": 196
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 123,
+                            "PosNA": 199
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 124,
+                            "PosNA": 202
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 125,
+                            "PosNA": 205
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 126,
+                            "PosNA": 208
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 127,
+                            "PosNA": 211
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 128,
+                            "PosNA": 214
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 129,
+                            "PosNA": 217
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 130,
+                            "PosNA": 220
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 131,
+                            "PosNA": 223
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 132,
+                            "PosNA": 226
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 133,
+                            "PosNA": 229
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 134,
+                            "PosNA": 232
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 135,
+                            "PosNA": 235
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 136,
+                            "PosNA": 238
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 137,
+                            "PosNA": 241
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 138,
+                            "PosNA": 244
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 139,
+                            "PosNA": 247
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 140,
+                            "PosNA": 250
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 141,
+                            "PosNA": 253
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 142,
+                            "PosNA": 256
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 143,
+                            "PosNA": 259
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 144,
+                            "PosNA": 262
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 145,
+                            "PosNA": 265
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 146,
+                            "PosNA": 268
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 147,
+                            "PosNA": 271
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 148,
+                            "PosNA": 274
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 149,
+                            "PosNA": 277
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 150,
+                            "PosNA": 280
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 151,
+                            "PosNA": 283
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 152,
+                            "PosNA": 286
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 153,
+                            "PosNA": 289
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 154,
+                            "PosNA": 292
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 155,
+                            "PosNA": 295
+                        }
+                    ],
+                    "FirstAA": 57,
+                    "FirstNA": 1,
+                    "FrameShifts": [],
+                    "LastAA": 155,
+                    "LastNA": 297,
+                    "Mutations": [
+                        {
+                            "AminoAcidText": "V",
+                            "CodonText": "GTC",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 59,
+                            "RefCodonText": "ATC",
+                            "ReferenceText": "I"
+                        },
+                        {
+                            "AminoAcidText": "S",
+                            "CodonText": "AGT",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 93,
+                            "RefCodonText": "AAT",
+                            "ReferenceText": "N"
+                        }
+                    ],
+                    "Name": "HXB2-PR",
+                    "Sequence": "CCTCAGGTCACTCTTTGGCAACGACCCCTCGTCACAATAAAGATAGGGGGGCAACTAAAGGAAGCTCTATTAGATACAGGAGCAGATGATACAGTATTAGAAGAAATGAGTTTGCCAGGAAGATGGAAACCAAAAATGATAGGGGGAATTGGAGGTTTTATCAAAGTAAGACAGTATGATCAGATACTCATAGAAATCTGTGGACATAAAGCTATAGGTACAGTATTAGTAGGACCTACACCTGTCAACATAATTGGAAGAAATCTGTTGACTCAGATTGGTTGCACTTTAAATTTT"
+                },
+                {
+                    "AlignedSites": [
+                        {
+                            "LengthNA": 2,
+                            "PosAA": 57,
+                            "PosNA": 1
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 58,
+                            "PosNA": 3
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 59,
+                            "PosNA": 6
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 60,
+                            "PosNA": 9
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 61,
+                            "PosNA": 12
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 62,
+                            "PosNA": 15
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 63,
+                            "PosNA": 18
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 64,
+                            "PosNA": 21
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 65,
+                            "PosNA": 24
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 66,
+                            "PosNA": 27
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 67,
+                            "PosNA": 30
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 68,
+                            "PosNA": 33
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 69,
+                            "PosNA": 36
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 70,
+                            "PosNA": 39
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 71,
+                            "PosNA": 42
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 72,
+                            "PosNA": 45
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 73,
+                            "PosNA": 48
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 74,
+                            "PosNA": 51
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 75,
+                            "PosNA": 54
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 76,
+                            "PosNA": 57
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 77,
+                            "PosNA": 60
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 78,
+                            "PosNA": 63
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 79,
+                            "PosNA": 66
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 80,
+                            "PosNA": 69
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 81,
+                            "PosNA": 72
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 82,
+                            "PosNA": 75
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 83,
+                            "PosNA": 78
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 84,
+                            "PosNA": 81
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 85,
+                            "PosNA": 84
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 86,
+                            "PosNA": 87
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 87,
+                            "PosNA": 90
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 88,
+                            "PosNA": 93
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 89,
+                            "PosNA": 96
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 90,
+                            "PosNA": 99
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 91,
+                            "PosNA": 102
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 92,
+                            "PosNA": 105
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 93,
+                            "PosNA": 108
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 94,
+                            "PosNA": 111
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 95,
+                            "PosNA": 114
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 96,
+                            "PosNA": 117
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 97,
+                            "PosNA": 120
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 98,
+                            "PosNA": 123
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 99,
+                            "PosNA": 126
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 100,
+                            "PosNA": 129
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 101,
+                            "PosNA": 132
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 102,
+                            "PosNA": 135
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 103,
+                            "PosNA": 138
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 104,
+                            "PosNA": 141
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 105,
+                            "PosNA": 144
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 106,
+                            "PosNA": 147
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 107,
+                            "PosNA": 150
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 108,
+                            "PosNA": 153
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 109,
+                            "PosNA": 156
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 110,
+                            "PosNA": 159
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 111,
+                            "PosNA": 162
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 112,
+                            "PosNA": 165
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 113,
+                            "PosNA": 168
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 114,
+                            "PosNA": 171
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 115,
+                            "PosNA": 174
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 116,
+                            "PosNA": 177
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 117,
+                            "PosNA": 180
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 118,
+                            "PosNA": 183
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 119,
+                            "PosNA": 186
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 120,
+                            "PosNA": 189
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 121,
+                            "PosNA": 192
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 122,
+                            "PosNA": 195
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 123,
+                            "PosNA": 198
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 124,
+                            "PosNA": 201
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 125,
+                            "PosNA": 204
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 126,
+                            "PosNA": 207
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 127,
+                            "PosNA": 210
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 128,
+                            "PosNA": 213
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 129,
+                            "PosNA": 216
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 130,
+                            "PosNA": 219
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 131,
+                            "PosNA": 222
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 132,
+                            "PosNA": 225
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 133,
+                            "PosNA": 228
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 134,
+                            "PosNA": 231
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 135,
+                            "PosNA": 234
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 136,
+                            "PosNA": 237
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 137,
+                            "PosNA": 240
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 138,
+                            "PosNA": 243
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 139,
+                            "PosNA": 246
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 140,
+                            "PosNA": 249
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 141,
+                            "PosNA": 252
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 142,
+                            "PosNA": 255
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 143,
+                            "PosNA": 258
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 144,
+                            "PosNA": 261
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 145,
+                            "PosNA": 264
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 146,
+                            "PosNA": 267
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 147,
+                            "PosNA": 270
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 148,
+                            "PosNA": 273
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 149,
+                            "PosNA": 276
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 150,
+                            "PosNA": 279
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 151,
+                            "PosNA": 282
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 152,
+                            "PosNA": 285
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 153,
+                            "PosNA": 288
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 154,
+                            "PosNA": 291
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 155,
+                            "PosNA": 294
+                        }
+                    ],
+                    "FirstAA": 57,
+                    "FirstNA": 1,
+                    "FrameShifts": [],
+                    "LastAA": 155,
+                    "LastNA": 296,
+                    "Mutations": [
+                        {
+                            "AminoAcidText": "X",
+                            "CodonText": "CT-",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 57,
+                            "RefCodonText": "CCT",
+                            "ReferenceText": "P"
+                        },
+                        {
+                            "AminoAcidText": "V",
+                            "CodonText": "GTC",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 59,
+                            "RefCodonText": "ATC",
+                            "ReferenceText": "I"
+                        },
+                        {
+                            "AminoAcidText": "S",
+                            "CodonText": "AGT",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 93,
+                            "RefCodonText": "AAT",
+                            "ReferenceText": "N"
+                        }
+                    ],
+                    "Name": "shift1",
+                    "Sequence": "CTCAGGTCACTCTTTGGCAACGACCCCTCGTCACAATAAAGATAGGGGGGCAACTAAAGGAAGCTCTATTAGATACAGGAGCAGATGATACAGTATTAGAAGAAATGAGTTTGCCAGGAAGATGGAAACCAAAAATGATAGGGGGAATTGGAGGTTTTATCAAAGTAAGACAGTATGATCAGATACTCATAGAAATCTGTGGACATAAAGCTATAGGTACAGTATTAGTAGGACCTACACCTGTCAACATAATTGGAAGAAATCTGTTGACTCAGATTGGTTGCACTTTAAATTTT\n"
+                },
+                {
+                    "AlignedSites": [
+                        {
+                            "LengthNA": 1,
+                            "PosAA": 57,
+                            "PosNA": 1
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 58,
+                            "PosNA": 2
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 59,
+                            "PosNA": 5
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 60,
+                            "PosNA": 8
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 61,
+                            "PosNA": 11
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 62,
+                            "PosNA": 14
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 63,
+                            "PosNA": 17
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 64,
+                            "PosNA": 20
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 65,
+                            "PosNA": 23
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 66,
+                            "PosNA": 26
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 67,
+                            "PosNA": 29
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 68,
+                            "PosNA": 32
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 69,
+                            "PosNA": 35
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 70,
+                            "PosNA": 38
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 71,
+                            "PosNA": 41
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 72,
+                            "PosNA": 44
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 73,
+                            "PosNA": 47
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 74,
+                            "PosNA": 50
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 75,
+                            "PosNA": 53
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 76,
+                            "PosNA": 56
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 77,
+                            "PosNA": 59
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 78,
+                            "PosNA": 62
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 79,
+                            "PosNA": 65
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 80,
+                            "PosNA": 68
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 81,
+                            "PosNA": 71
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 82,
+                            "PosNA": 74
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 83,
+                            "PosNA": 77
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 84,
+                            "PosNA": 80
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 85,
+                            "PosNA": 83
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 86,
+                            "PosNA": 86
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 87,
+                            "PosNA": 89
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 88,
+                            "PosNA": 92
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 89,
+                            "PosNA": 95
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 90,
+                            "PosNA": 98
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 91,
+                            "PosNA": 101
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 92,
+                            "PosNA": 104
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 93,
+                            "PosNA": 107
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 94,
+                            "PosNA": 110
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 95,
+                            "PosNA": 113
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 96,
+                            "PosNA": 116
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 97,
+                            "PosNA": 119
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 98,
+                            "PosNA": 122
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 99,
+                            "PosNA": 125
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 100,
+                            "PosNA": 128
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 101,
+                            "PosNA": 131
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 102,
+                            "PosNA": 134
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 103,
+                            "PosNA": 137
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 104,
+                            "PosNA": 140
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 105,
+                            "PosNA": 143
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 106,
+                            "PosNA": 146
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 107,
+                            "PosNA": 149
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 108,
+                            "PosNA": 152
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 109,
+                            "PosNA": 155
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 110,
+                            "PosNA": 158
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 111,
+                            "PosNA": 161
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 112,
+                            "PosNA": 164
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 113,
+                            "PosNA": 167
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 114,
+                            "PosNA": 170
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 115,
+                            "PosNA": 173
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 116,
+                            "PosNA": 176
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 117,
+                            "PosNA": 179
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 118,
+                            "PosNA": 182
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 119,
+                            "PosNA": 185
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 120,
+                            "PosNA": 188
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 121,
+                            "PosNA": 191
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 122,
+                            "PosNA": 194
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 123,
+                            "PosNA": 197
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 124,
+                            "PosNA": 200
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 125,
+                            "PosNA": 203
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 126,
+                            "PosNA": 206
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 127,
+                            "PosNA": 209
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 128,
+                            "PosNA": 212
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 129,
+                            "PosNA": 215
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 130,
+                            "PosNA": 218
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 131,
+                            "PosNA": 221
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 132,
+                            "PosNA": 224
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 133,
+                            "PosNA": 227
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 134,
+                            "PosNA": 230
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 135,
+                            "PosNA": 233
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 136,
+                            "PosNA": 236
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 137,
+                            "PosNA": 239
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 138,
+                            "PosNA": 242
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 139,
+                            "PosNA": 245
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 140,
+                            "PosNA": 248
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 141,
+                            "PosNA": 251
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 142,
+                            "PosNA": 254
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 143,
+                            "PosNA": 257
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 144,
+                            "PosNA": 260
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 145,
+                            "PosNA": 263
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 146,
+                            "PosNA": 266
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 147,
+                            "PosNA": 269
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 148,
+                            "PosNA": 272
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 149,
+                            "PosNA": 275
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 150,
+                            "PosNA": 278
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 151,
+                            "PosNA": 281
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 152,
+                            "PosNA": 284
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 153,
+                            "PosNA": 287
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 154,
+                            "PosNA": 290
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 155,
+                            "PosNA": 293
+                        }
+                    ],
+                    "FirstAA": 57,
+                    "FirstNA": 1,
+                    "FrameShifts": [],
+                    "LastAA": 155,
+                    "LastNA": 295,
+                    "Mutations": [
+                        {
+                            "AminoAcidText": "X",
+                            "CodonText": "T--",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 57,
+                            "RefCodonText": "CCT",
+                            "ReferenceText": "P"
+                        },
+                        {
+                            "AminoAcidText": "V",
+                            "CodonText": "GTC",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 59,
+                            "RefCodonText": "ATC",
+                            "ReferenceText": "I"
+                        },
+                        {
+                            "AminoAcidText": "S",
+                            "CodonText": "AGT",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 93,
+                            "RefCodonText": "AAT",
+                            "ReferenceText": "N"
+                        }
+                    ],
+                    "Name": "shift2",
+                    "Sequence": "TCAGGTCACTCTTTGGCAACGACCCCTCGTCACAATAAAGATAGGGGGGCAACTAAAGGAAGCTCTATTAGATACAGGAGCAGATGATACAGTATTAGAAGAAATGAGTTTGCCAGGAAGATGGAAACCAAAAATGATAGGGGGAATTGGAGGTTTTATCAAAGTAAGACAGTATGATCAGATACTCATAGAAATCTGTGGACATAAAGCTATAGGTACAGTATTAGTAGGACCTACACCTGTCAACATAATTGGAAGAAATCTGTTGACTCAGATTGGTTGCACTTTAAATTTT\n"
+                },
+                {
+                    "AlignedSites": [
+                        {
+                            "LengthNA": 1,
+                            "PosAA": 56,
+                            "PosNA": 1
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 57,
+                            "PosNA": 2
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 58,
+                            "PosNA": 5
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 59,
+                            "PosNA": 8
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 60,
+                            "PosNA": 11
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 61,
+                            "PosNA": 14
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 62,
+                            "PosNA": 17
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 63,
+                            "PosNA": 20
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 64,
+                            "PosNA": 23
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 65,
+                            "PosNA": 26
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 66,
+                            "PosNA": 29
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 67,
+                            "PosNA": 32
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 68,
+                            "PosNA": 35
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 69,
+                            "PosNA": 38
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 70,
+                            "PosNA": 41
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 71,
+                            "PosNA": 44
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 72,
+                            "PosNA": 47
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 73,
+                            "PosNA": 50
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 74,
+                            "PosNA": 53
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 75,
+                            "PosNA": 56
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 76,
+                            "PosNA": 59
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 77,
+                            "PosNA": 62
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 78,
+                            "PosNA": 65
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 79,
+                            "PosNA": 68
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 80,
+                            "PosNA": 71
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 81,
+                            "PosNA": 74
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 82,
+                            "PosNA": 77
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 83,
+                            "PosNA": 80
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 84,
+                            "PosNA": 83
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 85,
+                            "PosNA": 86
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 86,
+                            "PosNA": 89
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 87,
+                            "PosNA": 92
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 88,
+                            "PosNA": 95
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 89,
+                            "PosNA": 98
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 90,
+                            "PosNA": 101
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 91,
+                            "PosNA": 104
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 92,
+                            "PosNA": 107
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 93,
+                            "PosNA": 110
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 94,
+                            "PosNA": 113
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 95,
+                            "PosNA": 116
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 96,
+                            "PosNA": 119
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 97,
+                            "PosNA": 122
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 98,
+                            "PosNA": 125
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 99,
+                            "PosNA": 128
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 100,
+                            "PosNA": 131
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 101,
+                            "PosNA": 134
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 102,
+                            "PosNA": 137
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 103,
+                            "PosNA": 140
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 104,
+                            "PosNA": 143
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 105,
+                            "PosNA": 146
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 106,
+                            "PosNA": 149
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 107,
+                            "PosNA": 152
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 108,
+                            "PosNA": 155
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 109,
+                            "PosNA": 158
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 110,
+                            "PosNA": 161
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 111,
+                            "PosNA": 164
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 112,
+                            "PosNA": 167
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 113,
+                            "PosNA": 170
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 114,
+                            "PosNA": 173
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 115,
+                            "PosNA": 176
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 116,
+                            "PosNA": 179
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 117,
+                            "PosNA": 182
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 118,
+                            "PosNA": 185
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 119,
+                            "PosNA": 188
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 120,
+                            "PosNA": 191
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 121,
+                            "PosNA": 194
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 122,
+                            "PosNA": 197
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 123,
+                            "PosNA": 200
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 124,
+                            "PosNA": 203
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 125,
+                            "PosNA": 206
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 126,
+                            "PosNA": 209
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 127,
+                            "PosNA": 212
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 128,
+                            "PosNA": 215
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 129,
+                            "PosNA": 218
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 130,
+                            "PosNA": 221
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 131,
+                            "PosNA": 224
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 132,
+                            "PosNA": 227
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 133,
+                            "PosNA": 230
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 134,
+                            "PosNA": 233
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 135,
+                            "PosNA": 236
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 136,
+                            "PosNA": 239
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 137,
+                            "PosNA": 242
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 138,
+                            "PosNA": 245
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 139,
+                            "PosNA": 248
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 140,
+                            "PosNA": 251
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 141,
+                            "PosNA": 254
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 142,
+                            "PosNA": 257
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 143,
+                            "PosNA": 260
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 144,
+                            "PosNA": 263
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 145,
+                            "PosNA": 266
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 146,
+                            "PosNA": 269
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 147,
+                            "PosNA": 272
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 148,
+                            "PosNA": 275
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 149,
+                            "PosNA": 278
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 150,
+                            "PosNA": 281
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 151,
+                            "PosNA": 284
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 152,
+                            "PosNA": 287
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 153,
+                            "PosNA": 290
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 154,
+                            "PosNA": 293
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 155,
+                            "PosNA": 296
+                        }
+                    ],
+                    "FirstAA": 56,
+                    "FirstNA": 1,
+                    "FrameShifts": [],
+                    "LastAA": 155,
+                    "LastNA": 298,
+                    "Mutations": [
+                        {
+                            "AminoAcidText": "X",
+                            "CodonText": "C--",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 56,
+                            "RefCodonText": "TTC",
+                            "ReferenceText": "F"
+                        },
+                        {
+                            "AminoAcidText": "V",
+                            "CodonText": "GTC",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 59,
+                            "RefCodonText": "ATC",
+                            "ReferenceText": "I"
+                        },
+                        {
+                            "AminoAcidText": "S",
+                            "CodonText": "AGT",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 93,
+                            "RefCodonText": "AAT",
+                            "ReferenceText": "N"
+                        }
+                    ],
+                    "Name": "plus1",
+                    "Sequence": "TCAGGTCACTCTTTGGCAACGACCCCTCGTCACAATAAAGATAGGGGGGCAACTAAAGGAAGCTCTATTAGATACAGGAGCAGATGATACAGTATTAGAAGAAATGAGTTTGCCAGGAAGATGGAAACCAAAAATGATAGGGGGAATTGGAGGTTTTATCAAAGTAAGACAGTATGATCAGATACTCATAGAAATCTGTGGACATAAAGCTATAGGTACAGTATTAGTAGGACCTACACCTGTCAACATAATTGGAAGAAATCTGTTGACTCAGATTGGTTGCACTTTAAATTTT\n"
+                },
+                {
+                    "AlignedSites": [
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 56,
+                            "PosNA": 1
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 57,
+                            "PosNA": 4
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 58,
+                            "PosNA": 7
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 59,
+                            "PosNA": 10
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 60,
+                            "PosNA": 13
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 61,
+                            "PosNA": 16
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 62,
+                            "PosNA": 19
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 63,
+                            "PosNA": 22
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 64,
+                            "PosNA": 25
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 65,
+                            "PosNA": 28
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 66,
+                            "PosNA": 31
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 67,
+                            "PosNA": 34
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 68,
+                            "PosNA": 37
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 69,
+                            "PosNA": 40
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 70,
+                            "PosNA": 43
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 71,
+                            "PosNA": 46
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 72,
+                            "PosNA": 49
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 73,
+                            "PosNA": 52
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 74,
+                            "PosNA": 55
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 75,
+                            "PosNA": 58
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 76,
+                            "PosNA": 61
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 77,
+                            "PosNA": 64
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 78,
+                            "PosNA": 67
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 79,
+                            "PosNA": 70
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 80,
+                            "PosNA": 73
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 81,
+                            "PosNA": 76
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 82,
+                            "PosNA": 79
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 83,
+                            "PosNA": 82
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 84,
+                            "PosNA": 85
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 85,
+                            "PosNA": 88
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 86,
+                            "PosNA": 91
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 87,
+                            "PosNA": 94
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 88,
+                            "PosNA": 97
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 89,
+                            "PosNA": 100
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 90,
+                            "PosNA": 103
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 91,
+                            "PosNA": 106
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 92,
+                            "PosNA": 109
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 93,
+                            "PosNA": 112
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 94,
+                            "PosNA": 115
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 95,
+                            "PosNA": 118
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 96,
+                            "PosNA": 121
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 97,
+                            "PosNA": 124
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 98,
+                            "PosNA": 127
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 99,
+                            "PosNA": 130
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 100,
+                            "PosNA": 133
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 101,
+                            "PosNA": 136
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 102,
+                            "PosNA": 139
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 103,
+                            "PosNA": 142
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 104,
+                            "PosNA": 145
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 105,
+                            "PosNA": 148
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 106,
+                            "PosNA": 151
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 107,
+                            "PosNA": 154
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 108,
+                            "PosNA": 157
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 109,
+                            "PosNA": 160
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 110,
+                            "PosNA": 163
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 111,
+                            "PosNA": 166
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 112,
+                            "PosNA": 169
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 113,
+                            "PosNA": 172
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 114,
+                            "PosNA": 175
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 115,
+                            "PosNA": 178
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 116,
+                            "PosNA": 181
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 117,
+                            "PosNA": 184
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 118,
+                            "PosNA": 187
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 119,
+                            "PosNA": 190
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 120,
+                            "PosNA": 193
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 121,
+                            "PosNA": 196
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 122,
+                            "PosNA": 199
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 123,
+                            "PosNA": 202
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 124,
+                            "PosNA": 205
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 125,
+                            "PosNA": 208
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 126,
+                            "PosNA": 211
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 127,
+                            "PosNA": 214
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 128,
+                            "PosNA": 217
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 129,
+                            "PosNA": 220
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 130,
+                            "PosNA": 223
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 131,
+                            "PosNA": 226
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 132,
+                            "PosNA": 229
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 133,
+                            "PosNA": 232
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 134,
+                            "PosNA": 235
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 135,
+                            "PosNA": 238
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 136,
+                            "PosNA": 241
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 137,
+                            "PosNA": 244
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 138,
+                            "PosNA": 247
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 139,
+                            "PosNA": 250
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 140,
+                            "PosNA": 253
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 141,
+                            "PosNA": 256
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 142,
+                            "PosNA": 259
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 143,
+                            "PosNA": 262
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 144,
+                            "PosNA": 265
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 145,
+                            "PosNA": 268
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 146,
+                            "PosNA": 271
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 147,
+                            "PosNA": 274
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 148,
+                            "PosNA": 277
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 149,
+                            "PosNA": 280
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 150,
+                            "PosNA": 283
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 151,
+                            "PosNA": 286
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 152,
+                            "PosNA": 289
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 153,
+                            "PosNA": 292
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 154,
+                            "PosNA": 295
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 155,
+                            "PosNA": 298
+                        }
+                    ],
+                    "FirstAA": 56,
+                    "FirstNA": 1,
+                    "FrameShifts": [],
+                    "LastAA": 155,
+                    "LastNA": 300,
+                    "Mutations": [
+                        {
+                            "AminoAcidText": "V",
+                            "CodonText": "GTC",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 59,
+                            "RefCodonText": "ATC",
+                            "ReferenceText": "I"
+                        },
+                        {
+                            "AminoAcidText": "S",
+                            "CodonText": "AGT",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 93,
+                            "RefCodonText": "AAT",
+                            "ReferenceText": "N"
+                        }
+                    ],
+                    "Name": "plus_codon",
+                    "Sequence": "CCTCAGGTCACTCTTTGGCAACGACCCCTCGTCACAATAAAGATAGGGGGGCAACTAAAGGAAGCTCTATTAGATACAGGAGCAGATGATACAGTATTAGAAGAAATGAGTTTGCCAGGAAGATGGAAACCAAAAATGATAGGGGGAATTGGAGGTTTTATCAAAGTAAGACAGTATGATCAGATACTCATAGAAATCTGTGGACATAAAGCTATAGGTACAGTATTAGTAGGACCTACACCTGTCAACATAATTGGAAGAAATCTGTTGACTCAGATTGGTTGCACTTTAAATTTT"
+                },
+                {
+                    "AlignedSites": [
+                        {
+                            "LengthNA": 2,
+                            "PosAA": 57,
+                            "PosNA": 1
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 58,
+                            "PosNA": 3
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 59,
+                            "PosNA": 6
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 60,
+                            "PosNA": 9
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 61,
+                            "PosNA": 12
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 62,
+                            "PosNA": 15
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 63,
+                            "PosNA": 18
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 64,
+                            "PosNA": 21
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 65,
+                            "PosNA": 24
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 66,
+                            "PosNA": 27
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 67,
+                            "PosNA": 30
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 68,
+                            "PosNA": 33
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 69,
+                            "PosNA": 36
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 70,
+                            "PosNA": 39
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 71,
+                            "PosNA": 42
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 72,
+                            "PosNA": 45
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 73,
+                            "PosNA": 48
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 74,
+                            "PosNA": 51
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 75,
+                            "PosNA": 54
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 76,
+                            "PosNA": 57
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 77,
+                            "PosNA": 60
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 78,
+                            "PosNA": 63
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 79,
+                            "PosNA": 66
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 80,
+                            "PosNA": 69
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 81,
+                            "PosNA": 72
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 82,
+                            "PosNA": 75
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 83,
+                            "PosNA": 78
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 84,
+                            "PosNA": 81
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 85,
+                            "PosNA": 84
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 86,
+                            "PosNA": 87
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 87,
+                            "PosNA": 90
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 88,
+                            "PosNA": 93
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 89,
+                            "PosNA": 96
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 90,
+                            "PosNA": 99
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 91,
+                            "PosNA": 102
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 92,
+                            "PosNA": 105
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 93,
+                            "PosNA": 108
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 94,
+                            "PosNA": 111
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 95,
+                            "PosNA": 114
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 96,
+                            "PosNA": 117
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 97,
+                            "PosNA": 120
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 98,
+                            "PosNA": 123
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 99,
+                            "PosNA": 126
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 100,
+                            "PosNA": 129
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 101,
+                            "PosNA": 132
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 102,
+                            "PosNA": 135
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 103,
+                            "PosNA": 138
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 104,
+                            "PosNA": 141
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 105,
+                            "PosNA": 144
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 106,
+                            "PosNA": 147
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 107,
+                            "PosNA": 150
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 108,
+                            "PosNA": 153
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 109,
+                            "PosNA": 156
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 110,
+                            "PosNA": 159
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 111,
+                            "PosNA": 162
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 112,
+                            "PosNA": 165
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 113,
+                            "PosNA": 168
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 114,
+                            "PosNA": 171
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 115,
+                            "PosNA": 174
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 116,
+                            "PosNA": 177
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 117,
+                            "PosNA": 180
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 118,
+                            "PosNA": 183
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 119,
+                            "PosNA": 186
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 120,
+                            "PosNA": 189
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 121,
+                            "PosNA": 192
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 122,
+                            "PosNA": 195
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 123,
+                            "PosNA": 198
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 124,
+                            "PosNA": 201
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 125,
+                            "PosNA": 204
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 126,
+                            "PosNA": 207
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 127,
+                            "PosNA": 210
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 128,
+                            "PosNA": 213
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 129,
+                            "PosNA": 216
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 130,
+                            "PosNA": 219
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 131,
+                            "PosNA": 222
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 132,
+                            "PosNA": 225
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 133,
+                            "PosNA": 228
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 134,
+                            "PosNA": 231
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 135,
+                            "PosNA": 234
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 136,
+                            "PosNA": 237
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 137,
+                            "PosNA": 240
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 138,
+                            "PosNA": 243
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 139,
+                            "PosNA": 246
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 140,
+                            "PosNA": 249
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 141,
+                            "PosNA": 252
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 142,
+                            "PosNA": 255
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 143,
+                            "PosNA": 258
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 144,
+                            "PosNA": 261
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 145,
+                            "PosNA": 264
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 146,
+                            "PosNA": 267
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 147,
+                            "PosNA": 270
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 148,
+                            "PosNA": 273
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 149,
+                            "PosNA": 276
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 150,
+                            "PosNA": 279
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 151,
+                            "PosNA": 282
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 152,
+                            "PosNA": 285
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 153,
+                            "PosNA": 288
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 154,
+                            "PosNA": 291
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 155,
+                            "PosNA": 294
+                        }
+                    ],
+                    "FirstAA": 57,
+                    "FirstNA": 1,
+                    "FrameShifts": [],
+                    "LastAA": 155,
+                    "LastNA": 296,
+                    "Mutations": [
+                        {
+                            "AminoAcidText": "X",
+                            "CodonText": "CC-",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 57,
+                            "RefCodonText": "CCT",
+                            "ReferenceText": "P"
+                        },
+                        {
+                            "AminoAcidText": "S",
+                            "CodonText": "TCA",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 58,
+                            "RefCodonText": "CAG",
+                            "ReferenceText": "Q"
+                        },
+                        {
+                            "AminoAcidText": "G",
+                            "CodonText": "GGT",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 59,
+                            "RefCodonText": "ATC",
+                            "ReferenceText": "I"
+                        },
+                        {
+                            "AminoAcidText": "P",
+                            "CodonText": "CCT",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 60,
+                            "RefCodonText": "ACT",
+                            "ReferenceText": "T"
+                        },
+                        {
+                            "AminoAcidText": "S",
+                            "CodonText": "AGT",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 93,
+                            "RefCodonText": "AAT",
+                            "ReferenceText": "N"
+                        }
+                    ],
+                    "Name": "del1_after_3codons",
+                    "Sequence": "CCTCAGGTCCTCTTTGGCAACGACCCCTCGTCACAATAAAGATAGGGGGGCAACTAAAGGAAGCTCTATTAGATACAGGAGCAGATGATACAGTATTAGAAGAAATGAGTTTGCCAGGAAGATGGAAACCAAAAATGATAGGGGGAATTGGAGGTTTTATCAAAGTAAGACAGTATGATCAGATACTCATAGAAATCTGTGGACATAAAGCTATAGGTACAGTATTAGTAGGACCTACACCTGTCAACATAATTGGAAGAAATCTGTTGACTCAGATTGGTTGCACTTTAAATTTT\n"
+                },
+                {
+                    "AlignedSites": [
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 56,
+                            "PosNA": 1
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 57,
+                            "PosNA": 4
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 58,
+                            "PosNA": 7
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 59,
+                            "PosNA": 10
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 60,
+                            "PosNA": 13
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 61,
+                            "PosNA": 16
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 62,
+                            "PosNA": 19
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 63,
+                            "PosNA": 22
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 64,
+                            "PosNA": 25
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 65,
+                            "PosNA": 28
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 66,
+                            "PosNA": 31
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 67,
+                            "PosNA": 34
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 68,
+                            "PosNA": 37
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 69,
+                            "PosNA": 40
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 70,
+                            "PosNA": 43
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 71,
+                            "PosNA": 46
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 72,
+                            "PosNA": 49
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 73,
+                            "PosNA": 52
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 74,
+                            "PosNA": 55
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 75,
+                            "PosNA": 58
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 76,
+                            "PosNA": 61
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 77,
+                            "PosNA": 64
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 78,
+                            "PosNA": 67
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 79,
+                            "PosNA": 70
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 80,
+                            "PosNA": 73
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 81,
+                            "PosNA": 76
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 82,
+                            "PosNA": 79
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 83,
+                            "PosNA": 82
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 84,
+                            "PosNA": 85
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 85,
+                            "PosNA": 88
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 86,
+                            "PosNA": 91
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 87,
+                            "PosNA": 94
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 88,
+                            "PosNA": 97
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 89,
+                            "PosNA": 100
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 90,
+                            "PosNA": 103
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 91,
+                            "PosNA": 106
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 92,
+                            "PosNA": 109
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 93,
+                            "PosNA": 112
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 94,
+                            "PosNA": 115
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 95,
+                            "PosNA": 118
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 96,
+                            "PosNA": 121
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 97,
+                            "PosNA": 124
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 98,
+                            "PosNA": 127
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 99,
+                            "PosNA": 130
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 100,
+                            "PosNA": 133
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 101,
+                            "PosNA": 136
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 102,
+                            "PosNA": 139
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 103,
+                            "PosNA": 142
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 104,
+                            "PosNA": 145
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 105,
+                            "PosNA": 148
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 106,
+                            "PosNA": 151
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 107,
+                            "PosNA": 154
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 108,
+                            "PosNA": 157
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 109,
+                            "PosNA": 160
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 110,
+                            "PosNA": 163
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 111,
+                            "PosNA": 166
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 112,
+                            "PosNA": 169
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 113,
+                            "PosNA": 172
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 114,
+                            "PosNA": 175
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 115,
+                            "PosNA": 178
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 116,
+                            "PosNA": 181
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 117,
+                            "PosNA": 184
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 118,
+                            "PosNA": 187
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 119,
+                            "PosNA": 190
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 120,
+                            "PosNA": 193
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 121,
+                            "PosNA": 196
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 122,
+                            "PosNA": 199
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 123,
+                            "PosNA": 202
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 124,
+                            "PosNA": 205
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 125,
+                            "PosNA": 208
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 126,
+                            "PosNA": 211
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 127,
+                            "PosNA": 214
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 128,
+                            "PosNA": 217
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 129,
+                            "PosNA": 220
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 130,
+                            "PosNA": 223
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 131,
+                            "PosNA": 226
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 132,
+                            "PosNA": 229
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 133,
+                            "PosNA": 232
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 134,
+                            "PosNA": 235
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 135,
+                            "PosNA": 238
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 136,
+                            "PosNA": 241
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 137,
+                            "PosNA": 244
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 138,
+                            "PosNA": 247
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 139,
+                            "PosNA": 250
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 140,
+                            "PosNA": 253
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 141,
+                            "PosNA": 256
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 142,
+                            "PosNA": 259
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 143,
+                            "PosNA": 262
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 144,
+                            "PosNA": 265
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 145,
+                            "PosNA": 268
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 146,
+                            "PosNA": 271
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 147,
+                            "PosNA": 274
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 148,
+                            "PosNA": 277
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 149,
+                            "PosNA": 280
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 150,
+                            "PosNA": 283
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 151,
+                            "PosNA": 286
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 152,
+                            "PosNA": 289
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 153,
+                            "PosNA": 292
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 154,
+                            "PosNA": 295
+                        },
+                        {
+                            "LengthNA": 3,
+                            "PosAA": 155,
+                            "PosNA": 298
+                        }
+                    ],
+                    "FirstAA": 56,
+                    "FirstNA": 1,
+                    "FrameShifts": [],
+                    "LastAA": 155,
+                    "LastNA": 300,
+                    "Mutations": [
+                        {
+                            "AminoAcidText": "P",
+                            "CodonText": "CCT",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 56,
+                            "RefCodonText": "TTC",
+                            "ReferenceText": "F"
+                        },
+                        {
+                            "AminoAcidText": "Q",
+                            "CodonText": "CAG",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 57,
+                            "RefCodonText": "CCT",
+                            "ReferenceText": "P"
+                        },
+                        {
+                            "AminoAcidText": "V",
+                            "CodonText": "GTC",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 58,
+                            "RefCodonText": "CAG",
+                            "ReferenceText": "Q"
+                        },
+                        {
+                            "AminoAcidText": "K",
+                            "CodonText": "AAA",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 59,
+                            "RefCodonText": "ATC",
+                            "ReferenceText": "I"
+                        },
+                        {
+                            "AminoAcidText": "S",
+                            "CodonText": "AGT",
+                            "InsertedCodonsText": "",
+                            "IsDeletion": False,
+                            "IsInsertion": False,
+                            "Position": 93,
+                            "RefCodonText": "AAT",
+                            "ReferenceText": "N"
+                        }
+                    ],
+                    "Name": "insAAA_after_3codons",
+                    "Sequence": ""
+                }
+            ]
+
+        res_records = self.aligner.align_file(filename)
+
+        self.assertEqual(exp_records, res_records)
+
     def testCreateGeneMap(self):
         # Setting params
         exp_map = {'IN': (715, 1003),
@@ -1176,7 +5098,7 @@ class TestNucAminoAligner(unittest.TestCase):
     def testGetMutations(self):
         # Setting params
         self.maxDiff = None
-        records = self.aligner.align_file(r'tests\hxb2-pr.fa', program='nuc')
+        records = self.aligner.align_file(r'hxb2-pr.fa', program='nuc')
         
         exp_sequence_headers = ['HXB2-PR', 'shift1', 'shift2', 'plus1', 'plus_codon', 'del1_after_3codons', 'insAAA_after_3codons']
         exp_file_genes = [[('PR', 1, 99, 1, 294)], [('PR', 2, 99, 3, 293)], [('PR', 2, 99, 2, 292)], [('PR', 1, 99, 2, 295)], [('PR', 1, 99, 1, 297)], [('PR', 1, 99, 1, 293)], [('PR', 1, 99, 1, 297)]]  
