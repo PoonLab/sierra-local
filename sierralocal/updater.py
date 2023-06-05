@@ -15,14 +15,14 @@ def update_apobec():
     print('Downloading the latest APOBEC DRMS File')
 
     try:
-        url = 'https://raw.githubusercontent.com/hivdb/hivfacts/main/data/apobecs/apobec_drms.json'
-        filepath = os.path.join(mod_path, "data", "apobec_drms.json")
+        url = 'https://raw.githubusercontent.com/hivdb/hivfacts/main/data/apobecs/apobec_drms.csv'
+        filepath = os.path.join(mod_path, "data", "apobec_drms.csv")
         request = requests.get(url, allow_redirects=True)
         with open(filepath, 'wb') as file:
             file.write(request.content)
         print("Updated APOBEC DRMs into {}".format(filepath))
     except: # pragma: no cover
-        print("Unable to update APOBEC DRMs. Try manually downloading the APOBEC DRM JSON into data/apobec_drms.json")
+        print("Unable to update APOBEC DRMs. Try manually downloading the APOBEC DRM JSON into data/apobec_drms.csv")
 
     return filepath
 

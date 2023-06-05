@@ -12,7 +12,7 @@ class TestScore(unittest.TestCase):
 
     def testScorefile(self):
         # Setting params
-        input_file = r'tests\hxb2-pr.fa'
+        input_file = r'tests/hxb2-pr.fa'
 
         exp_sequence_headers = ['HXB2-PR', 'shift1', 'shift2',
                                 'plus1', 'plus_codon', 'del1_after_3codons',
@@ -104,7 +104,7 @@ class TestScore(unittest.TestCase):
 
     def testScorefilePostAlign(self):
         # Setting params
-        input_file = r'tests\hxb2-pr.fa'
+        input_file = r'tests/hxb2-pr.fa'
         res_sequence_headers, res_sequence_scores, res_ordered_mutation_list, res_file_genes, \
         res_sequence_lengths, res_file_trims, res_subtypes, na_seq = scorefile(input_file=input_file, algorithm=self.algorithm)
 

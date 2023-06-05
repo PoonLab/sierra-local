@@ -22,7 +22,7 @@ class TestGetInputSequences(unittest.TestCase):
 
     def testGetInputSequences(self):
         # Setting params
-        input_file = r'tests\hxb2-pr.fa'
+        input_file = r'tests/hxb2-pr.fa'
         
         with open(input_file) as handle:
             list_result = get_input_sequences(handle=handle)
