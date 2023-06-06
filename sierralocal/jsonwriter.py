@@ -1,15 +1,17 @@
-import json
-import xml.etree.ElementTree as xml
+import os
 import re
-from sierralocal.hivdb import HIVdb
 import csv
+import json
 from pathlib import Path
-import sys, os
+import xml.etree.ElementTree as xml
+from sierralocal.hivdb import HIVdb
+import hashlib
+
 
 class JSONWriter():
     def __init__(self, algorithm):
         # possible alternative drug abbrvs
-        self.names = {'3TC':'LMV'}
+        self.names = {'3TC': 'LMV'}
 
         # Set up algorithm data
         self.algorithm = algorithm
@@ -23,72 +25,161 @@ class JSONWriter():
         self.comments = self.algorithm.parse_comments(self.algorithm.root)
 
         # Load comments files stored locally. These are distributed in the repo for now.
-        dest = algorithm.json_filename
-        with open(dest,'r') as csvfile:
-            self.ApobecDRMs = json.load(csvfile)
+        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'INSTI-comments.csv')
+        with open(dest, 'r') as insti_file:
+            self.insti_comments = dict(csv.reader(insti_file, delimiter='\t'))
 
-        dest = str(Path(os.path.dirname(__file__))/'data'/'INSTI-comments.csv')
-        with open(dest, 'r') as INSTI_file:
-            self.INSTI_comments = dict(csv.reader(INSTI_file, delimiter='\t'))
+        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'PI-comments.csv')
+        with open(dest, 'r') as pi_file:
+            self.pi_comments = dict(csv.reader(pi_file, delimiter='\t'))
 
-        dest = str(Path(os.path.dirname(__file__))/'data'/'PI-comments.csv')
-        with open(dest, 'r') as PI_file:
-            self.PI_comments = dict(csv.reader(PI_file, delimiter='\t'))
+        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'RT-comments.csv')
+        with open(dest, 'r') as rt_file:
+            self.rt_comments = dict(csv.reader(rt_file, delimiter='\t'))
 
-        dest = str(Path(os.path.dirname(__file__))/'data'/'RT-comments.csv')
-        with open(dest, 'r') as RT_file:
-            self.RT_comments = dict(csv.reader(RT_file, delimiter='\t'))
+        # make dictionary for isUnusual
+        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'rx-all_subtype-all.csv')
+        with open(dest, 'r', encoding='utf-8-sig') as is_unusual_file:
+            is_unusual_file = csv.DictReader(is_unusual_file)
+            self.is_unusual_dic = {}
+            for row in is_unusual_file:
+                gene = row['gene']
+                pos = row['position']
+                aa = row['aa']
+                unusual = row['isUnusual']
+                if gene not in self.is_unusual_dic:
+                    self.is_unusual_dic.update({gene: {}})
+                if pos not in self.is_unusual_dic[gene]:
+                    self.is_unusual_dic[gene].update({pos: {}})
+                self.is_unusual_dic[gene][pos].update({aa: unusual})
 
+        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'sdrms_hiv1.csv')
+        with open(dest, 'r', encoding='utf-8-sig') as sdrm_files:
+            sdrm_files = csv.DictReader(sdrm_files)
+            self.sdrm_dic = {}
+            for row in sdrm_files:
+                gene = row['gene']
+                pos = row['position']
+                aa = row['aa']
+                if gene not in self.sdrm_dic:
+                    self.sdrm_dic.update({gene: {}})
+                if pos not in self.sdrm_dic[gene]:
+                    self.sdrm_dic[gene].update({pos: aa})
+                else:
+                    self.sdrm_dic[gene][pos] += aa
 
-    def formatValidationResults(self, validated):
+        # make dictionary for APOBEC DRMS
+        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'apobec_drms.csv')
+        with open(dest, 'r', encoding='utf-8-sig') as apobec_file:
+            apobec_file = csv.DictReader(apobec_file)
+            self.apobec_drm_dic = {}
+            for row in apobec_file:
+                gene = row['gene']
+                pos = row['position']
+                aa = row['aa']
+                if gene not in self.apobec_drm_dic:
+                    self.apobec_drm_dic.update({gene: {}})
+                if pos not in self.apobec_drm_dic[gene]:
+                    self.apobec_drm_dic[gene].update({pos: aa})
+                else:
+                    self.apobec_drm_dic[gene][pos] += aa
+
+        # make dictionary for primary type
+        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'mutation-type-pairs_hiv1.csv')
+        with open(dest, 'r', encoding='utf-8-sig') as mut_type_pairs1_files:
+            mut_type_pairs1_files = csv.DictReader(mut_type_pairs1_files)
+            self.primary_type_dic = {}
+            for row in mut_type_pairs1_files:
+                gene = row['gene']
+                pos = row['position']
+                aa = row['aas']
+                mut = row['mutationType']
+                if gene not in self.primary_type_dic:
+                    self.primary_type_dic.update({gene: {}})
+                if pos not in self.primary_type_dic[gene]:
+                    self.primary_type_dic[gene].update({pos: {}})
+                self.primary_type_dic[gene][pos].update({aa: mut})
+
+        # make dictionary for apobec mutations
+        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'apobecs.csv')
+        with open(dest, 'r', encoding='utf-8-sig') as apobec_mutations:
+            apobec_mutations = csv.DictReader(apobec_mutations)
+            self.apobec_mutations_dic = {}
+            for row in apobec_mutations:
+                gene = row['gene']
+                pos = row['position']
+                aa = row['aa']
+                if gene not in self.apobec_mutations_dic:
+                    self.apobec_mutations_dic.update({gene: {}})
+                if pos not in self.apobec_mutations_dic[gene]:
+                    self.apobec_mutations_dic[gene].update({pos: ""})
+                if aa not in self.apobec_mutations_dic[gene][pos]:
+                    self.apobec_mutations_dic[gene][pos] = self.apobec_mutations_dic[gene][pos] + aa
+
+    def format_validation_results(self, validated):
         """
-        Returns a list of dictionaries detailing validation results, meant for results output.
-        @param validated: list of tuples from validateSequence() function
-        @return validationResults: list of dictionaries
+        Returns a list of dictionaries detailing validation results,
+        meant for results output.
+        @param validated: list, list of tuples from validate_sequence() function
+        @return validation_results: list, list of dictionaries
         """
-        validationResults = [{'level':v[0], 'message':v[1]} for v in validated]
-        return validationResults
+        validation_results = [{'level': v[0], 'message': v[1]} for v in validated]
+        return validation_results
 
-    def formatDrugResistance(self, scores, gene):
+    def format_drug_resistance(self, scores, gene):
         """
-        Returns formatted drug resistance and score breakdowns, meant for results output.
-        @param scores: results of one query from score_alg.score_drugs()
-        @param genes: gene found in the sequence
-        @return drugResistance: a list of one dictionary encoding scores and descriptions
+        Returns formatted drug resistance and score breakdowns,
+        meant for results output.
+        @param scores: dict, results of one query from score_alg.score_drugs()
+        @param gene: str, gene found in the sequence
+        @return drug_resistance: dict, one dictionary encoding
+        scores and descriptions
         """
-        drugResistance = {}
-        drugResistance['version'] = {}
-        drugResistance['version']['text'] = self.algorithm.version
-        drugResistance['version']['publishDate'] = self.algorithm.version_date
-        drugResistance['gene'] = {'name' : gene}
-        drugScores = []
+        drug_resistance = {}
+        drug_resistance['version'] = {}
+        drug_resistance['version']['text'] = self.algorithm.version
+        drug_resistance['version']['publishDate'] = self.algorithm.version_date
+        drug_resistance['gene'] = {'name': gene}
+        drug_scores = []
 
         for drugclass in self.definitions['gene'][gene]:
             classlist = self.definitions['drugclass'][drugclass]
             for drug in classlist:
-                drugScore = {}
+                drug_score = {}
 
-                #Infer resistance level text from the score and globalrange
-                resistancelevel = -1
+                # Infer resistance level text from the score and globalrange
+                resistance_level = -1
                 for key in self.globalrange:
                     maximum = float(self.globalrange[key]['max'])
                     minimum = float(self.globalrange[key]['min'])
                     if minimum <= scores[drug][0] <= maximum:
-                        resistancelevel = str(key)
+                        resistance_level = str(key)
                         break
-                resistance_text = self.levels[resistancelevel]
+                resistance_text = self.levels[resistance_level]
 
-                drugScore['drugClass'] = {'name': drugclass} #e.g. NRTI
-                drugScore['drug'] = {}
+                drug_score['drugClass'] = {'name': drugclass}  # e.g. NRTI
+                drug_score['drug'] = {}
                 if drug in self.names:
-                    drugScore['drug']['name'] = self.names[drug]
+                    drug_score['drug']['name'] = self.names[drug]
                 else:
-                    drugScore['drug']['name'] = drug.replace('/r', '')
+                    drug_score['drug']['name'] = drug.replace('/r', '')
+                drug_score['drug']['displayAbbr'] = drug
+                drug_score['score'] = scores[drug][0]
 
-                drugScore['drug']['displayAbbr'] = drug
-                drugScore['score'] = float(scores[drug][0]) # score for this paritcular drug
+                # infer level from score of this drug
+                if scores[drug][0] < 10:
+                    drug_score['level'] = 1
+                elif scores[drug][0] < 15:
+                    drug_score['level'] = 2
+                elif scores[drug][0] < 30:
+                    drug_score['level'] = 3
+                elif scores[drug][0] < 60:
+                    drug_score['level'] = 4
+                else:
+                    drug_score['level'] = 5
+
                 # create partial score, for each mutation, datastructure
-                drugScore['partialScores'] = []
+                drug_score['partialScores'] = []
                 for index, pscore in enumerate(scores[drug][1]):
                     pscore = float(pscore)
                     if not pscore == 0.0:
@@ -97,112 +188,174 @@ class JSONWriter():
                         for combination in scores[drug][2][index]:
                             # find the mutation classification "type" based on the gene
                             type_ = drugclass
-                            pos = re.findall(u'([0-9]+)',combination)[0]
-                            muts = re.findall(u'(?<=[0-9])([A-Za-z])+',combination)[0]
-                            #print(pos, muts)
+                            pos = re.findall(u'([0-9]+)', combination)[0]
+                            muts = re.findall(u'(?<=[0-9])([A-Za-z])+', combination)[0]
                             if gene == 'IN':
-                                for key in self.INSTI_comments:
+                                for key in self.insti_comments:
                                     if pos in key and muts in key:
-                                        type_ = self.INSTI_comments[key]
+                                        type_ = self.insti_comments[key]
                                         break
                             elif gene == 'PR':
-                                for key in self.PI_comments:
+                                for key in self.pi_comments:
                                     if pos in key and muts in key:
-                                        type_ = self.PI_comments[key]
+                                        type_ = self.pi_comments[key]
                                         break
                             elif gene == 'RT':
-                                for key in self.RT_comments:
+                                for key in self.rt_comments:
                                     if pos in key and muts in key:
-                                        type_ = self.RT_comments[key]
+                                        type_ = self.rt_comments[key]
                                         break
                             mut = {}
                             mut['text'] = combination.replace('d', 'Deletion')
                             mut['primaryType'] = type_
                             mut['comments'] = [{
-                                'type' : type_,
-                                'text' : self.findComment(gene, combination, self.comments, self.definitions['comment'])
+                                'type': type_,
+                                'text': self.find_comment(gene,
+                                                          combination,
+                                                          self.comments,
+                                                          self.definitions['comment'])
                             }]
-                            pscoredict['mutations'].append(mut)                    
+                            pscoredict['mutations'].append(mut)
                         pscoredict['score'] = pscore
-                        drugScore['partialScores'].append(pscoredict)
-                drugScore['text'] = list(resistance_text)[0] #resistance level
-                drugScores.append(drugScore)
-        drugResistance['drugScores'] = drugScores
-        return drugResistance
+                        drug_score['partialScores'].append(pscoredict)
+                drug_score['text'] = list(resistance_text)[0]  # resistance level
+                drug_scores.append(drug_score)
+        drug_resistance['drugScores'] = drug_scores
+        return drug_resistance
 
-    def formatAlignedGeneSequences(self, ordered_mutation_list, gene, firstlastAA):
+    def format_aligned_gene_sequences(self, ordered_mutation_list,
+                                      gene, first_last_aa):
         """
-        Main function to format mutations into dictionary for results output
-        @param ordered_mutation_list: ordered list of mutations in the query sequence relative to reference
-        @param genes: genes found in the query sequence
-        @param firstlastNA: positions tuple of the first and last nucleotide in the query sequence
-        @return: list of one dictionary element describing mutations in a single query sequence
+        Main function to format mutations into dictionary for
+        results output
+        @param ordered_mutation_list: list, ordered list of mutations
+        in the query sequence relative to reference
+        @param gene: str, genes found in the query sequence
+        @param first_last_aa: tuple, positions tuple of the first and last
+        nucleotide in the query sequence
+        @return dic: dict, dictionary describing mutations in a single
+        query sequence
         """
         dic = {}
-        dic['firstAA'] = int(firstlastAA[0])
-        dic['lastAA'] = int(firstlastAA[1])
+        dic['firstAA'] = int(first_last_aa[0])
+        dic['lastAA'] = int(first_last_aa[1])
         dic['gene'] = {'name': gene, 'length': None}  # TODO: output length
         dic['mutations'] = []
-        for mutation in ordered_mutation_list:
+        dic['SDRMs'] = []
+        mutation_line = []
+        mutation_line.extend([" - " for i in range(int(first_last_aa[0]), int(first_last_aa[1]) + 1)])
+
+        for idx, mutation in enumerate(ordered_mutation_list):
             mutdict = {}
             mutdict['consensus'] = mutation[2]
             mutdict['position'] = int(mutation[0])
-            mutdict['AAs'] = mutation[1]
+            mutdict['AAs'] = "".join(sorted(mutation[1]))
             mutdict['isInsertion'] = mutation[1] == '_'
             mutdict['isDeletion'] = mutation[1] == '-'
-            mutdict['isApobecDRM'] = self.isApobecDRM(gene, mutation[2], mutation[0], mutation[1])
+            mutdict['isApobecMutation'] = self.is_apobec_mutation(gene,
+                                                                  mutation[0],
+                                                                  mutation[1])
+            mutdict['isApobecDRM'] = self.is_apobec_drm(gene,
+                                                        mutation[2],
+                                                        mutation[0],
+                                                        mutation[1])
+            mutdict['isUnusual'] = self.is_unusual(gene,
+                                                   mutation[0],
+                                                   mutation[1],
+                                                   mutation[3])
+            mutdict['isSDRM'] = self.is_sdrm(gene,
+                                             mutation[0],
+                                             mutation[1])
+            if self.is_sdrm(gene,
+                            mutation[0],
+                            mutation[1]):
+                dic['SDRMs'].append({'text': mutation[2] + str(mutation[0]) + mutation[3]})
+            mutdict['hasStop'] = self.has_stop(mutation, mutation[3])
+            mutdict['primaryType'] = self.primary_type(gene,
+                                                       mutation[0],
+                                                       mutation[1])
+            if mutdict['AAs'] == '-':
+                mutdict['text'] = mutation[2] + str(mutation[0]) + 'del'
+            else:
+                mutdict['text'] = mutation[2] + str(mutation[0]) + mutation[3]
+            if int(first_last_aa[0]) <= int(mutation[0]) <= int(first_last_aa[1]):
+                mutation_line[int(mutation[0]) - int(first_last_aa[1]) - 1] = f"{''.join(sorted(mutation[1])):^3}"
             dic['mutations'].append(mutdict)
         return dic
 
-    def formatInputSequence(self, header):
+    def format_input_sequence(self, header, sequence):
         out = {
-            'header' : header
-            #TODO: SHA512 hash of the gene sequence
+            'header': header,
+            'SHA512': hashlib.sha512(str.encode(sequence)).hexdigest()
         }
         return out
 
-    def write_to_json(self, filename, file_headers, file_scores, file_genes, file_mutation_lists,
-                      file_sequence_lengths, file_trims, file_subtypes):
-        '''
+    def write_to_json(self, filename, file_headers, file_scores,
+                      file_genes, file_mutation_lists, file_sequence_lengths,
+                      file_trims, file_subtypes, na_sequence):
+        """
         The main function to write passed result to a JSON file
-        :param filename: the filename to write the JSON to
-        :param names: list of sequence headers
-        :param scores: list of sequence scores
-        :param genes: list of single genes in queries
-        :param ordered_mutation_list: ordered list of mutations in the query sequence relative to reference
-        '''
+        @param filename: str, the file path to write the JSON to
+        @param file_headers: list, list of sequence header strings
+        @param file_scores: list, list of single genes in queries
+        list of sequence scores
+        @param file_genes: list, list of single genes in queries
+        @param file_mutation_lists: ordered list of mutations 
+        in the query sequence relative to reference
+        @param file_sequence_lengths: list, list of lists of ints denoting
+        sequence lengths
+        @param file_trims: list, list of lists of tuples of ints 
+        @param file_subtypes: list, list of subtype strings
+        @param na_sequence: dict, {sequence name: associated NA sequence}
+        """
         out = []
         for index, scores in enumerate(file_scores):
             genes = file_genes[index]
 
             data = {}
-            data['inputSequence'] = self.formatInputSequence(file_headers[index])
+            data['inputSequence'] = self.format_input_sequence(file_headers[index], na_sequence[file_headers[index]])
             data['subtypeText'] = file_subtypes[index]
 
-            validation = self.validateSequence(genes, file_sequence_lengths[index], file_trims[index])
-            data['validationResults'] = self.formatValidationResults(validation)
+            validation = self.validate_sequence(genes,
+                                                file_sequence_lengths[index],
+                                                file_trims[index])
+            data['validationResults'] = self.format_validation_results(validation)
 
             data['alignedGeneSequences'] = []
             data['drugResistance'] = []
+
             if not 'CRITICAL' in validation:
                 for idx, gene_info in enumerate(genes):
-                    gene, firstAA, lastAA, firstNA, lastNA = gene_info
+                    gene, first_aa, last_aa, first_na, last_na = gene_info
                     omlist = file_mutation_lists[index][idx]
-                    nalist = (firstAA, lastAA)
+                    nalist = (first_aa, last_aa)
                     data['alignedGeneSequences'].append(
-                        self.formatAlignedGeneSequences(omlist, gene, nalist)
+                        self.format_aligned_gene_sequences(omlist,
+                                                           gene,
+                                                           nalist)
                     )
-                    data['drugResistance'].append(self.formatDrugResistance(scores[idx], gene))
+                    data['drugResistance'].append(
+                        self.format_drug_resistance(scores[idx], gene)
+                    )
 
             out.append(data)
 
         # dump data to JSON file
-        with open(filename,'w+') as outfile:
+        with open(filename, 'w+') as outfile:
             json.dump(out, outfile, indent=2)
             print("Writing JSON to file {}".format(filename))
 
-
-    def validateSequence(self, genes, lengths, seq_trims):
+    def validate_sequence(self, genes, lengths, seq_trims):
+        """
+        Function to validate a sequence and return a
+        list of validation results
+        @param genes: list, list of single genes in queries
+        @param lengths: list, list of lists of ints denoting
+        sequence lengths
+        @param seq_trims: list, list of lists of tuples of ints
+        @return validation_results: list, lsit of either warning 
+        or critical error messages
+        """
         validation_results = []
 
         for index, gene in enumerate(genes):
@@ -245,10 +398,18 @@ class JSONWriter():
 
         return validation_results
 
-    def findComment(self, gene, mutation, comments, details):
-        trunc_mut = re.findall(r'\d+\D',mutation)[0] #163K
-        pos = re.findall(u'([0-9]+)',trunc_mut)[0]
-        muts = re.findall(u'(?<=[0-9])([A-Za-z])+',trunc_mut)[0]
+    def find_comment(self, gene, mutation, comments, details):
+        """
+        @param gene: str, genes found in the query sequence
+        @param mutation: str, TODO: incomplete
+        @param comments: dict, value in comments attribute of HIVdb object
+        @param details: dict, value of HIVdb object's definitions 
+        attribute's "comment" key
+        @return: str, TODO: incomplete
+        """
+        trunc_mut = re.findall(r'\d+\D', mutation)[0]  # 163K
+        pos = re.findall(u'([0-9]+)', trunc_mut)[0]
+        muts = re.findall(u'(?<=[0-9])([A-Za-z])+', trunc_mut)[0]
         for g, mutationdict in comments.items():
             for item in mutationdict.keys():
                 if pos in item and muts in item:
@@ -256,15 +417,110 @@ class JSONWriter():
                     if full_mut in details and g == gene:
                         return details[full_mut]['1']
 
-    def isApobecDRM(self, gene, consensus, position, AA):
-        ls = [[row['gene'], str(row['position'])] for row in self.ApobecDRMs]
-        if [gene, str(position)] in ls:
-            i = ls.index([gene, str(position)])
-            for aa in AA:
-                if aa in self.ApobecDRMs[i]['aa']:
-                    return True
+    def is_apobec_drm(self, gene, consensus, position, AA):
+        """
+        see if specific amino acid mutation is an apobec drm through checking hivbd facts
+        @param gene: str, RT, IN, PR
+        @param consensus: str, consensus amino acid
+        @param position: int, position of mutation relative to POL
+        @param AA: new amino acid
+        @return: bool
+        """
+        position = str(position)
+        if gene in self.apobec_drm_dic:
+            if position in self.apobec_drm_dic[gene]:
+                for aa in AA:
+                    if aa in self.apobec_drm_dic[gene][position]:
+                        return True
         return False
+
+    def is_sdrm(self, gene, position, AA):
+        """
+        see if specific amino acid mutation is a sdrm through checking hivbd facts
+        @param gene: str, RT, IN, PR
+        @param position: int, position of mutation relative to POL
+        @param AA: new amino acid
+        @return: bool
+        """
+        position = str(position)
+        if gene in self.sdrm_dic:
+            if position in self.sdrm_dic[gene]:
+                for aa in AA:
+                    if aa in self.sdrm_dic[gene][position]:
+                        return True
+        return False
+
+    def has_stop(self, ordered_mut_list_index, text):
+        """
+        see if specific amino acid mutation results in nonsense mutation
+        @param: ordered_mut_list_index, list, mutations of specific NA sequence
+        @param: text, str, translated amino acid from codon of mutation
+        @return: bool
+        """
+        if text == 'X':
+            return False
+
+        if "*" in ordered_mut_list_index[1]:
+            return True
+        return False
+
+    def is_apobec_mutation(self, gene, position, AA):
+        """
+        see if specific amino acid mutation is an apobec mutation through checking hivbd facts
+        @param gene: str, RT, IN, PR
+        @param position: int, position of mutation relative to POL
+        @param AA: new amino acid
+        @return: bool
+        """
+        position = str(position)
+        if gene in self.apobec_mutations_dic:
+            if position in self.apobec_mutations_dic[gene]:
+                for aa in AA:
+                    if aa in self.apobec_mutations_dic[gene][position]:
+                        return True
+        return False
+
+    def is_unusual(self, gene, position, AA, text):
+        """
+        see if specific amino acid mutation 'is unusual' through checking hivbd facts
+        @param gene: str, RT, IN, PR
+        @param position: int, position of mutation relative to POL
+        @param AA: new amino acid
+        @return: bool
+        """
+        position = str(position)
+        # The AA == X is stated in hivdb sierra core java files
+        if AA == 'X':
+            return True
+        if text == 'X':  # this just fixes most of the errors, can't find source
+            return False
+        if gene in self.is_unusual_dic:
+            if position in self.is_unusual_dic[gene]:
+                for aa in AA:
+                    if aa in self.is_unusual_dic[gene][position]:
+                        if self.is_unusual_dic[gene][position][aa].lower() == 'true':
+                            return True
+        return False
+
+    def primary_type(self, gene, position, AA):
+        """
+        see if specific amino acid's primary type through checking hivbd facts
+        @param gene: str, RT, IN, PR
+        @param position: int, position of mutation relative to POL
+        @param AA: new amino acid
+        @return: bool
+        """
+        position = str(position)
+        if gene in self.primary_type_dic:
+            if position in self.primary_type_dic[gene]:
+                keys = self.primary_type_dic[gene][position].keys()
+                for aa in AA:
+                    for key in keys:
+                        if aa in key:
+                            return self.primary_type_dic[gene][position][key]
+        return "Other"
+
 
 if __name__ == "__main__":
     writer = JSONWriter(HIVdb())
-    assert (writer.isApobecDRM("IN", "G", 163, "TRAG")) == True
+    assert (writer.is_apobec_drm("IN", "G", 163, "TRAG")) == True

@@ -4,6 +4,7 @@ hivdb/
 working/
 *.tsv
 *.json
+!apobec*.json
 *.csv
 *.fa
 ./nucamino-linux-amd64
