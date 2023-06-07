@@ -126,7 +126,7 @@ class TestNucAminoAligner(unittest.TestCase):
         self.assertEqual(exp_aligned, res_aligned)
 
     def testGetAlignedSeqPost(self):
-        filename = r'hxb2-pr.fa'
+        filename = r'tests/hxb2-pr.fa'
         # Setting params
         sites = [{'LengthNA': 3, 'PosAA': 58, 'PosNA': 4},
                  {'LengthNA': 3, 'PosAA': 59, 'PosNA': 7},
@@ -235,7 +235,7 @@ class TestNucAminoAligner(unittest.TestCase):
 
     def testAlignFile(self):
         # Setting params
-        filename = r'hxb2-pr.fa'
+        filename = r'tests/hxb2-pr.fa'
 
         exp_records = \
             [{'AlignedSites': [{'LengthNA': 3, 'PosAA': 57, 'PosNA': 1},
@@ -1156,7 +1156,7 @@ class TestNucAminoAligner(unittest.TestCase):
 
     def testAlignFilePost(self):
         # Setting params
-        filename = r'hxb2-pr.fa'
+        filename = r'tests/hxb2-pr.fa'
 
         exp_records = \
             [
@@ -5098,7 +5098,7 @@ class TestNucAminoAligner(unittest.TestCase):
     def testGetMutations(self):
         # Setting params
         self.maxDiff = None
-        records = self.aligner.align_file(r'hxb2-pr.fa', program='nuc')
+        records = self.aligner.align_file(r'tests/hxb2-pr.fa', program='nuc')
         
         exp_sequence_headers = ['HXB2-PR', 'shift1', 'shift2', 'plus1', 'plus_codon', 'del1_after_3codons', 'insAAA_after_3codons']
         exp_file_genes = [[('PR', 1, 99, 1, 294)], [('PR', 2, 99, 3, 293)], [('PR', 2, 99, 2, 292)], [('PR', 1, 99, 2, 295)], [('PR', 1, 99, 1, 297)], [('PR', 1, 99, 1, 293)], [('PR', 1, 99, 1, 297)]]  
