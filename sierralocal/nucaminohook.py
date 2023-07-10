@@ -52,21 +52,20 @@ class NucAminoAligner():
                 self.nucamino_binary = binary
         self.triplet_table = self.generate_table()
 
-        # with open(str(Path(os.path.dirname(__file__))/'data'/'apobec.tsv'), 'r') as csvfile:
-        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'apobec_drms.csv')
-        with open(dest, 'r', encoding='utf-8-sig') as apobec_file:
-            apobec_file = csv.DictReader(apobec_file)
+        with open(algorithm.json_filename, 'r') as jsonfile:
             self.apobec_drm_dic = {}
-            for row in apobec_file:
-                gene = row['gene']
-                pos = row['position']
-                aa = row['aa']
-                if gene not in self.apobec_drm_dic:
-                    self.apobec_drm_dic.update({gene: {}})
-                if pos not in self.apobec_drm_dic[gene]:
-                    self.apobec_drm_dic[gene].update({pos: aa})
+            for entry in json.load(jsonfile):
+                gene = entry['gene']
+                position = entry['position']
+                aa = entry['aa']
+
+                if not gene in self.apobec_drm_dic:
+                    self.apobec_drm_dic[gene] = {}
+
+                if not position in self.apobec_drm_dic[gene]:
+                    self.apobec_drm_dic[gene].update({position: aa})
                 else:
-                    self.apobec_drm_dic[gene][pos] += aa
+                    self.apobec_drm_dic[gene][position] += aa
 
         self.pi_dict = self.prevalence_parser('PIPrevalences.tsv')
         self.rti_dict = self.prevalence_parser('RTIPrevalences.tsv')

@@ -76,7 +76,7 @@ setup(
                 'data/HIVDB_9.4.xml',
                 'data/apobec-drms.221b0330.tsv',
                 'data/alignment-config_hiv1.json',
-                'data/apobec_drms.csv',
+                'data/apobec_drms.json',
                 'data/apobecs.csv',
                 'data/mutation-type-pairs_hiv1.csv',
                 'data/sdrms_hiv1.csv',

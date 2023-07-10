@@ -170,7 +170,7 @@ def parse_args(): # pragma: no cover
                         help='Deletes NucAmino alignment file after processing.')
     parser.add_argument('--forceupdate', action='store_true',
                         help='Forces update of HIVdb algorithm. Requires network connection.')
-    parser.add_argument('-alignment', default='post',
+    parser.add_argument('-alignment', default='post', choices=['post', 'nuc'],
                         help='Alignment program to use, "post" for postalign on default, else nucAmino')
     args = parser.parse_args()
     return args
