@@ -16,19 +16,18 @@ Our objective was to build a lightweight, open-source Python implementation of t
 
 ## Dependencies
 We tried to minimize dependencies:
-- Python 3 (tested on [Python 3.6.5](https://www.python.org/downloads/release/python-365/))
+- Python 3 (tested on [Python 3.9.0](https://www.python.org/downloads/release/python-390/) and [Python 3.10.9](https://www.python.org/downloads/release/python-3109/))
 - Python modules (used by `updater.py` script):
   - [requests](https://pypi.org/project/requests/)
-  - [Post-Align](https://github.com/hivdb/post-align)
-- [NucAmino](https://github.com/hivdb/nucamino) `v0.1.3` or later (included with package).
+- [NucAmino](https://github.com/hivdb/nucamino) `v0.1.3` or later (included with the package).
 
-Post-Align is the new alignment program and requires the following dependency:
+[Post-Align](https://github.com/hivdb/post-align) is the new alignment program and requires the following dependency:
 - [Cython==0.29.32](https://pypi.org/project/Cython/)
 
 ## Installation
 
 ### Setting up Post-Align
-Post-Align is the new alignment program used by sierrapy, which we've incorporated into sierra-local. After all dependcies are satisfied run:
+Post-Align is the new alignment program used by sierrapy, which we've incorporated into sierra-local. After cython is installed, run:
 ```
 pip install https://github.com/hivdb/post-align/archive/3f99cc81ad89d66adf3beb062c93962f0deb3352.zip
 ```
@@ -60,7 +59,7 @@ Aligned RT.fa
 Writing JSON to file RT_results.json
 Time elapsed: 19.796 seconds (5.1555 it/s)
 ```
-To swap between running Post-Align (default) and NucAmnio, you can specifiy using `-alignment`, where inputing anything other than `post` will result in NucAmino being called
+To swap between running Post-Align (default) and NucAmnio, you can specify using `-alignment`, where inputting anything other than `post` will result in NucAmino being called
 ```
 will@Jesry:~/sierra-local# sierralocal RT.fa -alignment nuc
 searching path /root/miniconda3/envs/py395/lib/python3.10/site-packages/sierralocal/data/HIVDB*.xml
