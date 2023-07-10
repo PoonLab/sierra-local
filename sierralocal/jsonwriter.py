@@ -70,7 +70,6 @@ class JSONWriter():
 
         # make dictionary for APOBEC DRMS
         with open(algorithm.json_filename, 'r') as jsonfile:
-            print(f'lol: {algorithm.json_filename}')
             self.apobec_drm_dic = {}
             for entry in json.load(jsonfile):
                 gene = entry['gene']

@@ -98,8 +98,8 @@ def scorefile(input_file, algorithm, do_subtype=False, program='post'):
     return sequence_headers, sequence_scores, ordered_mutation_list, \
            file_genes, sequence_lengths, file_trims, subtypes, na_sequence
 
-def sierralocal(fasta, outfile, xml=None, json=None,
-                cleanup=False, forceupdate=False, program='post'): # pragma: no cover
+def sierralocal(fasta, outfile, xml=None, json=None, cleanup=False, forceupdate=False,
+                program='post', do_subtype=False): # pragma: no cover
     """
     Contains all initializing and processing calls.
 
@@ -130,7 +130,8 @@ def sierralocal(fasta, outfile, xml=None, json=None,
 
         # process and score file
         sequence_headers, sequence_scores, ordered_mutation_list, file_genes, \
-        sequence_lengths, file_trims, subtypes, na_sequence = scorefile(input_file, algorithm, program=program)
+        sequence_lengths, file_trims, subtypes, na_sequence = scorefile(input_file, algorithm,
+                                                                        program=program, do_subtype=do_subtype)
 
         count += len(sequence_headers)
         print("{} sequences found in file {}.".format(len(sequence_headers), input_file, na_sequence))
@@ -171,7 +172,10 @@ def parse_args(): # pragma: no cover
     parser.add_argument('--forceupdate', action='store_true',
                         help='Forces update of HIVdb algorithm. Requires network connection.')
     parser.add_argument('-alignment', default='post', choices=['post', 'nuc'],
-                        help='Alignment program to use, "post" for postalign on default, else nucAmino')
+                        help='Alignment program to use, "post" for post align and "nuc" for nucamino')
+    parser.add_argument('-subtype', action='store_true', default=False,
+                        help='Subtype while running sierralocal'
+                        )
     args = parser.parse_args()
     return args
 
@@ -188,10 +192,12 @@ def main(): # pragma: no cover
             print("Error: there is no file {}".format(file))
             sys.exit()
 
+    print(args.subtype)
+
     time_start = time.time()
     count, time_elapsed = sierralocal(args.fasta, args.outfile, xml=args.xml,
-                                      json=args.json, cleanup=args.cleanup,
-                                      forceupdate=args.forceupdate, program=args.alignment)
+                                      json=args.json, cleanup=args.cleanup, forceupdate=args.forceupdate,
+                                      program=args.alignment, do_subtype=args.subtype)
     time_diff = time.time() - time_start
 
     print("Time elapsed: {:{prec}} seconds ({:{prec}} it/s)".format(
