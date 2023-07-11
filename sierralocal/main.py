@@ -192,8 +192,6 @@ def main(): # pragma: no cover
             print("Error: there is no file {}".format(file))
             sys.exit()
 
-    print(args.subtype)
-
     time_start = time.time()
     count, time_elapsed = sierralocal(args.fasta, args.outfile, xml=args.xml,
                                       json=args.json, cleanup=args.cleanup, forceupdate=args.forceupdate,
