@@ -25,12 +25,12 @@ class TestHIVDb(unittest.TestCase):
             algorithm = HIVdb(asi2=invalid_xml)
 
     def testSetApobecJson(self):
-        exp_json_filename = os.path.abspath(r'sierralocal/data/apobec_drms.csv')
+        exp_json_filename = os.path.abspath(r'sierralocal/data/apobec_drms.json')
         res_json_filename = os.path.abspath(self.algorithm.json_filename)
         self.assertEqual(exp_json_filename, res_json_filename)
 
         # Setting params
-        json_path = r'sierralocal\data\apobec_drms.csv'
+        json_path = r'sierralocal\data\apobec_drms.json'
 
         algorithm = HIVdb(apobec=json_path)
         exp_json_filename = os.path.abspath(json_path)

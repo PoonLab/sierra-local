@@ -10,7 +10,7 @@ from sierralocal.updater import *
 class TestUpdater(unittest.TestCase):
 
     def testUpdateApobecMutation(self):
-        exp_filepath = r'sierralocal/data/apobec_drms.csv'
+        exp_filepath = r'sierralocal/data/apobec_drms.json'
 
         with patch('sierralocal.updater.update_apobec'):
             res_filepath = update_apobec_mutation()
