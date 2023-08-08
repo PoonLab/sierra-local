@@ -69,20 +69,20 @@ class JSONWriter():
                     self.sdrm_dic[gene][pos] += aa
 
         # make dictionary for APOBEC DRMS
-        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'apobec_drms.csv')
-        with open(dest, 'r', encoding='utf-8-sig') as apobec_file:
-            apobec_file = csv.DictReader(apobec_file)
+        with open(algorithm.json_filename, 'r') as jsonfile:
             self.apobec_drm_dic = {}
-            for row in apobec_file:
-                gene = row['gene']
-                pos = row['position']
-                aa = row['aa']
-                if gene not in self.apobec_drm_dic:
-                    self.apobec_drm_dic.update({gene: {}})
-                if pos not in self.apobec_drm_dic[gene]:
-                    self.apobec_drm_dic[gene].update({pos: aa})
+            for entry in json.load(jsonfile):
+                gene = entry['gene']
+                position = entry['position']
+                aa = entry['aa']
+
+                if not gene in self.apobec_drm_dic:
+                    self.apobec_drm_dic[gene] = {}
+
+                if not position in self.apobec_drm_dic[gene]:
+                    self.apobec_drm_dic[gene].update({position: aa})
                 else:
-                    self.apobec_drm_dic[gene][pos] += aa
+                    self.apobec_drm_dic[gene][position] += aa
 
         # make dictionary for primary type
         dest = str(Path(os.path.dirname(__file__)) / 'data' / 'mutation-type-pairs_hiv1.csv')
@@ -426,7 +426,6 @@ class JSONWriter():
         @param AA: new amino acid
         @return: bool
         """
-        position = str(position)
         if gene in self.apobec_drm_dic:
             if position in self.apobec_drm_dic[gene]:
                 for aa in AA:

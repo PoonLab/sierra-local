@@ -21,8 +21,9 @@ We tried to minimize dependencies:
   - [requests](https://pypi.org/project/requests/)
 - [NucAmino](https://github.com/hivdb/nucamino) `v0.1.3` or later (included with the package).
 
-[Post-Align](https://github.com/hivdb/post-align) is the new alignment program and requires the following dependency:
-- [Cython==0.29.32](https://pypi.org/project/Cython/)
+[Post-Align](https://github.com/hivdb/post-align) is the new alignment program and requires the following dependencies:
+- [Cython==0.29.32](https://pypi.org/project/Cython/0.29.32/)
+- [minimap2](https://github.com/lh3/minimap2)
 
 ## Installation
 
@@ -40,7 +41,7 @@ git clone http://github.com/PoonLab/sierra-local
 cd sierra-local
 sudo python3 setup.py install
 ```
-Note that you need super-user privileges to install the package by this method.  For more detailed instrucitons, please refer to the document [INSTALL.md](INSTALL.md) that should be located in the root directory of this Python package.
+Note that you need super-user privileges to install the package by this method.  For more detailed instructions, please refer to the document [INSTALL.md](INSTALL.md) that should be located in the root directory of this Python package.
 
 ## Using sierra-local
 
@@ -59,7 +60,7 @@ Aligned RT.fa
 Writing JSON to file RT_results.json
 Time elapsed: 19.796 seconds (5.1555 it/s)
 ```
-To swap between running Post-Align (default) and NucAmnio, you can specify using `-alignment`, where inputting anything other than `post` will result in NucAmino being called
+To swap between running Post-Align (default) and NucAmnio, you can specify using `-alignment`, where inputting `nuc` will result in NucAmino being called
 ```
 will@Jesry:~/sierra-local# sierralocal RT.fa -alignment nuc
 searching path /root/miniconda3/envs/py395/lib/python3.10/site-packages/sierralocal/data/HIVDB*.xml
@@ -71,7 +72,6 @@ Aligned RT.fa
 Writing JSON to file RT_results.json
 Time elapsed: 4.1417 seconds (25.45 it/s)
 ```
-
 
 `retrieve_hivdb_data.py` is a Python script that we provided to download small samples of HIV-1 sequence data from the Stanford HIVdb database.  In this case, we have retrieved 100 reverse transcriptase (RT) sequences and processsed them with the *sierra-local* pipeline.  By default, the results are written to the file `[FASTA basename]_results.json`:
 ```console
@@ -127,6 +127,15 @@ art@Jesry:~/git/sierra-local$ R
 63 AF102332.A11.B.62       B  90 115 115  90  80  80  60   0  10  10  10
 ```
 
+To specify your own JSON file for APOBEC DRMS, you can call `-json` followed by your file. In the example below, `EXTERNAL-APOBEC.json` is located in the same directory as I called `sierralocal`:
+```
+root@LAPTOP-4FGEVBR0:~/sierra-local# sierralocal RT.fa -json EXTERNAL-APOBEC.json
+```
+
+To call the `subtyper.py` file while running sierralocal, you can call `-subtype` while calling `sierralocal`. Subtyping on default is off.
+```
+root@LAPTOP-4FGEVBR0:~/sierra-local# sierralocal RT.fa -subtype
+```
 
 ### As a Python module
 If you have downloaded the package source to your computer, you can also run *sierra-local* as a Python module from the root directory of the package.  In the following example, we are calling the main function of *sierra-local* from an interactive Python session:
@@ -150,15 +159,9 @@ Writing JSON to file RT.json
 ```
 Note that this doesn't require any `sudo` privileges.
 
-### Graphical user interface (GUI)
-We have a GUI in development that uses the Python Tkinter framework.  To use this script, you need to check out the *gui* branch of this repository and then call the script from the root directory of the project:
-```
-python3 gui.py
-```
-
 ## Updating the algorithm
 
-The Stanford HIVdb database regularly updates its resistance genotyping algorithm and publishes the associated ASI2 XML file on their website.  In previous versions of *sierra-local*, we used Python to automatically query this website and download the newest version if it was not already present on the user's computer.  Subsequent changes to the Stanford HIVdb website, however, meant that users would have to install several additional dependencies in order for Python to locate the required files.  As a result, we decided to make the `updater.py` script an optional step of the pipeline.
+The Stanford HIVdb database regularly updates its resistance genotyping algorithm and publishes the associated ASI2 XML file on their github, [hivfacts](https://github.com/hivdb/hivfacts/tree/main/data).  In previous versions of *sierra-local*, we used Python to automatically query this website and download the newest version if it was not already present on the user's computer.  Subsequent changes to the Stanford HIVdb website, however, meant that users would have to install several additional dependencies in order for Python to locate the required files.  As a result, we decided to make the `updater.py` script an optional step of the pipeline.
 
 
 Manually running the script enabled me to grab the most recent versions of the ASI2 and APOBEC files from the HIVdb webserver:
@@ -170,7 +173,7 @@ Downloading the latest APOBEC DRMS File
 Updated APOBEC DRMs into sierralocal/data/apobec_drms.json
 ```
 
-Now of course, it would be much simpler to manually point your browser to the Stanford HIVdb website and download these files yourself, but in some applications there may be a benefit to automating this step.
+Now of course, it would be much simpler to manually download these files yourself in [hivfacts](https://github.com/hivdb/hivfacts/tree/main/data), but in some applications there may be a benefit to automating this step.
 
 
 ## About Us
