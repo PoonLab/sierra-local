@@ -1,4 +1,3 @@
-
 [![PyPI](https://img.shields.io/pypi/v/sierralocal.svg)](https://pypi.org/project/sierralocal/)
 [![DOI](http://joss.theoj.org/papers/10.21105/joss.01186/status.svg)](https://doi.org/10.21105/joss.01186)
 
@@ -22,7 +21,10 @@ We tried to minimize dependencies:
 - [NucAmino](https://github.com/hivdb/nucamino) `v0.1.3` or later (included with the package).
 
 [Post-Align](https://github.com/hivdb/post-align) is the new alignment program and requires the following dependencies:
-- [Cython==0.29.32](https://pypi.org/project/Cython/0.29.32/)
+- [Cython==0.29.32](https://pypi.org/project/Cython/0.29.35/)
+- [more-itertools==9.1.0](https://pypi.org/project/more-itertools/9.1.0/)
+- [orjson==3.9.1](https://pypi.org/project/orjson/3.9.1/)
+- [types-setuptools==67.8.0.0](https://pypi.org/project/types-setuptools/67.8.0.0/)
 - [minimap2](https://github.com/lh3/minimap2)
 
 ## Installation
@@ -30,7 +32,7 @@ We tried to minimize dependencies:
 ### Setting up Post-Align
 Post-Align is the new alignment program used by sierrapy, which we've incorporated into sierra-local. After cython is installed, run:
 ```
-pip install https://github.com/hivdb/post-align/archive/3f99cc81ad89d66adf3beb062c93962f0deb3352.zip
+pip install https://github.com/hivdb/post-align/archive/8e2ee118261987208c17add6cef5c1270e325a4c.zip
 ```
 which is adapted from Post-Align's [docker script](https://github.com/hivdb/sierra/blob/main/Dockerfile#L24-L30)
 
