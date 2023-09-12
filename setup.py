@@ -11,7 +11,7 @@ if sys.version_info.major < 3:
 
 # check to see if dependencies are met
 install_needs=[
-    'cython==0.29.32',
+    'cython==0.29.35',
     'postalign @ https://github.com/hivdb/post-align'
 ]
 
