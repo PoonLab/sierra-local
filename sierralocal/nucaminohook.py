@@ -278,12 +278,19 @@ class NucAminoAligner():
                                 if not protein['Error'] and protein['Report'] and 'pol' in protein['Gene']:
                                     for key, info in protein['Report'].items():
                                         if key == 'AlignedSites':
-                                            for i in info:
-                                                # PosNA shows all three positions, should only show first
-                                                i['PosNA'] = i['PosNAs'][0]
-                                                i.pop('PosNAs')
-                                                i['PosAA'] = i['PosAA'] + 1
+                                            i = 0
+                                            while i < len(info):
+                                                # len of 0 breaks code, need to check if len of 1 or 2 breaks it too
+                                                if info[i]['LengthNA'] == 0:
+                                                    del info[i]
+                                                else:
+                                                    # PosNA shows all three positions, should only show first
+                                                    info[i]['PosNA'] = info[i]['PosNAs'][0]
+                                                    info[i].pop('PosNAs')
+                                                    info[i]['PosAA'] = info[i]['PosAA'] + 1
+                                                    i += 1
 
+                                            # TODO: test if lengthNA == 1,2 breaks it too
                                             result['AlignedSites'] += info
 
                                         elif key == 'Mutations':
