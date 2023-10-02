@@ -1,3 +1,4 @@
+from ast import Index
 import os
 import re
 import csv
@@ -126,15 +127,48 @@ class JSONWriter():
         validation_results = [{'level': v[0], 'message': v[1]} for v in validated]
         return validation_results
 
-    def format_drug_resistance(self, scores, gene):
+    def format_drug_resistance(self, scores, sequence_name, gene, ambiguous, names):
         """
         Returns formatted drug resistance and score breakdowns,
         meant for results output.
         @param scores: dict, results of one query from score_alg.score_drugs()
         @param gene: str, gene found in the sequence
+        @param ambiguous: dict, {sequence name: position of NNN NAs}
+        @param names: list, [sequence names]
         @return drug_resistance: dict, one dictionary encoding
         scores and descriptions
         """
+        # remove all ambiguous NNN positions
+        for drug, info in scores.items():
+            new = [[] for i in info[2]]
+            scores[drug] = list(scores[drug])
+            inds = set() # hold positions for valid scores
+
+            # not fastest way, but works around not mutating while iterating
+            for index, position in enumerate(info[2]):
+                for ind2, mut in enumerate(position):
+                    if int(mut[1:-1]) in ambiguous[sequence_name][gene]:
+                        inds.add(index)
+                    else:
+                        new[index].append(mut)
+
+            new1 = []
+            for i in new:
+                if i:
+                    new1.append(i)
+
+            new2 = []
+            for index, score in enumerate(info[1]):
+                if not index in inds:
+                    new2.append(score)            
+            scores[drug][2] = new1
+            scores[drug][1] = new2
+            scores[drug][0] = sum(scores[drug][1]) 
+
+            if gene == 'IN':
+                print(scores)
+
+
         drug_resistance = {}
         drug_resistance['version'] = {}
         drug_resistance['version']['text'] = self.algorithm.version
@@ -181,6 +215,7 @@ class JSONWriter():
                 # create partial score, for each mutation, datastructure
                 drug_score['partialScores'] = []
                 for index, pscore in enumerate(scores[drug][1]):
+
                     pscore = float(pscore)
                     if not pscore == 0.0:
                         pscoredict = {}
@@ -292,7 +327,7 @@ class JSONWriter():
 
     def write_to_json(self, filename, file_headers, file_scores,
                       file_genes, file_mutation_lists, file_sequence_lengths,
-                      file_trims, file_subtypes, na_sequence):
+                      file_trims, file_subtypes, na_sequence, ambiguous, names):
         """
         The main function to write passed result to a JSON file
         @param filename: str, the file path to write the JSON to
@@ -307,6 +342,8 @@ class JSONWriter():
         @param file_trims: list, list of lists of tuples of ints 
         @param file_subtypes: list, list of subtype strings
         @param na_sequence: dict, {sequence name: associated NA sequence}
+        @param ambiguous: dict, {sequence name: positions of NNN triplet NA}
+        @param names: list, [sequence names]
         """
         out = []
         for index, scores in enumerate(file_scores):
@@ -335,7 +372,7 @@ class JSONWriter():
                                                            nalist)
                     )
                     data['drugResistance'].append(
-                        self.format_drug_resistance(scores[idx], gene)
+                        self.format_drug_resistance(scores[idx], file_headers[index], gene, ambiguous, names)
                     )
 
             out.append(data)
