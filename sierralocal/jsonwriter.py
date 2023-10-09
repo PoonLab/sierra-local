@@ -165,9 +165,6 @@ class JSONWriter():
             scores[drug][1] = new2
             scores[drug][0] = sum(scores[drug][1]) 
 
-            if gene == 'IN':
-                print(scores)
-
 
         drug_resistance = {}
         drug_resistance['version'] = {}
