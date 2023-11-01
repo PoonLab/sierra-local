@@ -249,8 +249,8 @@ class JSONWriter():
             mutdict = {}
             mutdict['consensus'] = mutation[2]
             mutdict['position'] = int(mutation[0])
-            mutdict['AAs'] = "".join(sorted(mutation[1]))
-            mutdict['isInsertion'] =  '_' in mutation[1]
+            mutdict['AAs'] = "".join(mutation[1])
+            mutdict['isInsertion'] =  mutation[1].startswith('_')
             mutdict['isDeletion'] = mutation[1] == '-'
             mutdict['isApobecMutation'] = self.is_apobec_mutation(gene,
                                                                   mutation[0],
