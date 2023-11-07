@@ -290,6 +290,8 @@ class NucAminoAligner():
 
                                         elif key == 'Mutations':
                                             for mutation in info:
+                                                if mutation['IsInsertion'] is True:
+                                                    mutation['AminoAcidText'] = '_' + mutation['AminoAcidText'] 
                                                 mutation['ReferenceText'] = mutation['RefAminoAcidText']
                                                 mutation.pop('RefAminoAcidText')
                                                 mutation['Position'] += 1
