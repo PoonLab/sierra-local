@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import argparse
+import json
 
 from sierralocal import score_alg
 from sierralocal.hivdb import HIVdb
@@ -22,15 +23,15 @@ def score(filename, xml_path=None, tsv_path=None, forceupdate=False, do_subtype=
     time_start = time.time()
 
     sequence_headers, sequence_scores, ordered_mutation_list, file_genes, \
-    sequence_lengths, file_trims, subtypes, na_sequence = scorefile(filename, algorithm, do_subtype)
+    sequence_lengths, file_trims, subtypes, na_sequence, ambiguous, names = scorefile(filename, algorithm, do_subtype)
 
     count = len(sequence_headers)
 
     print("{} sequences found in file {}.".format(len(sequence_headers), filename))
     output_file = os.path.splitext(filename)[0] + '-local.json'
     writer = JSONWriter(algorithm)
-    writer.write_to_json(output_file, sequence_headers, sequence_scores, file_genes,
-                         ordered_mutation_list, sequence_lengths, file_trims, subtypes, na_sequence)
+    writer.write_to_json(output_file, sequence_headers, sequence_scores, file_genes, ordered_mutation_list,
+                        sequence_lengths, file_trims, subtypes, na_sequence, ambiguous, names)
     time_end = time.time()
     print("Time elapsed: {:{prec}} seconds ({:{prec}} it/s)".format(
         time_end - time_start, count/(time_end - time_start), prec='.5'))
@@ -51,9 +52,33 @@ def scorefile(input_file, algorithm, do_subtype=False, program='post'):
     aligner = NucAminoAligner(algorithm, program=program)
     result = aligner.align_file(input_file, program=program)
 
+    # hold all NNN sequences and void them when scoring drugs
+    ambiguous = {}  # {sequence name: {gene : set(positions of NNN)}}
+    names = []
+    gene_order = {}
+
+
     print('Aligned ' + input_file)
     sequence_headers, file_genes, file_mutations, file_trims, subtypes = \
         aligner.get_mutations(result, do_subtype=do_subtype)
+
+
+    for ind, gene in enumerate(file_genes):
+        seq_n = sequence_headers[ind]
+        gene_order[seq_n] = []
+        
+        for ind2, protein in enumerate(gene):
+            gene_order[seq_n].append(protein[0])
+
+    for ind, sequence in enumerate(file_mutations):
+        seq_n = sequence_headers[ind]
+        ambiguous[seq_n] = {}
+        for ind2, muts in enumerate(sequence):
+            ambiguous[seq_n][gene_order[seq_n][ind2]] = set()
+            for position, AA in muts.items():
+                if len(AA[1]) == 21: # checks if was NNN
+                    ambiguous[seq_n][gene_order[seq_n][ind2]].add(position)
+
 
     ordered_mutation_list = []
     sequence_scores = []
@@ -96,7 +121,7 @@ def scorefile(input_file, algorithm, do_subtype=False, program='post'):
         sequence_lengths.append(length_lists)
 
     return sequence_headers, sequence_scores, ordered_mutation_list, \
-           file_genes, sequence_lengths, file_trims, subtypes, na_sequence
+           file_genes, sequence_lengths, file_trims, subtypes, na_sequence, ambiguous, gene_order
 
 def sierralocal(fasta, outfile, xml=None, json=None, cleanup=False, forceupdate=False,
                 program='post', do_subtype=False): # pragma: no cover
@@ -130,7 +155,7 @@ def sierralocal(fasta, outfile, xml=None, json=None, cleanup=False, forceupdate=
 
         # process and score file
         sequence_headers, sequence_scores, ordered_mutation_list, file_genes, \
-        sequence_lengths, file_trims, subtypes, na_sequence = scorefile(input_file, algorithm,
+        sequence_lengths, file_trims, subtypes, na_sequence, ambiguous, names = scorefile(input_file, algorithm,
                                                                         program=program, do_subtype=do_subtype)
 
         count += len(sequence_headers)
@@ -144,7 +169,7 @@ def sierralocal(fasta, outfile, xml=None, json=None, cleanup=False, forceupdate=
 
         writer.write_to_json(output_file, sequence_headers, sequence_scores,
                              file_genes, ordered_mutation_list, sequence_lengths,
-                             file_trims, subtypes, na_sequence)
+                             file_trims, subtypes, na_sequence, ambiguous, names)
 
         if cleanup:
             # delete alignment file

@@ -344,7 +344,6 @@ class NucAminoAligner():
                 try:
                     sites = record['Report']['AlignedSites']
                 except:
-                    print(record)
                     raise
                 nuc = record['Report']['NucleicAcidsLine']
 
