@@ -447,10 +447,10 @@ class NucAminoAligner():
 
             pol_first_aa = record['FirstAA']
             pol_last_aa = record['LastAA']
-
+            
             # predict subtype
-            subtype = ''
-            if do_subtype:
+            subtype = ''                
+            if do_subtype and pol_first_aa and pol_last_aa: # fails if either of the aas are None
                 offset = (pol_first_aa - 57) * 3
                 if offset < 0:
                     offset = 0  # align_file() will have trimmed sequence preceding PR
@@ -463,7 +463,7 @@ class NucAminoAligner():
             trims = []
             first_last_nas = []
             just_genes = []
-
+            
             for gene, first_aa, last_aa, first_na, last_na in genes:
                 just_genes.append(gene)
                 first_last_nas.append((first_na, last_na))
