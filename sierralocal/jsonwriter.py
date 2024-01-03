@@ -141,12 +141,13 @@ class JSONWriter():
         """
         # remove all ambiguous NNN positions
         for drug, info in scores.items():
-            new = [[] for i in info[2]] # list of all the SNPS
+            muts_scores, drug_muts = info[1], info[2]
+            new = [[] for i in drug_muts] # list of all the SNPS
             scores[drug] = list(scores[drug])
             inds = set() # holds index within score[1] list that are valid
 
             # not fastest way, but works around not mutating while iterating
-            for index, position in enumerate(info[2]):
+            for index, position in enumerate(drug_muts):
                 for ind2, mut in enumerate(position):
                     if int(mut[1:-1]) in ambiguous[sequence_name][gene]:
                         inds.add(index)
@@ -155,11 +156,9 @@ class JSONWriter():
 
             new1 = [i for i in new if i] # New list of mutations that aren't NNN
             # if the drug score in info[1] index is in inds, it is NNN position, so exclude
-            new2 = [score for index, score in enumerate(info[1]) if index not in inds]
+            new2 = [score for index, score in enumerate(muts_scores) if index not in inds]
                         
-            scores[drug][2] = new1
-            scores[drug][1] = new2
-            scores[drug][0] = sum(scores[drug][1]) 
+            scores[drug] = [sum(scores[drug][1]), new2, new1]
 
         drug_resistance = {}
         drug_resistance['version'] = {}

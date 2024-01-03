@@ -54,7 +54,6 @@ def scorefile(input_file, algorithm, do_subtype=False, program='post'):
 
     # hold all NNN sequences and void them when scoring drugs
     ambiguous = {}  # {sequence name: {gene : set(positions of NNN)}}
-    names = []
     gene_order = {}
 
 
