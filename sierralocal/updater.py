@@ -143,7 +143,7 @@ def update_reference_fasta():
     try:
         latest = "https://cms.hivdb.org/prod/downloads/hiv-genotyper/genotype-references.fasta"
         request = requests.get(latest)
-        filepath = os.path.join(mod_path, 'data', 'genotype-references.9c610d61.fasta')
+        filepath = os.path.join(mod_path, 'data', 'genotype-references.fasta')
         with open(filepath, 'wb') as file:
             file.write(request.content)
         
@@ -159,7 +159,7 @@ def update_genotype_properties():
     try:
         latest = 'https://cms.hivdb.org/prod/downloads/hiv-genotyper/genotype-properties.tsv'
         request = requests.get(latest)
-        filepath = os.path.join(mod_path, 'data', 'genotype-properties.cc00f512.csv')
+        filepath = os.path.join(mod_path, 'data', 'genotype-properties.csv')
         with open(filepath, 'wb') as file:
             file.write(request.content)
             

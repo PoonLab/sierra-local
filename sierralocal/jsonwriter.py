@@ -131,8 +131,9 @@ class JSONWriter():
         """
         Returns formatted drug resistance and score breakdowns,
         meant for results output.
-        @param scores: dict, results of one query from score_alg.score_drugs()
+        @param scores: dict, results of one query from score_alg.score_drugs() {drug: (total score, [scores/SNP], [SNPS])}
         @param gene: str, gene found in the sequence
+        @param seqeunce_name: str, sequence name of fasta input, use for ambiguous dict
         @param ambiguous: dict, {sequence name: position of NNN NAs}
         @param names: list, [sequence names]
         @return drug_resistance: dict, one dictionary encoding
@@ -140,9 +141,9 @@ class JSONWriter():
         """
         # remove all ambiguous NNN positions
         for drug, info in scores.items():
-            new = [[] for i in info[2]]
+            new = [[] for i in info[2]] # list of all the SNPS
             scores[drug] = list(scores[drug])
-            inds = set() # hold positions for valid scores
+            inds = set() # holds index within score[1] list that are valid
 
             # not fastest way, but works around not mutating while iterating
             for index, position in enumerate(info[2]):
@@ -152,19 +153,13 @@ class JSONWriter():
                     else:
                         new[index].append(mut)
 
-            new1 = []
-            for i in new:
-                if i:
-                    new1.append(i)
-
-            new2 = []
-            for index, score in enumerate(info[1]):
-                if not index in inds:
-                    new2.append(score)            
+            new1 = [i for i in new if i] # New list of mutations that aren't NNN
+            # if the drug score in info[1] index is in inds, it is NNN position, so exclude
+            new2 = [score for index, score in enumerate(info[1]) if index not in inds]
+                        
             scores[drug][2] = new1
             scores[drug][1] = new2
             scores[drug][0] = sum(scores[drug][1]) 
-
 
         drug_resistance = {}
         drug_resistance['version'] = {}

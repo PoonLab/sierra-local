@@ -76,9 +76,9 @@ def scorefile(input_file, algorithm, do_subtype=False, program='post'):
         for ind2, muts in enumerate(sequence):
             ambiguous[seq_n][gene_order[seq_n][ind2]] = set()
             for position, AA in muts.items():
-                if len(AA[1]) == 21: # checks if was NNN
+                # *ACDEFGHIKLMNPQRSTVWY is the AA output for NNN, all AA + stop codon
+                if len(AA[1]) == 21:
                     ambiguous[seq_n][gene_order[seq_n][ind2]].add(position)
-
 
     ordered_mutation_list = []
     sequence_scores = []
