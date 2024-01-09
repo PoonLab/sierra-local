@@ -135,7 +135,38 @@ def update_apobec():
         print('Could not update file for apobecs (apobecs.csv)\n'
               'Please download manually from https://github.com/hivdb/hivfacts/tree/main/data')
 
-
+def update_reference_fasta():
+    """
+    update reference fasta file for subtyper script
+    """
+    print("Downloading the latest subtype reference fasta file")
+    try:
+        latest = "https://cms.hivdb.org/prod/downloads/hiv-genotyper/genotype-references.fasta"
+        request = requests.get(latest)
+        filepath = os.path.join(mod_path, 'data', 'genotype-references.fasta')
+        with open(filepath, 'wb') as file:
+            file.write(request.content)
+        
+        print(f'Updated reference fasta to {filepath}')
+    except:
+        print("Couldn't update subtyper reference fasta, please get manually at: https://hivdb.stanford.edu/page/hiv-subtyper/")
+        
+def update_genotype_properties():
+    """
+    update genotype property file for subtyper script
+    """
+    print("Downloading the latest subtype genotype property File")
+    try:
+        latest = 'https://cms.hivdb.org/prod/downloads/hiv-genotyper/genotype-properties.tsv'
+        request = requests.get(latest)
+        filepath = os.path.join(mod_path, 'data', 'genotype-properties.csv')
+        with open(filepath, 'wb') as file:
+            file.write(request.content)
+            
+        print(f'Updated reference fasta to {filepath}')
+    except:
+        print("Couldn't update subtyper genotype property file, please get manually at: https://hivdb.stanford.edu/page/hiv-subtyper/")
+    
 def main(): # pragma: no cover
     update_hivdb()
     update_apobec()
@@ -143,6 +174,8 @@ def main(): # pragma: no cover
     update_sdrms()
     update_mutation_type()
     update_apobec_mutation()
+    update_genotype_properties()
+    update_reference_fasta()
 
 if __name__ == '__main__':
     main()
