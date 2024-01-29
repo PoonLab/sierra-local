@@ -134,11 +134,6 @@ To specify your own JSON file for APOBEC DRMS, you can call `-json` followed by 
 root@LAPTOP-4FGEVBR0:~/sierra-local# sierralocal RT.fa -json EXTERNAL-APOBEC.json
 ```
 
-To call the `subtyper.py` file while running sierralocal, you can call `-subtype` while calling `sierralocal`. Subtyping on default is off.
-```
-root@LAPTOP-4FGEVBR0:~/sierra-local# sierralocal RT.fa -subtype
-```
-
 ### As a Python module
 If you have downloaded the package source to your computer, you can also run *sierra-local* as a Python module from the root directory of the package.  In the following example, we are calling the main function of *sierra-local* from an interactive Python session:
 ```console
