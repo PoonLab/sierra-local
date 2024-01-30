@@ -154,11 +154,11 @@ class JSONWriter():
                     else:
                         new[index].append(mut)
 
-            new1 = [i for i in new if i] # New list of mutations that aren't NNN
-            # if the drug score in info[1] index is in inds, it is NNN position, so exclude
+            new1 = [i for i in new if i] # New list of mutations that doesn't result in X AA
+            # if the drug score in info[1] index is in inds, it is amb position, so exclude
             new2 = [score for index, score in enumerate(muts_scores) if index not in inds]
                         
-            scores[drug] = [sum(scores[drug][1]), new2, new1]
+            scores[drug] = [sum(new2), new2, new1]
 
         drug_resistance = {}
         drug_resistance['version'] = {}

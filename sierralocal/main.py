@@ -75,8 +75,8 @@ def scorefile(input_file, algorithm, do_subtype=False, program='post'):
         for ind2, muts in enumerate(sequence):
             ambiguous[seq_n][gene_order[seq_n][ind2]] = set()
             for position, AA in muts.items():
-                # *ACDEFGHIKLMNPQRSTVWY is the AA output for NNN, all AA + stop codon
-                if len(AA[1]) == 21:
+                # >4 results in X AA, which sierrapy seems to ignore for SDRMs
+                if len(AA[1]) > 4:
                     ambiguous[seq_n][gene_order[seq_n][ind2]].add(position)
 
     ordered_mutation_list = []
@@ -197,9 +197,6 @@ def parse_args(): # pragma: no cover
                         help='Forces update of HIVdb algorithm. Requires network connection.')
     parser.add_argument('-alignment', default='post', choices=['post', 'nuc'],
                         help='Alignment program to use, "post" for post align and "nuc" for nucamino')
-    parser.add_argument('-subtype', action='store_true', default=False,
-                        help='Subtype while running sierralocal'
-                        )
     args = parser.parse_args()
     return args
 
@@ -219,7 +216,7 @@ def main(): # pragma: no cover
     time_start = time.time()
     count, time_elapsed = sierralocal(args.fasta, args.outfile, xml=args.xml,
                                       json=args.json, cleanup=args.cleanup, forceupdate=args.forceupdate,
-                                      program=args.alignment, do_subtype=args.subtype)
+                                      program=args.alignment)
     time_diff = time.time() - time_start
 
     print("Time elapsed: {:{prec}} seconds ({:{prec}} it/s)".format(
