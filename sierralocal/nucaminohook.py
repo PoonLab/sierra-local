@@ -7,7 +7,6 @@ import platform
 import tempfile
 import subprocess
 from pathlib import Path
-from sierralocal.subtyper import Subtyper
 
 
 class NucAminoAligner():
@@ -79,9 +78,6 @@ class NucAminoAligner():
             'IN': (4230, 5096)
         }
         self.gene_map = self.create_gene_map()
-
-        # initialize Subtyper class
-        self.typer = Subtyper()
 
     def prevalence_parser(self, filename):
         """
