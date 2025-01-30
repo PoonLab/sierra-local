@@ -15,8 +15,8 @@ import argparse
 __author__ = '@ArtPoon'
 
 parser = argparse.ArgumentParser()
-parser.add_argument('gene', choices=['PR', 'RT', 'INT'],
-                  help='Target gene (PR, RT or INT).')
+parser.add_argument('gene', choices=['PR', 'RT', 'IN'],
+                  help='Target gene (PR, RT or IN).')
 parser.add_argument('outfile', type=argparse.FileType('w'),
                     help='Destination file for sequences.')
 parser.add_argument('-size', type=int, default=100,
