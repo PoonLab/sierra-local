@@ -42,7 +42,7 @@ jobs:
 
     environment:
       name: pypi
-      url: https://pypi.org/p/sierra-local
+      url: https://pypi.org/p/sierralocal
 
     steps:
       - name: Retrieve release distributions
