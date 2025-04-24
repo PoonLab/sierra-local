@@ -9,28 +9,6 @@ from setuptools import find_packages
 if sys.version_info.major < 3:
     sys.exit('Sorry, sierra-local requires Python 3.x or above')
 
-# check to see if dependencies are met
-install_needs=[
-    'cython==0.29.35',
-    'postalign @ https://github.com/hivdb/post-align'
-]
-
-missing = []
-for package in install_needs:
-    package_name = package.split('==')[0]  # Extract the package name
-
-    if '@' in package_name:
-        package_name = package_name.split(' @')[0]
-
-    try:
-        __import__(package_name)
-    except ImportError:
-        missing.append(package)
-
-if missing:
-    missing_packages = ', '.join(missing)
-    raise SystemExit(f"Missing required dependencies: {missing_packages}")
-
 # adapted from
 # https://stackoverflow.com/questions/5932804/set-file-permissions-in-setup-py-file/25761434
 class OverrideInstall(install):
@@ -54,7 +32,13 @@ setup(
                      "resistance genotyping algorithm (Sierra web "
                      "service) for local execution.",
     packages=find_packages(),
-    install_requires=install_needs,
+    install_requires=[
+    'cython >=0.29.35',
+    'post-align @ https://github.com/hivdb/post-align/archive/8e2ee118261987208c17add6cef5c1270e325a4c.zip',
+    'more-itertools>=9.1.0',
+    'orjson>=3.9.1',
+    'types-setuptools>=67.8.0.0'
+    ],
     version='0.4',
     author=['Jasper Ho', 'Art Poon'],
     author_email='apoon42@uwo.ca',
