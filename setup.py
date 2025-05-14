@@ -55,9 +55,9 @@ setup(
                      "service) for local execution.",
     packages=find_packages(),
     install_requires=install_needs,
-    version='0.2.1',
-    author='Jasper Ho',
-    author_email='jasperchho@gmail.com',
+    version='0.4',
+    author=['Art Poon', 'Jasper Ho', 'Garway Ng', 'Gopi Gugan', 'Mathias Renaud', 'William Wang'],
+    author_email=['apoon42@uwo.ca', 'jasperchho@gmail.com'],
     url='https://github.com/PoonLab/sierra-local',
     classifiers=[
         'Programming Language :: Python :: 3',
