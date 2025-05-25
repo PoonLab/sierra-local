@@ -73,6 +73,7 @@ class NucAminoAligner():
         # initialize gene map
         self.pol_start = 2085
         self.pol_nuc_map = {
+            'CA': (1186, 1878),
             'PR': (2253, 2549),
             'RT': (2550, 4229),  # incorrectly includes RNAse, emulating sierrapy
             'IN': (4230, 5096)
@@ -374,8 +375,6 @@ class NucAminoAligner():
         """
         Determines the first POL gene that is present in 
         the query sequence, by virtue of gene breakpoints
-        TODO: sierra uses different minimum numbers of sites per gene
-        (40, 60 and 30 for PR, RT and IN)
         @param pol_aligned_sites: list, sublist holds alignment program
         output aligned POL sites
         @param pol_first_aa: int, location of first amino acid in pol
@@ -385,7 +384,12 @@ class NucAminoAligner():
          first na position in pol, last na position in pol]
         """
         # good here
-        min_overlap = {'PR': 40, 'RT': 60, 'IN': 30}
+        min_overlap = {
+            'PR': 40,
+            'RT': 60,
+            'IN': 30,
+            'CA': 30, # Arbitrary as could not find source for above thresholds
+            }
         genes = []
         for gene, bounds in self.gene_map.items():
             aa_start, aa_end = bounds
