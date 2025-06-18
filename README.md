@@ -156,6 +156,10 @@ Writing JSON to file RT.json
 ```
 Note that this doesn't require any `sudo` privileges.
 
+### Subtyping
+
+Currently, we do not support the subtyping function present in sierrapy. However, there is a framework of the script located in `/sierralocal/deprecated/subtyper.py`. We do not recommend using this feature through our scripts without modification as it is not maintained or tested. However, you can manually enable this feature by changing the `do_subtype` values to True in `sierralocal/nucaminohook.py` and importing the subtyper class in the subtyper script.
+
 ## Updating the algorithm
 
 The Stanford HIVdb database regularly updates its resistance genotyping algorithm and publishes the associated ASI2 XML file on their github, [hivfacts](https://github.com/hivdb/hivfacts/tree/main/data).  In previous versions of *sierra-local*, we used Python to automatically query this website and download the newest version if it was not already present on the user's computer.  Subsequent changes to the Stanford HIVdb website, however, meant that users would have to install several additional dependencies in order for Python to locate the required files.  As a result, we decided to make the `updater.py` script an optional step of the pipeline.
