@@ -4,6 +4,8 @@
 # sierra-local
 sierra-local is a Python 3 implementation of the [Stanford University HIV Drug Resistance Database](https://hivdb.stanford.edu/) (HIVdb) [Sierra web service](https://hivdb.stanford.edu/page/webservice/) for generating drug resistance predictions from HIV-1 sequence data. This Python package enables laboratories to run this prediction algorithm without needing to transmit patient data over the network, and confers full control over [data provenance](https://en.wikipedia.org/wiki/Data_lineage#Data_Provenance) and security.
 
+NOTE: **the PyPi version of this project is not maintained**, and is in an earlier version running the old alignemnt program, nucamino.
+
 ## Rationale
 
 The Stanford HIVdb algortihm is a widely used method for predicting the drug resistance phenotype of an HIV-1 infection based on its genetic sequence, specifically the complete or partial sequence of the genomic regions encoding the primary targets of modern antiretroviral therapy.  Prediction of HIV-1 drug resistance is an important component in the routine clinical management of HIV-1 infection, being faster and more cost-effective than the direct measurement of drug resistance by culturing virus isolates in the laboratory.  The HIVdb algorithm is essentially rules-based classifier that is actively maintained and released to the public domain in the ASI ([Algorithm Specification Interface](http://jcm.asm.org/content/41/6/2792.short)) exchange format, demonstrating a laudable commitment by the HIVdb developers to open-source research and clinical practice.
@@ -44,6 +46,13 @@ cd sierra-local
 sudo python3 setup.py install
 ```
 Note that you need super-user privileges to install the package by this method.  For more detailed instructions, please refer to the document [INSTALL.md](INSTALL.md) that should be located in the root directory of this Python package.
+
+Alternatively, you can install with pip, which doesn't need sudo"
+```
+git clone http://github.com/PoonLab/sierra-local
+cd sierra-local
+pip install --user .
+```
 
 ## Using sierra-local
 
