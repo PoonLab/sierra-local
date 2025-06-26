@@ -75,9 +75,11 @@ class NucAminoAligner():
         self.pol_nuc_map = {
             'PR': (2253, 2549),
             'RT': (2550, 4229),  # incorrectly includes RNAse, emulating sierrapy
-            'IN': (4230, 5096)
-        }
+            'IN': (4230, 5096),
+            'CA': (1186, 1878)
+            }
         self.gene_map = self.create_gene_map()
+        print(self.gene_map)
 
     def prevalence_parser(self, filename):
         """
@@ -318,7 +320,7 @@ class NucAminoAligner():
 
             os.remove(tfPostOut.name)
             os.remove(tf.name)
-
+            
             return output
 
         else:  # call nucAmino instead of post-align
@@ -385,7 +387,7 @@ class NucAminoAligner():
          first na position in pol, last na position in pol]
         """
         # good here
-        min_overlap = {'PR': 40, 'RT': 60, 'IN': 30}
+        min_overlap = {'PR': 40, 'RT': 60, 'IN': 30, 'CA':30}
         genes = []
         for gene, bounds in self.gene_map.items():
             aa_start, aa_end = bounds
@@ -410,6 +412,7 @@ class NucAminoAligner():
                 # if post-align returns nothing, need to raise message
                 # "There were no PR, RT, and IN genes found, refuse to process."
                 pass
+        # print(genes)
         return genes
 
     def get_mutations(self, records, do_subtype=False):

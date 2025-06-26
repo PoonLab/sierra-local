@@ -148,7 +148,9 @@ class JSONWriter():
 
             # not fastest way, but works around not mutating while iterating
             for index, position in enumerate(drug_muts):
+                print
                 for ind2, mut in enumerate(position):
+                    print(mut)
                     if int(mut[1:-1]) in ambiguous[sequence_name][gene]:
                         inds.add(index)
                     else:

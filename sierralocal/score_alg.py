@@ -1,4 +1,4 @@
-
+import re
 
 def score_drugs(algorithm, gene, seq_mutations):
     """
@@ -121,9 +121,43 @@ def score_single(algorithm, drugname, seq_mutations):
                     max_mask.append(False)
         sequence_partial_scores = [x for i,x in enumerate(sequence_partial_scores)
                                    if max_mask[i]]
-        sequence_drms = [x for i,x in enumerate(sequence_drms)
-                         if max_mask[i]]
+        
+        seen = dict()
+        for i, x in enumerate(sequence_drms):
+            pos, keep, end = extract_parts(x[0])
+            if not keep in seen:
+                seen[keep] = [end]
+                
+            else:
+                if not end in seen[keep][0]:
+                    seen[keep][0] += end
+            
+            if max_mask[i]:  # using the ind to sort it
+                seen[keep].append(i)
+        
+        sequence_drms = [k + v[0] for k, v in sorted(seen.items(), key=lambda item: item[1][1])]
 
     total_score = rec(sequence_partial_scores)
-
+    
     return total_score, sequence_partial_scores, sequence_drms
+
+def extract_parts(s):
+    """
+    get the relevant stuff form the mutation string
+
+    s: str, mut
+
+    using example of M184IVM
+    pos: 184
+    keep: M184
+    end: IVM
+    """
+    match = re.search(r'(\d+)', s)
+    if not match:
+        return None, None, None
+    
+    pos = match.group(1)
+    keep = s[:match.end()]
+    end = s[match.end():]
+    
+    return pos, keep, end
