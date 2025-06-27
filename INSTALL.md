@@ -39,6 +39,9 @@ sierralocal: error: the following arguments are required: fasta
 However, we appreciate that many users will not have root privileges on their computer or may prefer not to clone the git repository, so we provide some alternative installation instructions below.
 
 ### Using pip3
+
+NOTE: The PyPi package for sierra-local is not maintained. It is on an earlier version. Following these steps will install sierralocal wihtout the new alignment program, post-align.
+
 To install *sierra-local* from the [Python Package Index](https://pypi.org/), you need to have `pip3` on your system.  You can check whether this program is installed by invoking it from the command line:
 ```console
 art@Jesry:~$ pip3
