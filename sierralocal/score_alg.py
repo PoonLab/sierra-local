@@ -86,7 +86,7 @@ def score_single(algorithm, drugname, seq_mutations):
                                 # and not drm_positions+[residue] in sequence_drm_positions:
                                 mut = str(seq_mutations[position][0]) \
                                     + str(position) \
-                                    + str(seq_mutation)
+                                    + str(seq_mutations[position][1])
                                 drm_positions.append(position)
                                 drm_mutations.append(mut)
                                 DRM_present = True
