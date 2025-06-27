@@ -119,45 +119,45 @@ def score_single(algorithm, drugname, seq_mutations):
                     max_mask.append(True)
                 else:
                     max_mask.append(False)
+        
+        sequence_drms = merge_drm_positions(sequence_drms, max_mask)
         sequence_partial_scores = [x for i,x in enumerate(sequence_partial_scores)
                                    if max_mask[i]]
-        
-        seen = dict()
-        for i, x in enumerate(sequence_drms):
-            pos, keep, end = extract_parts(x[0])
-            if not keep in seen:
-                seen[keep] = [end]
-                
-            else:
-                if not end in seen[keep][0]:
-                    seen[keep][0] += end
-            
-            if max_mask[i]:  # using the ind to sort it
-                seen[keep].append(i)
-        
-        sequence_drms = [k + v[0] for k, v in sorted(seen.items(), key=lambda item: item[1][1])]
 
     total_score = rec(sequence_partial_scores)
     
     return total_score, sequence_partial_scores, sequence_drms
 
-def extract_parts(s):
+def merge_drm_positions(sequence_drm_positions, max_mask):
     """
-    get the relevant stuff form the mutation string
+    Sierrapy reports all triggering AAs, this function merges the AAs of the ones we are dropping to the highest scoring one
+    this function is not the most efficient, it triples over the input list
 
-    s: str, mut
-
-    using example of M184IVM
-    pos: 184
-    keep: M184
-    end: IVM
     """
-    match = re.search(r'(\d+)', s)
-    if not match:
-        return None, None, None
-    
-    pos = match.group(1)
-    keep = s[:match.end()]
-    end = s[match.end():]
-    
-    return pos, keep, end
+    result = []
+    merged = []
+
+    # collect all True entries as is
+    for idx, drm_list in enumerate(sequence_drm_positions):
+        if max_mask[idx]:
+            result.append(list(drm_list))  # copy to avoid mutation
+            merged.append([d[:-1] for d in drm_list])  # track prefixes
+
+    # for False entries, append suffixes to corresponding True entry
+    for idx, drm_list in enumerate(sequence_drm_positions):
+        if not max_mask[idx]:
+            for drm in drm_list:
+                prefix, suffix = drm[:-1], drm[-1]
+
+                # Find a matching prefix in already added result
+                for r_idx, prefix_list in enumerate(merged):
+                    if prefix in prefix_list:
+                        # Find the exact position in inner list to modify
+                        for p_idx, pfx in enumerate(prefix_list):
+                            if pfx == prefix:
+                                existing = result[r_idx][p_idx]
+                                if suffix not in existing:
+                                    result[r_idx][p_idx] += suffix
+                        break
+
+    return result

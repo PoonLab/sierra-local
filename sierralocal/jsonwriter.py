@@ -148,10 +148,10 @@ class JSONWriter():
 
             # not fastest way, but works around not mutating while iterating
             for index, position in enumerate(drug_muts):
-                print
                 for ind2, mut in enumerate(position):
-                    print(mut)
-                    if int(mut[1:-1]) in ambiguous[sequence_name][gene]:
+                    mut_pos = re.search(r'\d+', mut).group() # 184 in M184IV
+                    if int(mut_pos) in ambiguous[sequence_name][gene]:
+                        inds.add(index)
                         inds.add(index)
                     else:
                         new[index].append(mut)
@@ -161,7 +161,6 @@ class JSONWriter():
             new2 = [score for index, score in enumerate(muts_scores) if index not in inds]
                         
             scores[drug] = [sum(new2), new2, new1]
-
         drug_resistance = {}
         drug_resistance['version'] = {}
         drug_resistance['version']['text'] = self.algorithm.version
@@ -213,29 +212,31 @@ class JSONWriter():
                     if not pscore == 0.0:
                         pscoredict = {}
                         pscoredict['mutations'] = []
+
                         for combination in scores[drug][2][index]:
                             # find the mutation classification "type" based on the gene
                             type_ = drugclass
                             pos = re.findall(u'([0-9]+)', combination)[0]
-                            muts = re.findall(u'(?<=[0-9])([A-Za-z])+', combination)[0]
+                            muts = re.search(r'\d([A-Za-z]+)', combination).group(1)
                             if gene == 'IN':
                                 for key in self.insti_comments:
-                                    if pos in key and muts in key:
+                                    if pos in key and any(c in key for c in muts):
                                         type_ = self.insti_comments[key]
                                         break
                             elif gene == 'PR':
                                 for key in self.pi_comments:
-                                    if pos in key and muts in key:
+                                    if pos in key and any(c in key for c in muts):
                                         type_ = self.pi_comments[key]
                                         break
                             elif gene == 'RT':
                                 for key in self.rt_comments:
-                                    if pos in key and muts in key:
+                                    if pos in key and any(c in key for c in muts):
                                         type_ = self.rt_comments[key]
                                         break
                             mut = {}
                             mut['text'] = combination.replace('d', 'Deletion')
                             mut['primaryType'] = type_
+                            mut['triggeredAAs'] = muts
                             mut['comments'] = [{
                                 'type': type_,
                                 'text': self.find_comment(gene,
