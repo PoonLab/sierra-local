@@ -127,7 +127,7 @@ class JSONWriter():
         validation_results = [{'level': v[0], 'message': v[1]} for v in validated]
         return validation_results
 
-    def format_drug_resistance(self, scores, sequence_name, gene, ambiguous, names):
+    def format_drug_resistance(self, scores, sequence_name, gene, ambiguous, mut_dic):
         """
         Returns formatted drug resistance and score breakdowns,
         meant for results output.
@@ -135,7 +135,6 @@ class JSONWriter():
         @param gene: str, gene found in the sequence
         @param seqeunce_name: str, sequence name of fasta input, use for ambiguous dict
         @param ambiguous: dict, {sequence name: position of NNN NAs}
-        @param names: list, [sequence names]
         @return drug_resistance: dict, one dictionary encoding
         scores and descriptions
         """
@@ -149,7 +148,9 @@ class JSONWriter():
             # not fastest way, but works around not mutating while iterating
             for index, position in enumerate(drug_muts):
                 for ind2, mut in enumerate(position):
-                    if int(mut[1:-1]) in ambiguous[sequence_name][gene]:
+                    mut_pos = re.search(r'\d+', mut).group() # 184 in M184IV
+                    if int(mut_pos) in ambiguous[sequence_name][gene]:
+                        inds.add(index)
                         inds.add(index)
                     else:
                         new[index].append(mut)
@@ -159,7 +160,6 @@ class JSONWriter():
             new2 = [score for index, score in enumerate(muts_scores) if index not in inds]
                         
             scores[drug] = [sum(new2), new2, new1]
-
         drug_resistance = {}
         drug_resistance['version'] = {}
         drug_resistance['version']['text'] = self.algorithm.version
@@ -211,29 +211,31 @@ class JSONWriter():
                     if not pscore == 0.0:
                         pscoredict = {}
                         pscoredict['mutations'] = []
+
                         for combination in scores[drug][2][index]:
                             # find the mutation classification "type" based on the gene
                             type_ = drugclass
                             pos = re.findall(u'([0-9]+)', combination)[0]
-                            muts = re.findall(u'(?<=[0-9])([A-Za-z])+', combination)[0]
+                            muts = re.search(r'\d([A-Za-z]+)', combination).group(1)
                             if gene == 'IN':
                                 for key in self.insti_comments:
-                                    if pos in key and muts in key:
+                                    if pos in key and any(c in key for c in muts):
                                         type_ = self.insti_comments[key]
                                         break
                             elif gene == 'PR':
                                 for key in self.pi_comments:
-                                    if pos in key and muts in key:
+                                    if pos in key and any(c in key for c in muts):
                                         type_ = self.pi_comments[key]
                                         break
                             elif gene == 'RT':
                                 for key in self.rt_comments:
-                                    if pos in key and muts in key:
+                                    if pos in key and any(c in key for c in muts):
                                         type_ = self.rt_comments[key]
                                         break
                             mut = {}
-                            mut['text'] = combination.replace('d', 'Deletion')
+                            mut['text'] = combination[0] + pos + mut_dic[combination[0] + pos]
                             mut['primaryType'] = type_
+                            mut['triggeredAAs'] = muts
                             mut['comments'] = [{
                                 'type': type_,
                                 'text': self.find_comment(gene,
@@ -261,6 +263,8 @@ class JSONWriter():
         nucleotide in the query sequence
         @return dic: dict, dictionary describing mutations in a single
         query sequence
+        @return curr_mut: dict, dictionary to capture the sequnece AAs per consensus and position
+        to fill out text field in format_drug_resistnace
         """
         dic = {}
         dic['firstAA'] = int(first_last_aa[0])
@@ -268,9 +272,9 @@ class JSONWriter():
         dic['gene'] = {'name': gene, 'length': None}  # TODO: output length
         dic['mutations'] = []
         dic['SDRMs'] = []
+        curr_mut = {}
         mutation_line = []
         mutation_line.extend([" - " for i in range(int(first_last_aa[0]), int(first_last_aa[1]) + 1)])
-
         for idx, mutation in enumerate(ordered_mutation_list):
             mutdict = {}
             mutdict['consensus'] = mutation[2]
@@ -300,14 +304,19 @@ class JSONWriter():
             mutdict['primaryType'] = self.primary_type(gene,
                                                        mutation[0],
                                                        mutation[1])
+            con_pos = mutation[2] + str(mutation[0]) # M184 in M184MIV
             if mutdict['AAs'] == '-':
-                mutdict['text'] = mutation[2] + str(mutation[0]) + 'del'
+                mutdict['text'] = con_pos + 'del'
+                curr_mut[con_pos] = 'del'
             else:
-                mutdict['text'] = mutation[2] + str(mutation[0]) + mutation[3]
+               
+                mutdict['text'] = con_pos + mutation[3]
+                curr_mut[con_pos] =  mutation[3]
             if int(first_last_aa[0]) <= int(mutation[0]) <= int(first_last_aa[1]):
                 mutation_line[int(mutation[0]) - int(first_last_aa[1]) - 1] = f"{''.join(sorted(mutation[1])):^3}"
+            
             dic['mutations'].append(mutdict)
-        return dic
+        return dic, curr_mut
 
     def format_input_sequence(self, header, sequence):
         out = {
@@ -357,13 +366,13 @@ class JSONWriter():
                     gene, first_aa, last_aa, first_na, last_na = gene_info
                     omlist = file_mutation_lists[index][idx]
                     nalist = (first_aa, last_aa)
-                    data['alignedGeneSequences'].append(
-                        self.format_aligned_gene_sequences(omlist,
+                    formatted, curr_mut = self.format_aligned_gene_sequences(omlist,
                                                            gene,
                                                            nalist)
+                    data['alignedGeneSequences'].append(formatted
                     )
                     data['drugResistance'].append(
-                        self.format_drug_resistance(scores[idx], file_headers[index], gene, ambiguous, names)
+                        self.format_drug_resistance(scores[idx], file_headers[index], gene, ambiguous, curr_mut)
                     )
 
             out.append(data)
