@@ -1,4 +1,4 @@
-
+import re
 
 def score_drugs(algorithm, gene, seq_mutations):
     """
@@ -119,11 +119,45 @@ def score_single(algorithm, drugname, seq_mutations):
                     max_mask.append(True)
                 else:
                     max_mask.append(False)
+        
+        sequence_drms = merge_drm_positions(sequence_drms, max_mask)
         sequence_partial_scores = [x for i,x in enumerate(sequence_partial_scores)
                                    if max_mask[i]]
-        sequence_drms = [x for i,x in enumerate(sequence_drms)
-                         if max_mask[i]]
 
     total_score = rec(sequence_partial_scores)
-
+    
     return total_score, sequence_partial_scores, sequence_drms
+
+def merge_drm_positions(sequence_drm_positions, max_mask):
+    """
+    Sierrapy reports all triggering AAs, this function merges the AAs of the ones we are dropping to the highest scoring one
+    this function is not the most efficient, it triples over the input list
+
+    """
+    result = []
+    merged = []
+
+    # collect all True entries as is
+    for idx, drm_list in enumerate(sequence_drm_positions):
+        if max_mask[idx]:
+            result.append(list(drm_list))  # copy to avoid mutation
+            merged.append([d[:-1] for d in drm_list])  # track prefixes
+
+    # for False entries, append suffixes to corresponding True entry
+    for idx, drm_list in enumerate(sequence_drm_positions):
+        if not max_mask[idx]:
+            for drm in drm_list:
+                prefix, suffix = drm[:-1], drm[-1]
+
+                # Find a matching prefix in already added result
+                for r_idx, prefix_list in enumerate(merged):
+                    if prefix in prefix_list:
+                        # Find the exact position in inner list to modify
+                        for p_idx, pfx in enumerate(prefix_list):
+                            if pfx == prefix:
+                                existing = result[r_idx][p_idx]
+                                if suffix not in existing:
+                                    result[r_idx][p_idx] += suffix
+                        break
+
+    return result
