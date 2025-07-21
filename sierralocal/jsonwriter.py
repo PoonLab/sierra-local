@@ -293,13 +293,13 @@ class JSONWriter():
                                                    mutation[0],
                                                    mutation[1],
                                                    mutation[3])
-            mutdict['isSDRM'] = self.is_sdrm(gene,
+            check_sdrm, sdrm_aas = self.is_sdrm(gene,
                                              mutation[0],
                                              mutation[1])
-            if self.is_sdrm(gene,
-                            mutation[0],
-                            mutation[1]):
-                dic['SDRMs'].append({'text': mutation[2] + str(mutation[0]) + mutation[3]})
+            
+            if check_sdrm:
+                dic['SDRMs'].append({'text': mutation[2] + str(mutation[0]) + sdrm_aas})
+
             mutdict['hasStop'] = self.has_stop(mutation, mutation[3])
             mutdict['primaryType'] = self.primary_type(gene,
                                                        mutation[0],
@@ -479,12 +479,15 @@ class JSONWriter():
         @return: bool
         """
         position = str(position)
+        all_aas = ''
+        found = False
         if gene in self.sdrm_dic:
             if position in self.sdrm_dic[gene]:
                 for aa in AA:
                     if aa in self.sdrm_dic[gene][position]:
-                        return True
-        return False
+                        all_aas += aa
+                        found = True
+        return found, all_aas
 
     def has_stop(self, ordered_mut_list_index, text):
         """
