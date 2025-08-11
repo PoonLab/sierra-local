@@ -13,10 +13,14 @@ if sys.version_info.major < 3:
 # https://stackoverflow.com/questions/5932804/set-file-permissions-in-setup-py-file/25761434
 class OverrideInstall(install):
     def run(self):
-        uid, gid = 0, 0  # root user
-        mode = 0o755
-        set_data_dir = False
         install.run(self)
+
+        # Make sure postalign.linux is executable
+        for filepath in self.get_outputs():
+            if filepath.endswith("postalign.linux"):
+                log.info(f"Setting executable permissions on {filepath}")
+                os.chmod(filepath, 0o755)
+        set_data_dir = False
         for filepath in self.get_outputs():
             path = os.path.dirname(filepath)
             if path.endswith('data') and not set_data_dir:
