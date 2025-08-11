@@ -34,7 +34,6 @@ setup(
     packages=find_packages(),
     install_requires=[
     'cython >=0.29.35',
-    'post-align @ https://github.com/hivdb/post-align/archive/8e2ee118261987208c17add6cef5c1270e325a4c.zip',
     'more-itertools>=9.1.0',
     'orjson>=3.9.1',
     'types-setuptools>=67.8.0.0'
@@ -53,6 +52,8 @@ setup(
     package_data={
             'sierralocal': [
                 'bin/nucamino-*',
+                'bin/postalign*',
+                'bin/minimap2*',
                 'data/genotype-properties.*.csv',
                 'data/genotype-references.*.fasta',
                 'data/*Prevalences.tsv',

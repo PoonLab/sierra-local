@@ -23,7 +23,8 @@ class NucAminoAligner():
 
         if program == 'post':
             print('Aligning using post-align')
-            pass  # TODO include post align as a submodule
+            print(platform.system().lower())
+            pass  # TODO include post align as a submodule: I'm here now!
         else:  # get necessary binaries for nucAmino
             if binary is None:
                 target = 'nucamino-{}-{}'.format(
@@ -203,6 +204,7 @@ class NucAminoAligner():
                     inputSequences.update({name: ''})
                 tf.write(line)
         tf.close()
+
         if program == 'post':
             # incorporate config file as apart of sierralocal
             with open(str(Path(os.path.dirname(__file__)) / 'data' / 'alignment-config_hiv1.json'), 'r') as f:
@@ -217,12 +219,14 @@ class NucAminoAligner():
             POST_PROCESSORS = self.getConfigField(config=config, field='postProcessors')
             MINIMAP2_OPTS = self.getConfigField(config=config, field='minimap2Opts')
 
+            bin_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f'bin/postalign.{platform.system().lower()}')
+            
             # hold the output of postalign
             tfPostOut = tempfile.NamedTemporaryFile(mode='w', delete=False)
             for refFragmentName in REF_SEQUENCE:
                 refSeqFile = REF_SEQUENCE[refFragmentName]
                 cmd = [
-                    'postalign',
+                    bin_path,
                     '-i', tf.name,
                     '-o', tfPostOut.name,
                     '-f', 'MINIMAP2',
