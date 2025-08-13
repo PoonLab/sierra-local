@@ -57,6 +57,10 @@ pip install --user .
 ## Using sierra-local
 
 ### Command-line interface (CLI)
+Before running, we recommend using the `sierralocal/updater.py` script to update the datafiles associated with this repository to the most updated versions available form HIVdb. Please note that you do need the requests package stated above for the following command to run.
+```console
+python3 sierralocal/updater.py
+```
 
 To run a quick example, use the following sequence of commands:
 ```console
