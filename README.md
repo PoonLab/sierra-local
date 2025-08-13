@@ -22,7 +22,7 @@ We tried to minimize dependencies:
   - [requests](https://pypi.org/project/requests/)
 - [NucAmino](https://github.com/hivdb/nucamino) `v0.1.3` or later (included with the package).
 
-[Post-Align](https://github.com/hivdb/post-align) is the new alignment program and requires the following dependencies:
+[Post-Align](https://github.com/hivdb/post-align) is the new alignment program and requires the following dependencies (included with the package as well):
 - [Cython==0.29.32](https://pypi.org/project/Cython/0.29.35/)
 - [more-itertools==9.1.0](https://pypi.org/project/more-itertools/9.1.0/)
 - [orjson==3.9.1](https://pypi.org/project/orjson/3.9.1/)
@@ -30,13 +30,6 @@ We tried to minimize dependencies:
 - [minimap2](https://github.com/lh3/minimap2)
 
 ## Installation
-
-### Setting up Post-Align
-Post-Align is the new alignment program used by sierrapy, which we've incorporated into sierra-local. After cython is installed, run:
-```
-pip install https://github.com/hivdb/post-align/archive/8e2ee118261987208c17add6cef5c1270e325a4c.zip
-```
-which is adapted from Post-Align's [docker script](https://github.com/hivdb/sierra/blob/main/Dockerfile#L24-L30)
 
 ### Setting up Sierra-Local
 On a Linux system, you can install *sierra-local* as follows:
@@ -47,7 +40,7 @@ sudo python3 setup.py install
 ```
 Note that you need super-user privileges to install the package by this method.  For more detailed instructions, please refer to the document [INSTALL.md](INSTALL.md) that should be located in the root directory of this Python package.
 
-Alternatively, you can install with pip, which doesn't need sudo"
+Alternatively, you can install with pip, which doesn't need sudo.
 ```
 git clone http://github.com/PoonLab/sierra-local
 cd sierra-local
@@ -57,6 +50,10 @@ pip install --user .
 ## Using sierra-local
 
 ### Command-line interface (CLI)
+Before running, we recommend using the `sierralocal/updater.py` script to update the datafiles associated with this repository to the most updated versions available form HIVdb. Please note that you do need the requests package stated above for the following command to run.
+```console
+python3 sierralocal/updater.py
+```
 
 To run a quick example, use the following sequence of commands:
 ```console

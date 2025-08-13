@@ -13,10 +13,14 @@ if sys.version_info.major < 3:
 # https://stackoverflow.com/questions/5932804/set-file-permissions-in-setup-py-file/25761434
 class OverrideInstall(install):
     def run(self):
-        uid, gid = 0, 0  # root user
-        mode = 0o755
-        set_data_dir = False
         install.run(self)
+
+        # Make sure postalign.linux is executable
+        for filepath in self.get_outputs():
+            if filepath.endswith("postalign.linux"):
+                log.info(f"Setting executable permissions on {filepath}")
+                os.chmod(filepath, 0o755)
+        set_data_dir = False
         for filepath in self.get_outputs():
             path = os.path.dirname(filepath)
             if path.endswith('data') and not set_data_dir:
@@ -34,7 +38,6 @@ setup(
     packages=find_packages(),
     install_requires=[
     'cython >=0.29.35',
-    'post-align @ https://github.com/hivdb/post-align/archive/8e2ee118261987208c17add6cef5c1270e325a4c.zip',
     'more-itertools>=9.1.0',
     'orjson>=3.9.1',
     'types-setuptools>=67.8.0.0'
@@ -53,6 +56,8 @@ setup(
     package_data={
             'sierralocal': [
                 'bin/nucamino-*',
+                'bin/postalign*',
+                'bin/minimap2*',
                 'data/genotype-properties.*.csv',
                 'data/genotype-references.*.fasta',
                 'data/*Prevalences.tsv',
