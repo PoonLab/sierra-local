@@ -4,8 +4,6 @@
 # sierra-local
 sierra-local is a Python 3 implementation of the [Stanford University HIV Drug Resistance Database](https://hivdb.stanford.edu/) (HIVdb) [Sierra web service](https://hivdb.stanford.edu/page/webservice/) for generating drug resistance predictions from HIV-1 sequence data. This Python package enables laboratories to run this prediction algorithm without needing to transmit patient data over the network, and confers full control over [data provenance](https://en.wikipedia.org/wiki/Data_lineage#Data_Provenance) and security.
 
-NOTE: **the PyPi version of this project is not maintained**, and is in an earlier version running the old alignemnt program, nucamino.
-
 ## Rationale
 
 The Stanford HIVdb algortihm is a widely used method for predicting the drug resistance phenotype of an HIV-1 infection based on its genetic sequence, specifically the complete or partial sequence of the genomic regions encoding the primary targets of modern antiretroviral therapy.  Prediction of HIV-1 drug resistance is an important component in the routine clinical management of HIV-1 infection, being faster and more cost-effective than the direct measurement of drug resistance by culturing virus isolates in the laboratory.  The HIVdb algorithm is essentially rules-based classifier that is actively maintained and released to the public domain in the ASI ([Algorithm Specification Interface](http://jcm.asm.org/content/41/6/2792.short)) exchange format, demonstrating a laudable commitment by the HIVdb developers to open-source research and clinical practice.
@@ -21,22 +19,14 @@ We tried to minimize dependencies:
 - Python modules (used by `updater.py` script):
   - [requests](https://pypi.org/project/requests/)
 - [NucAmino](https://github.com/hivdb/nucamino) `v0.1.3` or later (included with the package).
-
-[Post-Align](https://github.com/hivdb/post-align) is the new alignment program and requires the following dependencies:
-- [Cython==0.29.32](https://pypi.org/project/Cython/0.29.35/)
-- [more-itertools==9.1.0](https://pypi.org/project/more-itertools/9.1.0/)
-- [orjson==3.9.1](https://pypi.org/project/orjson/3.9.1/)
-- [types-setuptools==67.8.0.0](https://pypi.org/project/types-setuptools/67.8.0.0/)
-- [minimap2](https://github.com/lh3/minimap2)
+- [Post-Align](https://github.com/hivdb/post-align) is the new alignment program and requires the following dependencies (included with the package as well):
+  - [Cython==0.29.32](https://pypi.org/project/Cython/0.29.35/)
+  - [more-itertools==9.1.0](https://pypi.org/project/more-itertools/9.1.0/)
+  - [orjson==3.9.1](https://pypi.org/project/orjson/3.9.1/)
+  - [types-setuptools==67.8.0.0](https://pypi.org/project/types-setuptools/67.8.0.0/)
+  - [minimap2](https://github.com/lh3/minimap2)
 
 ## Installation
-
-### Setting up Post-Align
-Post-Align is the new alignment program used by sierrapy, which we've incorporated into sierra-local. After cython is installed, run:
-```
-pip install https://github.com/hivdb/post-align/archive/8e2ee118261987208c17add6cef5c1270e325a4c.zip
-```
-which is adapted from Post-Align's [docker script](https://github.com/hivdb/sierra/blob/main/Dockerfile#L24-L30)
 
 ### Setting up Sierra-Local
 On a Linux system, you can install *sierra-local* as follows:
@@ -47,7 +37,7 @@ sudo python3 setup.py install
 ```
 Note that you need super-user privileges to install the package by this method.  For more detailed instructions, please refer to the document [INSTALL.md](INSTALL.md) that should be located in the root directory of this Python package.
 
-Alternatively, you can install with pip, which doesn't need sudo"
+Alternatively, you can install with pip, which doesn't need sudo.
 ```
 git clone http://github.com/PoonLab/sierra-local
 cd sierra-local
@@ -57,6 +47,26 @@ pip install --user .
 ## Using sierra-local
 
 ### Command-line interface (CLI)
+Before running, we recommend using the `sierralocal/updater.py` script to update the data files associated with this repository to the most updated versions available from [hivfacts](https://github.com/hivdb/hivfacts/tree/main/data). Please note that you do need the requests package stated above for the following command to run. More information regarding this script is detailed below.
+```console
+(sierra) will@dyn172-30-75-11 sierra-local % python3 sierralocal/updater.py 
+Downloading the latest HIVDB XML File
+Updated HIVDB XML into /Users/will/projects/sierra-local/sierralocal/data/HIVDB_9.8.xml
+Downloading the latest file to determine apobec
+Updated apobecs file to /Users/will/projects/sierra-local/sierralocal/data/apobecs.csv
+Downloading the latest file to determine is unusual
+Updated is unusual file to /Users/will/projects/sierra-local/sierralocal/data/rx-all_subtype-all.csv
+Downloading the latest file to determine SDRM mutations
+Updated SDRM mutations file to /Users/will/projects/sierra-local/sierralocal/data/sdrms_hiv1.csv
+Downloading the latest file to determine mutation type
+Updated mutation type file to /Users/will/projects/sierra-local/sierralocal/data/mutation-type-pairs_hiv1.csv
+Downloading the latest APOBEC DRMS File
+Updated APOBEC DRMs into /Users/will/projects/sierra-local/sierralocal/data/apobec_drms.json
+Downloading the latest subtype genotype property File
+Updated reference fasta to /Users/will/projects/sierra-local/sierralocal/data/genotype-properties.csv
+Downloading the latest subtype reference fasta file
+Updated reference fasta to /Users/will/projects/sierra-local/sierralocal/data/genotype-references.fasta
+```
 
 To run a quick example, use the following sequence of commands:
 ```console
@@ -66,7 +76,7 @@ searching path /root/miniconda3/envs/py395/lib/python3.10/site-packages/sierralo
 searching path /root/miniconda3/envs/py395/lib/python3.10/site-packages/sierralocal/data/apobec*.json
 HIVdb version 9.4
 Aligning using post-align
-Aligned RT.fa
+Aligned RT.fax
 100 sequences found in file RT.fa.
 Writing JSON to file RT_results.json
 Time elapsed: 19.796 seconds (5.1555 it/s)
@@ -101,14 +111,14 @@ art@Jesry:~/git/sierra-local$ head RT_results.json
 
 We can also specify a different ASI (XML) file representing an earlier version of the HIVdb algorithm to reprocess the same data, and save the output to another file:
 ```console
-art@Jesry:~/git/sierra-local$ sierralocal -xml sierralocal/data/HIVDB_8.5.d926dfff.xml RT.fa -o RT-v8.5.json
-/usr/local/lib/python3.6/dist-packages/sierralocal/data/apobec.tsv
-HIVdb version 8.5
-Found NucAmino binary /usr/local/lib/python3.6/dist-packages/sierralocal/bin/nucamino-linux-amd64
+(sierra) will@dyn172-30-75-11 sierra-local % sierralocal -xml sierralocal/data/HIVDB_9.8.xml RT.fa -o RT-v9.8.json
+searching path /Users/will/miniconda3/envs/sierra/lib/python3.9/site-packages/sierralocal/data/apobec_drms.json
+HIVdb version 9.8
+Aligning using post-align
 Aligned RT.fa
 100 sequences found in file RT.fa.
-Writing JSON to file RT-v8.5.json
-Time elapsed: 5.5014 seconds (18.337 it/s)
+Writing JSON to file RT-v9.8.json
+Time elapsed: 9.3831 seconds (10.709 it/s)
 ```
 
 We find that switching versions of the algorithm from 8.5 to 8.7 results in substantial changes in resistance scores for these data with the introduction of a new drug [doravirine](https://aidsinfo.nih.gov/drugs/546/doravirine/0/patient) (DOR).  In addition, two of 100 cases were scored differently:
@@ -138,50 +148,49 @@ art@Jesry:~/git/sierra-local$ R
 63 AF102332.A11.B.62       B  90 115 115  90  80  80  60   0  10  10  10
 ```
 
-To specify your own JSON file for APOBEC DRMS, you can call `-json` followed by your file. In the example below, `EXTERNAL-APOBEC.json` is located in the same directory as I called `sierralocal`:
+To specify your own JSON file for APOBEC DRMS, you can call `-json` followed by your file:
 ```
-root@LAPTOP-4FGEVBR0:~/sierra-local# sierralocal RT.fa -json EXTERNAL-APOBEC.json
+(sierra) will@dyn172-30-75-11 sierra-local % sierralocal RT.fa -json sierralocal/data/apobec_drms.c9583ac2.json
+searching path /Users/will/miniconda3/envs/sierra/lib/python3.9/site-packages/sierralocal/data/HIVDB*.xml
+HIVdb version 9.4
+Aligning using post-align
+Aligned RT.fa
+100 sequences found in file RT.fa.
+Writing JSON to file RT_results.json
+Time elapsed: 9.3442 seconds (10.751 it/s)
 ```
 
 ### As a Python module
 If you have downloaded the package source to your computer, you can also run *sierra-local* as a Python module from the root directory of the package.  In the following example, we are calling the main function of *sierra-local* from an interactive Python session:
 ```console
-art@Jesry:~/git/sierra-local$ git clone http://github.com/PoonLab/sierra-local
-art@Jesry:~/git/sierra-local$ cd sierra-local
-art@Jesry:~/git/sierra-local$ python3
-Python 3.6.6 (default, Sep 12 2018, 18:26:19) 
-[GCC 8.0.1 20180414 (experimental) [trunk revision 259383]] on linux
+(sierra) will@dyn172-30-75-11 sierra-local % git clone http://github.com/PoonLab/sierra-local
+(sierra) will@dyn172-30-75-11 sierra-local % cd sierra-local
+(sierra) will@dyn172-30-75-11 sierra-local % python3
+Python 3.9.18 | packaged by conda-forge | (main, Dec 23 2023, 16:35:41) 
+[Clang 16.0.6 ] on darwin
 Type "help", "copyright", "credits" or "license" for more information.
 >>> from sierralocal.main import sierralocal
 >>> sierralocal('RT.fa', 'RT.json')
-searching path /home/art/git/sierra-local/sierralocal/data/HIVDB*.xml
-searching path /home/art/git/sierra-local/sierralocal/data/apobec*.tsv
-HIVdb version 8.8
-Found NucAmino binary /home/art/git/sierra-local/sierralocal/bin/nucamino-linux-amd64
+searching path /Users/will/projects/sierra-local/sierralocal/data/HIVDB*.xml
+searching path /Users/will/projects/sierra-local/sierralocal/data/apobec_drms.json
+HIVdb version 9.8
+Aligning using post-align
 Aligned RT.fa
 100 sequences found in file RT.fa.
 Writing JSON to file RT.json
-(100, 0.04676532745361328)
+(100, 0.0769047737121582)
 ```
 Note that this doesn't require any `sudo` privileges.
 
 ### Subtyping
 
-Currently, we do not support the subtyping function present in sierrapy. However, there is a framework of the script located in `/sierralocal/deprecated/subtyper.py`. We do not recommend using this feature through our scripts without modification as it is not maintained or tested. However, you can manually enable this feature by changing the `do_subtype` values to True in `sierralocal/nucaminohook.py` and importing the subtyper class in the subtyper script.
+Currently, we do not support the subtyping function present in sierrapy. However, there is a framework of the script located in `/sierralocal/deprecated/subtyper.py`. We do not recommend using this feature through our scripts without modification as it is not maintained or tested. However, you can manually enable this feature by changing the `do_subtype` values to True in `sierralocal/nucaminohook.py` and importing the subtyper class from the subtyper script.
 
-## Updating the algorithm
+## Updating the algorithm and other data files
 
 The Stanford HIVdb database regularly updates its resistance genotyping algorithm and publishes the associated ASI2 XML file on their github, [hivfacts](https://github.com/hivdb/hivfacts/tree/main/data).  In previous versions of *sierra-local*, we used Python to automatically query this website and download the newest version if it was not already present on the user's computer.  Subsequent changes to the Stanford HIVdb website, however, meant that users would have to install several additional dependencies in order for Python to locate the required files.  As a result, we decided to make the `updater.py` script an optional step of the pipeline.
 
-
-Manually running the script enabled me to grab the most recent versions of the ASI2 and APOBEC files from the HIVdb webserver:
-```console
-art@orolo:~/git/sierra-local$ python3 sierralocal/updater.py 
-Downloading the latest HIVDB XML File
-Updated HIVDB XML into sierralocal/data/HIVDB_9.4.xml
-Downloading the latest APOBEC DRMS File
-Updated APOBEC DRMs into sierralocal/data/apobec_drms.json
-```
+Manually running the script enabled me to grab the most recent versions of the ASI2 and other mutation data files from the HIVdb webserver:
 
 Now of course, it would be much simpler to manually download these files yourself in [hivfacts](https://github.com/hivdb/hivfacts/tree/main/data), but in some applications there may be a benefit to automating this step.
 
