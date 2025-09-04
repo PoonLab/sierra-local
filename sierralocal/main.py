@@ -123,6 +123,7 @@ def scorefile(input_file, algorithm, do_subtype=False, program='post'):
            file_genes, sequence_lengths, file_trims, subtypes, na_sequence, ambiguous, gene_order
 
 def sierralocal(fasta, outfile, xml=None, json=None, cleanup=False, forceupdate=False,
+                apobec_csv=None, unusual_csv=None, sdrms_csv=None, mutation_csv=None,
                 program='post', do_subtype=False): # pragma: no cover
     """
     Contains all initializing and processing calls.
@@ -134,13 +135,17 @@ def sierralocal(fasta, outfile, xml=None, json=None, cleanup=False, forceupdate=
     @param json: <optional> str, path to local copy of HIVdb algorithm APOBEC DRM file
     @param cleanup:  <optional> bool, to delete alignment file
     @param forceupdate: <optional> bool, forces sierralocal to update its local copy of the HIVdb algorithm
+    @param apobec_csv: str <optional>, Path to CSV APOBEC csv file (default: apobecs.csv)
+    @param unusual_csv: str <optional>, Path to CSV file to determine if is unusual (default: rx-all_subtype-all.csv)
+    @param sdrms_csv: str <optional>, Path to CSV file to determine SDRM mutations (default: sdrms_hiv1.csv)
+    @param mutation_csv: str <optional>, Path to CSV file to determine mutation type (default: mutation-type-pairs_hiv1.csv)
     @return: tuple, a tuple of (number of records processed, time elapsed initializing algorithm)
     """
 
     # initialize algorithm and jsonwriter
     time0 = time.time()
     algorithm = HIVdb(asi2=xml, apobec=json, forceupdate=forceupdate)
-    writer = JSONWriter(algorithm)
+    writer = JSONWriter(algorithm, apobec_csv, unusual_csv, sdrms_csv, mutation_csv)
     time_elapsed = time.time() - time0
 
     # accommodate single file path argument
@@ -197,9 +202,17 @@ def parse_args(): # pragma: no cover
                         help='Forces update of HIVdb algorithm. Requires network connection.')
     parser.add_argument('-alignment', default='post', choices=['post', 'nuc'],
                         help='Alignment program to use, "post" for post align and "nuc" for nucamino')
+    parser.add_argument('-apobec_csv', default=None,
+                        help='<optional> Path to CSV APOBEC csv file (default: apobecs.csv)')
+    parser.add_argument('-unusual_csv', default=None,
+                        help='<optional> Path to CSV file to determine if is unusual (default: rx-all_subtype-all.csv)')
+    parser.add_argument('-sdrms_csv', default=None,
+                        help='<optional> Path to CSV file to determine SDRM mutations (default: sdrms_hiv1.csv)')
+    parser.add_argument('-mutation_csv', default=None,
+                        help='<optional> Path to CSV file to determine mutation type (default: mutation-type-pairs_hiv1.csv)')
+
     args = parser.parse_args()
     return args
-
 
 def main(): # pragma: no cover
     """
@@ -216,6 +229,8 @@ def main(): # pragma: no cover
     time_start = time.time()
     count, time_elapsed = sierralocal(args.fasta, args.outfile, xml=args.xml,
                                       json=args.json, cleanup=args.cleanup, forceupdate=args.forceupdate,
+                                      apobec_csv=args.apobec_csv, unusual_csv=args.unusual_csv, 
+                                      sdrms_csv=args.sdrms_csv, mutation_csv=args.mutation_csv,
                                       program=args.alignment)
     time_diff = time.time() - time_start
 
