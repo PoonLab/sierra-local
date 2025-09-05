@@ -58,7 +58,7 @@ def update_is_unusual():
     print('Downloading the latest file to determine is unusual')
 
     try:
-        unusual_latest = 'https://raw.githubusercontent.com/hivdb/hivfacts/2021.3/data/aapcnt/rx-all_subtype-all.csv'
+        unusual_latest = 'https://raw.githubusercontent.com/hivdb/hivfacts/refs/heads/main/data/aapcnt/rx-all_subtype-all.csv' 
         request = requests.get(unusual_latest)
         filepath = os.path.join(mod_path, "data", "rx-all_subtype-all.csv")
         with open(filepath, 'wb') as file:
