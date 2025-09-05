@@ -3,12 +3,12 @@ import sys
 import time
 import argparse
 import json
+from pathlib import Path
 
 from sierralocal import score_alg
 from sierralocal.hivdb import HIVdb
 from sierralocal.jsonwriter import JSONWriter
 from sierralocal.nucaminohook import NucAminoAligner
-
 
 def score(filename, xml_path=None, tsv_path=None, forceupdate=False, do_subtype=False, program='post'): # pragma: no cover
     """
@@ -124,7 +124,7 @@ def scorefile(input_file, algorithm, do_subtype=False, program='post'):
 
 def sierralocal(fasta, outfile, xml=None, json=None, cleanup=False, forceupdate=False,
                 apobec_csv=None, unusual_csv=None, sdrms_csv=None, mutation_csv=None,
-                program='post', do_subtype=False): # pragma: no cover
+                updater_outdir=None, program='post', do_subtype=False): # pragma: no cover
     """
     Contains all initializing and processing calls.
 
@@ -144,7 +144,7 @@ def sierralocal(fasta, outfile, xml=None, json=None, cleanup=False, forceupdate=
 
     # initialize algorithm and jsonwriter
     time0 = time.time()
-    algorithm = HIVdb(asi2=xml, apobec=json, forceupdate=forceupdate)
+    algorithm = HIVdb(asi2=xml, apobec=json, forceupdate=forceupdate, updater_outdir=updater_outdir)
     writer = JSONWriter(algorithm, apobec_csv, unusual_csv, sdrms_csv, mutation_csv)
     time_elapsed = time.time() - time0
 
@@ -210,6 +210,8 @@ def parse_args(): # pragma: no cover
                         help='<optional> Path to CSV file to determine SDRM mutations (default: sdrms_hiv1.csv)')
     parser.add_argument('-mutation_csv', default=None,
                         help='<optional> Path to CSV file to determine mutation type (default: mutation-type-pairs_hiv1.csv)')
+    parser.add_argument('-updater_outdir', default=None,
+                        help='<optional> Path to folder to store updated files from updater (default: sierralocal/data folder))')
 
     args = parser.parse_args()
     return args
@@ -219,6 +221,16 @@ def main(): # pragma: no cover
     Main function called from CLI.
     """
     args = parse_args()
+
+    mod_path = Path(os.path.dirname(__file__))
+
+    if args.updater_outdir:
+        target_dir = args.updater_outdir
+    else:
+        target_dir = os.path.join(mod_path, "data")
+    
+    # Create directory if it doesn't exist
+    os.makedirs(target_dir, exist_ok=True)
 
     # check that FASTA files in list all exist
     for file in args.fasta:
@@ -230,7 +242,7 @@ def main(): # pragma: no cover
     count, time_elapsed = sierralocal(args.fasta, args.outfile, xml=args.xml,
                                       json=args.json, cleanup=args.cleanup, forceupdate=args.forceupdate,
                                       apobec_csv=args.apobec_csv, unusual_csv=args.unusual_csv, 
-                                      sdrms_csv=args.sdrms_csv, mutation_csv=args.mutation_csv,
+                                      sdrms_csv=args.sdrms_csv, mutation_csv=args.mutation_csv, updater_outdir=target_dir,
                                       program=args.alignment)
     time_diff = time.time() - time_start
 
