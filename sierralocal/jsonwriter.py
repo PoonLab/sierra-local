@@ -10,7 +10,7 @@ import hashlib
 
 
 class JSONWriter():
-    def __init__(self, algorithm):
+    def __init__(self, algorithm, apobec_csv, unusual_csv, sdrms_csv, mutation_csv):
         # possible alternative drug abbrvs
         self.names = {'3TC': 'LMV'}
 
@@ -39,7 +39,16 @@ class JSONWriter():
             self.rt_comments = dict(csv.reader(rt_file, delimiter='\t'))
 
         # make dictionary for isUnusual
-        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'rx-all_subtype-all.csv')
+        if unusual_csv is None:
+            dest = str(Path(os.path.dirname(__file__)) / 'data' / 'rx-all_subtype-all.csv')
+        else:
+            if os.path.isfile(unusual_csv):    # Ensure is a file
+                dest = unusual_csv
+            else:
+                raise FileNotFoundError(
+                        "Path to CSV file to determine if is unusual cannot be found at user specified "
+                        "path {}".format(unusual_csv))
+        print("Using unusual file: "+dest)
         with open(dest, 'r', encoding='utf-8-sig') as is_unusual_file:
             is_unusual_file = csv.DictReader(is_unusual_file)
             self.is_unusual_dic = {}
@@ -54,7 +63,16 @@ class JSONWriter():
                     self.is_unusual_dic[gene].update({pos: {}})
                 self.is_unusual_dic[gene][pos].update({aa: unusual})
 
-        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'sdrms_hiv1.csv')
+        if sdrms_csv is None:
+            dest = str(Path(os.path.dirname(__file__)) / 'data' / 'sdrms_hiv1.csv')
+        else:
+            if os.path.isfile(sdrms_csv):    # Ensure is a file
+                dest = sdrms_csv
+            else:
+                raise FileNotFoundError(
+                        "Path to CSV file to determine SDRM mutations cannot be found at user specified "
+                        "path {}".format(sdrms_csv))
+        print("Using SDRM mutations file: "+dest)
         with open(dest, 'r', encoding='utf-8-sig') as sdrm_files:
             sdrm_files = csv.DictReader(sdrm_files)
             self.sdrm_dic = {}
@@ -86,7 +104,17 @@ class JSONWriter():
                     self.apobec_drm_dic[gene][position] += aa
 
         # make dictionary for primary type
-        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'mutation-type-pairs_hiv1.csv')
+        if mutation_csv is None:
+            dest = str(Path(os.path.dirname(__file__)) / 'data' / 'mutation-type-pairs_hiv1.csv')
+        else:
+            if os.path.isfile(mutation_csv):    # Ensure is a file
+                dest = mutation_csv
+            else:
+                raise FileNotFoundError(
+                        "Path to CSV file to determine mutation type cannot be found at user specified "
+                        "path {}".format(mutation_csv))
+
+        print("Using mutation type file: "+dest)
         with open(dest, 'r', encoding='utf-8-sig') as mut_type_pairs1_files:
             mut_type_pairs1_files = csv.DictReader(mut_type_pairs1_files)
             self.primary_type_dic = {}
@@ -102,7 +130,16 @@ class JSONWriter():
                 self.primary_type_dic[gene][pos].update({aa: mut})
 
         # make dictionary for apobec mutations
-        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'apobecs.csv')
+        if apobec_csv is None:
+            dest = str(Path(os.path.dirname(__file__)) / 'data' / 'apobecs.csv')
+        else:
+            if os.path.isfile(apobec_csv):    # Ensure is a file
+                dest = apobec_csv
+            else:
+                raise FileNotFoundError(
+                        "Path to CSV file with APOBEC cannot be found at user specified "
+                        "path {}".format(apobec_csv))
+        print("Using APOBEC file: "+dest)
         with open(dest, 'r', encoding='utf-8-sig') as apobec_mutations:
             apobec_mutations = csv.DictReader(apobec_mutations)
             self.apobec_mutations_dic = {}
