@@ -240,7 +240,6 @@ def check_input(apobec_path, unusual_path, sdrms_path, mutation_path):
         "sdrms_csv": sdrms_path,
         "mutation_csv": mutation_path,
     }
-
     for key, path in paths.items():
         if path is None:
             continue
@@ -256,6 +255,7 @@ def check_input(apobec_path, unusual_path, sdrms_path, mutation_path):
                 f"Invalid header in {key} file '{path}'.\n"
                 f"Expected: {exp[key]}\nFound:    {header}"
             )
+            sys.exit()
 
 
 def main(): # pragma: no cover
