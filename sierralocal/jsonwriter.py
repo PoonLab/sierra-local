@@ -49,6 +49,7 @@ class JSONWriter():
                         "Path to CSV file to determine if is unusual cannot be found at user specified "
                         "path {}".format(unusual_csv))
         print("Using unusual file: "+dest)
+
         with open(dest, 'r', encoding='utf-8-sig') as is_unusual_file:
             is_unusual_file = csv.DictReader(is_unusual_file)
             self.is_unusual_dic = {}
@@ -73,6 +74,7 @@ class JSONWriter():
                         "Path to CSV file to determine SDRM mutations cannot be found at user specified "
                         "path {}".format(sdrms_csv))
         print("Using SDRM mutations file: "+dest)
+
         with open(dest, 'r', encoding='utf-8-sig') as sdrm_files:
             sdrm_files = csv.DictReader(sdrm_files)
             self.sdrm_dic = {}
@@ -333,8 +335,9 @@ class JSONWriter():
             check_sdrm, sdrm_aas = self.is_sdrm(gene,
                                              mutation[0],
                                              mutation[1])
-            
-            if check_sdrm:
+            mutdict['isSDRM'] = check_sdrm
+
+            if check_sdrm: 
                 dic['SDRMs'].append({'text': mutation[2] + str(mutation[0]) + sdrm_aas})
 
             mutdict['hasStop'] = self.has_stop(mutation, mutation[3])
