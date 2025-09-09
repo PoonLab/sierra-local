@@ -334,7 +334,8 @@ class JSONWriter():
                                                    mutation[3])
             check_sdrm, sdrm_aas = self.is_sdrm(gene,
                                              mutation[0],
-                                             mutation[1])
+                                             mutation[1],
+                                             mutation[3])
             mutdict['isSDRM'] = check_sdrm
 
             if check_sdrm: 
@@ -510,7 +511,7 @@ class JSONWriter():
                         return True
         return False
 
-    def is_sdrm(self, gene, position, AA):
+    def is_sdrm(self, gene, position, AA, text):
         """
         see if specific amino acid mutation is a sdrm through checking hivbd facts
         @param gene: str, RT, IN, PR
@@ -518,6 +519,8 @@ class JSONWriter():
         @param AA: new amino acid
         @return: bool
         """
+        if text == 'X':
+            return False, ''
         position = str(position)
         all_aas = ''
         found = False
