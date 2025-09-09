@@ -12,14 +12,19 @@ class HIVdb():
     webserver, to retrieve the rules-based prediction algorithm as ASI XML,
     and convert this information into Python objects.
     """
-    def __init__(self, asi2=None, apobec=None, forceupdate=False):
+    def __init__(self, asi2=None, apobec=None, forceupdate=False, updater_outdir=None):
         self.xml_filename = None
         self.json_filename = None
 
         if forceupdate:
             import sierralocal.updater as updater
-            self.xml_filename = updater.update_HIVDB()
-            self.json_filename = updater.update_APOBEC()
+            self.xml_filename = updater.update_hivdb(updater_outdir)
+            self.json_filename = updater.update_apobec_mutation(updater_outdir)
+            self.apobec_csv = updater.update_apobec(updater_outdir)
+            self.is_unusual_csv = updater.update_is_unusual(updater_outdir)
+            self.sdrms_csv = updater.update_sdrms(updater_outdir)
+            self.mutation_type_csv = updater.update_mutation_type(updater_outdir)
+            
         else:
             self.set_hivdb_xml(asi2)
             self.set_apobec_json(apobec)

@@ -47,7 +47,7 @@ pip install --user .
 ## Using sierra-local
 
 ### Command-line interface (CLI)
-Before running, we recommend using the `sierralocal/updater.py` script to update the data files associated with this repository to the most updated versions available from [hivfacts](https://github.com/hivdb/hivfacts/tree/main/data). Please note that you do need the requests package stated above for the following command to run. More information regarding this script is detailed below.
+Before running, we recommend using the `sierralocal/updater.py` script to update the data files associated with this repository to the most updated versions available from [hivfacts](https://github.com/hivdb/hivfacts/tree/main/data). Please note that you do need the requests package stated above for the following command to run. More information regarding this script is detailed below. An alternative to running this script through the main function is also provided below.
 ```console
 (sierra) will@dyn172-30-75-11 sierra-local % python3 sierralocal/updater.py 
 Downloading the latest HIVDB XML File
@@ -158,6 +158,50 @@ Aligned RT.fa
 100 sequences found in file RT.fa.
 Writing JSON to file RT_results.json
 Time elapsed: 9.3442 seconds (10.751 it/s)
+```
+
+To specify other files for detecting the parameters, `isApobecMutation`, `isUnusual`, `isSDRM`, `primaryType`, you can use the following arguments: `-apobec_csv`, `-unusual_csv`, `-sdrms_csv`, `-mutation_csv`, respectively
+```console
+(sierra) will@Williams-MacBook-Pro sierra-local % sierralocal -apobec_csv apobecs.csv -unusual_csv rx-all_subtype-all.csv -sdrms_csv sdrms_hiv1.csv -mutation_csv mutation-type-pairs_hiv1.csv RT.fa
+searching path /Users/will/miniconda3/envs/sierra/lib/python3.9/site-packages/sierralocal/data/HIVDB*.xml
+searching path /Users/will/miniconda3/envs/sierra/lib/python3.9/site-packages/sierralocal/data/apobec_drms.json
+HIVdb version 9.8
+Using unusual file: rx-all_subtype-all.csv
+Using SDRM mutations file: sdrms_hiv1.csv
+Using mutation type file: mutation-type-pairs_hiv1.csv
+Using APOBEC file: apobecs.csv
+Aligning using post-align
+Aligned RT.fa
+100 sequences found in file RT.fa.
+Writing JSON to file RT_results.json
+Time elapsed: 9.5917 seconds (10.481 it/s)
+```
+
+To update these files while running the script, and subsequently specify an output directory, you can use the args `-forceupdate` followed by `-output_dir` and the new file path. Please note, if you run with `-forceupdate`, you must rerun the installation steps to apply the changes. If you do choose to a different output directory, you must always specifiy the new file locations for these files, otherwise they will default to the ones found in the `sierralocal/data` folder.
+```console
+(sierra) will@Williams-MacBook-Pro sierra-local % sierralocal --forceupdate -updater_outdir . RT.fa        
+Downloading the latest HIVDB XML File
+Updated HIVDB XML into ./HIVDB_9.8.xml
+Downloading the latest APOBEC DRMS File
+Updated APOBEC DRMs into ./apobec_drms.json
+Downloading the latest file to determine apobec
+Updated apobecs file to ./apobecs.csv
+Downloading the latest file to determine is unusual
+Updated is unusual file to ./rx-all_subtype-all.csv
+Downloading the latest file to determine SDRM mutations
+Updated SDRM mutations file to ./sdrms_hiv1.csv
+Downloading the latest file to determine mutation type
+Updated mutation type file to ./mutation-type-pairs_hiv1.csv
+HIVdb version 9.8
+Using unusual file: /Users/will/miniconda3/envs/sierra/lib/python3.9/site-packages/sierralocal/data/rx-all_subtype-all.csv
+Using SDRM mutations file: /Users/will/miniconda3/envs/sierra/lib/python3.9/site-packages/sierralocal/data/sdrms_hiv1.csv
+Using mutation type file: /Users/will/miniconda3/envs/sierra/lib/python3.9/site-packages/sierralocal/data/mutation-type-pairs_hiv1.csv
+Using APOBEC file: /Users/will/miniconda3/envs/sierra/lib/python3.9/site-packages/sierralocal/data/apobecs.csv
+Aligning using post-align
+Aligned RT.fa
+100 sequences found in file RT.fa.
+Writing JSON to file RT_results.json
+Time elapsed: 9.9952 seconds (10.846 it/s)
 ```
 
 ### As a Python module

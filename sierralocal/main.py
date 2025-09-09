@@ -3,12 +3,13 @@ import sys
 import time
 import argparse
 import json
+from pathlib import Path
+import csv
 
 from sierralocal import score_alg
 from sierralocal.hivdb import HIVdb
 from sierralocal.jsonwriter import JSONWriter
 from sierralocal.nucaminohook import NucAminoAligner
-
 
 def score(filename, xml_path=None, tsv_path=None, forceupdate=False, do_subtype=False, program='post'): # pragma: no cover
     """
@@ -123,7 +124,8 @@ def scorefile(input_file, algorithm, do_subtype=False, program='post'):
            file_genes, sequence_lengths, file_trims, subtypes, na_sequence, ambiguous, gene_order
 
 def sierralocal(fasta, outfile, xml=None, json=None, cleanup=False, forceupdate=False,
-                program='post', do_subtype=False): # pragma: no cover
+                apobec_csv=None, unusual_csv=None, sdrms_csv=None, mutation_csv=None,
+                updater_outdir=None, program='post', do_subtype=False): # pragma: no cover
     """
     Contains all initializing and processing calls.
 
@@ -134,13 +136,17 @@ def sierralocal(fasta, outfile, xml=None, json=None, cleanup=False, forceupdate=
     @param json: <optional> str, path to local copy of HIVdb algorithm APOBEC DRM file
     @param cleanup:  <optional> bool, to delete alignment file
     @param forceupdate: <optional> bool, forces sierralocal to update its local copy of the HIVdb algorithm
+    @param apobec_csv: str <optional>, Path to CSV APOBEC csv file (default: apobecs.csv)
+    @param unusual_csv: str <optional>, Path to CSV file to determine if is unusual (default: rx-all_subtype-all.csv)
+    @param sdrms_csv: str <optional>, Path to CSV file to determine SDRM mutations (default: sdrms_hiv1.csv)
+    @param mutation_csv: str <optional>, Path to CSV file to determine mutation type (default: mutation-type-pairs_hiv1.csv)
     @return: tuple, a tuple of (number of records processed, time elapsed initializing algorithm)
     """
 
     # initialize algorithm and jsonwriter
     time0 = time.time()
-    algorithm = HIVdb(asi2=xml, apobec=json, forceupdate=forceupdate)
-    writer = JSONWriter(algorithm)
+    algorithm = HIVdb(asi2=xml, apobec=json, forceupdate=forceupdate, updater_outdir=updater_outdir)
+    writer = JSONWriter(algorithm, apobec_csv, unusual_csv, sdrms_csv, mutation_csv)
     time_elapsed = time.time() - time0
 
     # accommodate single file path argument
@@ -188,7 +194,7 @@ def parse_args(): # pragma: no cover
     parser.add_argument('fasta', nargs='+', type=str, help='List of input files.')
     parser.add_argument('-o', dest='outfile', default=None, type=str, help='Output filename.')
     parser.add_argument('-xml', default=None,
-                        help='<optional> Path to HIVdb ASI2 XML file')
+                        help='<optional> Path to HIVdb ASI2 XML file (default: HIVDB_9.4.xml)')
     parser.add_argument('-json', default=None,
                         help='<optional> Path to JSON HIVdb APOBEC DRM file')
     parser.add_argument('--cleanup', action='store_true',
@@ -197,8 +203,59 @@ def parse_args(): # pragma: no cover
                         help='Forces update of HIVdb algorithm. Requires network connection.')
     parser.add_argument('-alignment', default='post', choices=['post', 'nuc'],
                         help='Alignment program to use, "post" for post align and "nuc" for nucamino')
+    parser.add_argument('-apobec_csv', default=None,
+                        help='<optional> Path to CSV APOBEC csv file (default: apobecs.csv)')
+    parser.add_argument('-unusual_csv', default=None,
+                        help='<optional> Path to CSV file to determine if is unusual (default: rx-all_subtype-all.csv)')
+    parser.add_argument('-sdrms_csv', default=None,
+                        help='<optional> Path to CSV file to determine SDRM mutations (default: sdrms_hiv1.csv)')
+    parser.add_argument('-mutation_csv', default=None,
+                        help='<optional> Path to CSV file to determine mutation type (default: mutation-type-pairs_hiv1.csv)')
+    parser.add_argument('-updater_outdir', default=None,
+                        help='<optional> Path to folder to store updated files from updater (default: sierralocal/data folder))')
+
     args = parser.parse_args()
     return args
+
+
+def check_input(apobec_path, unusual_path, sdrms_path, mutation_path):
+    """
+    Check if the input for the files are valid based on the first row of the csv.
+
+    apobec_path: path to apobec_drms.csv
+    unusual_path: path to rx-all_subtype-all.csv
+    sdrms_path: path to sdrms_hiv1.csv
+    mutation_path: path to mutation-type-pairs_hiv1.csv
+    """
+    exp = {
+        "apobec_csv": ["gene", "position", "aa"],
+        "unusual_csv": ["gene", "position", "aa", "percent", "count", "total", "reason", "isUnusual"],
+        "sdrms_csv": ["drug_class", "gene", "position", "aa"],
+        "mutation_csv": ["strain", "gene", "drugClass", "position", "aas", "mutationType", "isUnusual"],
+    }
+
+    paths = {
+        "apobec_csv": apobec_path,
+        "unusual_csv": unusual_path,
+        "sdrms_csv": sdrms_path,
+        "mutation_csv": mutation_path,
+    }
+    for key, path in paths.items():
+        if path is None:
+            continue
+        try:
+            with open(path, newline="", encoding="utf-8-sig") as f:
+                reader = csv.reader(f)
+                header = next(reader)
+        except Exception as e:
+            sys.exit(f"Could not open {key} file '{path}': {e}")
+
+        if header != exp[key]:
+            print(
+                f"Invalid header in {key} file '{path}'.\n"
+                f"Expected: {exp[key]}\nFound:    {header}"
+            )
+            sys.exit()
 
 
 def main(): # pragma: no cover
@@ -206,6 +263,19 @@ def main(): # pragma: no cover
     Main function called from CLI.
     """
     args = parse_args()
+
+    # check for valid file inputs
+    check_input(args.apobec_csv, args.unusual_csv, args.sdrms_csv, args.mutation_csv)
+
+    mod_path = Path(os.path.dirname(__file__))
+
+    if args.updater_outdir:
+        target_dir = args.updater_outdir
+    else:
+        target_dir = os.path.join(mod_path, "data")
+    
+    # Create directory if it doesn't exist
+    os.makedirs(target_dir, exist_ok=True)
 
     # check that FASTA files in list all exist
     for file in args.fasta:
@@ -216,6 +286,8 @@ def main(): # pragma: no cover
     time_start = time.time()
     count, time_elapsed = sierralocal(args.fasta, args.outfile, xml=args.xml,
                                       json=args.json, cleanup=args.cleanup, forceupdate=args.forceupdate,
+                                      apobec_csv=args.apobec_csv, unusual_csv=args.unusual_csv, 
+                                      sdrms_csv=args.sdrms_csv, mutation_csv=args.mutation_csv, updater_outdir=target_dir,
                                       program=args.alignment)
     time_diff = time.time() - time_start
 
