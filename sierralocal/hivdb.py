@@ -20,6 +20,11 @@ class HIVdb():
             import sierralocal.updater as updater
             self.xml_filename = updater.update_hivdb(updater_outdir)
             self.json_filename = updater.update_apobec_mutation(updater_outdir)
+            self.apobec_csv = updater.update_apobec(updater_outdir)
+            self.is_unusual_csv = updater.update_is_unusual(updater_outdir)
+            self.sdrms_csv = updater.update_sdrms(updater_outdir)
+            self.mutation_type_csv = updater.update_mutation_type(updater_outdir)
+            
         else:
             self.set_hivdb_xml(asi2)
             self.set_apobec_json(apobec)
