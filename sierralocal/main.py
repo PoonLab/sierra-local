@@ -4,6 +4,7 @@ import time
 import argparse
 import json
 from pathlib import Path
+import csv
 
 from sierralocal import score_alg
 from sierralocal.hivdb import HIVdb
@@ -193,7 +194,7 @@ def parse_args(): # pragma: no cover
     parser.add_argument('fasta', nargs='+', type=str, help='List of input files.')
     parser.add_argument('-o', dest='outfile', default=None, type=str, help='Output filename.')
     parser.add_argument('-xml', default=None,
-                        help='<optional> Path to HIVdb ASI2 XML file')
+                        help='<optional> Path to HIVdb ASI2 XML file (default: HIVDB_9.4.xml)')
     parser.add_argument('-json', default=None,
                         help='<optional> Path to JSON HIVdb APOBEC DRM file')
     parser.add_argument('--cleanup', action='store_true',
@@ -216,11 +217,55 @@ def parse_args(): # pragma: no cover
     args = parser.parse_args()
     return args
 
+
+def check_input(apobec_path, unusual_path, sdrms_path, mutation_path):
+    """
+    Check if the input for the files are valid based on the first row of the csv.
+
+    apobec_path: path to apobec_drms.csv
+    unusual_path: path to rx-all_subtype-all.csv
+    sdrms_path: path to sdrms_hiv1.csv
+    mutation_path: path to mutation-type-pairs_hiv1.csv
+    """
+    exp = {
+        "apobec_csv": ["gene", "position", "aa"],
+        "unusual_csv": ["gene", "position", "aa", "percent", "count", "total", "reason", "isUnusual"],
+        "sdrms_csv": ["drug_class", "gene", "position", "aa"],
+        "mutation_csv": ["strain", "gene", "drugClass", "position", "aas", "mutationType", "isUnusual"],
+    }
+
+    paths = {
+        "apobec_csv": apobec_path,
+        "unusual_csv": unusual_path,
+        "sdrms_csv": sdrms_path,
+        "mutation_csv": mutation_path,
+    }
+
+    for key, path in paths.items():
+        if path is None:
+            continue
+        try:
+            with open(path, newline="", encoding="utf-8-sig") as f:
+                reader = csv.reader(f)
+                header = next(reader)
+        except Exception as e:
+            sys.exit(f"Could not open {key} file '{path}': {e}")
+
+        if header != exp[key]:
+            print(
+                f"Invalid header in {key} file '{path}'.\n"
+                f"Expected: {exp[key]}\nFound:    {header}"
+            )
+
+
 def main(): # pragma: no cover
     """
     Main function called from CLI.
     """
     args = parse_args()
+
+    # check for valid file inputs
+    check_input(args.apobec_csv, args.unusual_csv, args.sdrms_csv, args.mutation_csv)
 
     mod_path = Path(os.path.dirname(__file__))
 
