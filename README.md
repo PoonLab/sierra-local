@@ -44,6 +44,22 @@ cd sierra-local
 pip install --user .
 ```
 
+### Installation with Conda
+
+You can install sierra-local easily using conda, without requiring super-user privileges:
+
+```bash
+# Create a new conda environment with sierra-local
+conda create --name sierralocal -c bioconda sierra-local
+
+# Activate the environment
+conda activate sierralocal
+```
+
+After activation, the sierralocal command will be available for use.
+
+> Note: Remember that using conda `updater.py` file would be inside the `<path/to/conda>/envs/sierralocal/lib/python3.10/site-packages/sierralocal/updater.py` and that it won't be in your `$PATH`. You can use it from that path.
+
 ## Using sierra-local
 
 ### Command-line interface (CLI)
