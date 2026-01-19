@@ -54,7 +54,7 @@ class HIVdb():
             # find the newest XML that can be parsed
             intermed = []
             for file in files:
-                version = re.search("HIVDB_([0-9]\.[0-9.-]+)\.", file).group(1)
+                version = re.search("HIVDB_([0-9]+\.[0-9.-]+)\.", file).group(1)
                 intermed.append((version, file))
             intermed.sort(reverse=True)
 
