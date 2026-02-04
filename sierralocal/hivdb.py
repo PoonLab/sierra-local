@@ -36,6 +36,15 @@ class HIVdb():
         self.version_date = self.root.find('ALGDATE').text
         print("HIVdb version", self.version)
 
+    def version_key(v):
+        """
+        Fix for #126 contributed by Karma0alpha
+        @param v:  str, HIVdb version string
+        @return tuple of version digits as integers
+        """
+        parts = v[0].replace('-', '.').split('.')
+        return tuple(int(part) for part in parts)
+
     def set_hivdb_xml(self, path):
         """
         Assigns user specified XML file path to self.xml_filename.
@@ -54,9 +63,10 @@ class HIVdb():
             # find the newest XML that can be parsed
             intermed = []
             for file in files:
-                version = re.search("HIVDB_([0-9]+\.[0-9.-]+)\.", file).group(1)
+                #version = re.search("HIVDB_([0-9]+\.[0-9.-]+)\.", file).group(1)
+                version = re.search(r"HIVDB_(\d+\.\d+(?:-\d+)?)\.", file).group(1)
                 intermed.append((version, file))
-            intermed.sort(reverse=True)
+            intermed.sort(key=self.version_key, reverse=True)
 
             for version, file in intermed:
                 try:
