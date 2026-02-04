@@ -36,7 +36,7 @@ class HIVdb():
         self.version_date = self.root.find('ALGDATE').text
         print("HIVdb version", self.version)
 
-    def version_key(v):
+    def version_key(self, v):
         """
         Fix for #126 contributed by Karma0alpha
         @param v:  str, HIVdb version string
