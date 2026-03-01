@@ -218,7 +218,10 @@ class NucAminoAligner():
             POST_PROCESSORS = self.getConfigField(config=config, field='postProcessors')
             MINIMAP2_OPTS = self.getConfigField(config=config, field='minimap2Opts')
 
-            bin_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f'bin/postalign.{platform.system().lower()}_{platform.machine().lower()}')
+            if platform.system().lower() == 'linux':
+                bin_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f'bin/postalign.{platform.system().lower()}')
+            else:
+                bin_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f'bin/postalign.{platform.system().lower()}_{platform.machine().lower()}')
             
             # hold the output of postalign
             tfPostOut = tempfile.NamedTemporaryFile(mode='w', delete=False)
