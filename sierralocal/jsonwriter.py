@@ -500,17 +500,23 @@ class JSONWriter():
                     # mutation format: (position, AA, consensus, text)
                     position = mutation[0]
                     aa = mutation[1]
-                    consensus = mutation[2]
                     text = mutation[3] if len(mutation) > 3 else ''
 
                     # Check for unusual mutations (including X)
                     if self.is_unusual(gene, position, aa, text):
-                        unusual_muts.append(f"{consensus}{position}{text}")
+                        unusual_muts.append(f"{mutation[2]}{position}{text}")
 
                     # Check for X at drug resistance positions
-                    # Use format with consensus AA (e.g., "D30" instead of "30")
                     if (text == 'X' or 'X' in aa) and self.is_drug_resistance_position(gene, position):
-                        ambiguous_drp_positions.append(f"{consensus}{position}")
+                        ambiguous_drp_positions.append(f"{mutation[2]}{position}")
+
+                # Check for unsequenced/ambiguous positions at DRPs
+                if ambiguous is not None and sequence_name is not None:
+                    if sequence_name in ambiguous and gene in ambiguous[sequence_name]:
+                        for amb_pos in ambiguous[sequence_name][gene]:
+                            if self.is_drug_resistance_position(gene, amb_pos):
+                                if str(amb_pos) not in [str(p) for p in ambiguous_drp_positions]:
+                                    ambiguous_drp_positions.append(str(amb_pos))
 
                 # Add warnings for ambiguous positions at DRPs
                 num_amb_drps = len(ambiguous_drp_positions)
