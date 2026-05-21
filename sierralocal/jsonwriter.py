@@ -637,9 +637,11 @@ class JSONWriter():
         @return: bool
         """
         position = str(position)
-        # FIXED: Consistent with sierra Java implementation - X amino acids are always unusual
-        if 'X' in AA or text == 'X':
+        # The AA == X is stated in hivdb sierra core java files
+        if AA == 'X':
             return True
+        if text == 'X':  # this just fixes most of the errors, can't find source
+            return False
         if gene in self.is_unusual_dic:
             if position in self.is_unusual_dic[gene]:
                 for aa in AA:
