@@ -493,7 +493,7 @@ class JSONWriter():
             # NEW: Validate unusual mutations and ambiguous positions at DRPs (similar to sierra)
             if mutation_lists is not None and index < len(mutation_lists):
                 mutation_list = mutation_lists[index]
-                unusual_muts = []
+                unusual_indels = []
                 ambiguous_drp_positions = []
 
                 for mutation in mutation_list:
@@ -502,14 +502,16 @@ class JSONWriter():
                     aa = mutation[1]
                     text = mutation[3] if len(mutation) > 3 else ''
 
-                    # Check for unusual mutations (including X)
-                    if self.is_unusual(gene, position, aa, text):
-                        unusual_muts.append(f"{mutation[2]}{position}{text}")
-
                     # Check for X at drug resistance positions
                     if (text == 'X' or 'X' in aa) and self.is_drug_resistance_position(gene, position):
                         if str(position) not in ambiguous_drp_positions:
                             ambiguous_drp_positions.append(str(position))
+
+                    # Check for unusual INDELS only (matching Stanford's behavior)
+                    is_deletion = (aa == '-')
+                    is_insertion = (aa.startswith('_'))
+                    if (is_deletion or is_insertion) and self.is_unusual(gene, position, aa, text):
+                        unusual_indels.append(f"{mutation[2]}{position}{text}")
 
                 # Add warnings for ambiguous positions at DRPs
                 num_amb_drps = len(ambiguous_drp_positions)
@@ -525,11 +527,11 @@ class JSONWriter():
                          f"One drug-resistance position was not sequenced or is ambiguous in {gene}: {ambiguous_drp_positions[0]}.")
                     )
 
-                # Add warnings for unusual mutations
-                if len(unusual_muts) > 0:
+                # Add warnings for unusual INDELS (not all unusual mutations)
+                if len(unusual_indels) > 0:
                     validation_results.append(
                         ('WARNING',
-                         f"There {'are' if len(unusual_muts) > 1 else 'is'} {len(unusual_muts)} unusual mutation{'s' if len(unusual_muts) > 1 else ''} in {gene}: {', '.join(unusual_muts)}.")
+                         f"The {gene} gene has {len(unusual_indels)} unusual indel{'s' if len(unusual_indels) > 1 else ''}: {', '.join(unusual_indels)}.")
                     )
 
         return validation_results
