@@ -401,7 +401,7 @@ class NucAminoAligner():
          first na position in pol, last na position in pol]
         """
         # good here
-        min_overlap = {'PR': 40, 'RT': 60, 'IN': 30, 'CA': 60}
+        min_overlap = {'PR': 40, 'RT': 60, 'IN': 30, 'CA': 23}
         genes = []
         for gene, bounds in self.gene_map.items():
             aa_start, aa_end = bounds
