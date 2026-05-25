@@ -278,8 +278,9 @@ class NucAminoAligner():
                             for protein in data:
 
                                 # sequenced if the report field is not empty
-                                # NucAmino is positioned on POL
-                                if not protein['Error'] and protein['Report'] and 'pol' in protein['Gene']:
+                                # NucAmino is positioned on POL, but we also want GAG for CA
+                                gene_lower = protein['Gene'].lower() if protein.get('Gene') else ''
+                                if not protein['Error'] and protein['Report'] and ('pol' in gene_lower or 'gag' in gene_lower):
                                     for key, info in protein['Report'].items():
                                         if key == 'AlignedSites':
                                             valid = []
@@ -295,10 +296,12 @@ class NucAminoAligner():
                                         elif key == 'Mutations':
                                             for mutation in info:
                                                 if mutation['IsInsertion'] is True:
-                                                    mutation['AminoAcidText'] = '_' + mutation['AminoAcidText'] 
+                                                    mutation['AminoAcidText'] = '_' + mutation['AminoAcidText']
                                                 mutation['ReferenceText'] = mutation['RefAminoAcidText']
                                                 mutation.pop('RefAminoAcidText')
-                                                mutation['Position'] += 1
+                                                # Add +1 for pol genes only, not gag (gag already uses correct indexing)
+                                                if 'pol' in gene_lower:
+                                                    mutation['Position'] += 1
                                             result['Mutations'] += info
 
                                         elif key == 'FrameShifts':
@@ -486,11 +489,12 @@ class NucAminoAligner():
                     if position < left or right < position:
                         continue  # mutation in other gene
                     codon = mut['CodonText']
+                    adj_pos = position - left
                     gene_muts.update(
-                        {position - left: (mut['ReferenceText'],  # consensus
-                                           mut['AminoAcidText'],  # AAs line in output
-                                           self.translate_na_triplet(codon)  # Text line in the output
-                                           )}
+                        {adj_pos: (mut['ReferenceText'],  # consensus
+                                   mut['AminoAcidText'],  # AAs line in output
+                                   self.translate_na_triplet(codon)  # Text line in the output
+                                   )}
                     )
                     codon_list.append(codon)
 
