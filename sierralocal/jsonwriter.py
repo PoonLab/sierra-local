@@ -337,9 +337,6 @@ class JSONWriter():
                                              mutation[1],
                                              mutation[3])
             mutdict['isSDRM'] = check_sdrm
-            mutdict['isCapsidResistance'] = self.is_capsid_resistance(gene,
-                                                                       mutation[0],
-                                                                       mutation[1])
 
             if check_sdrm: 
                 dic['SDRMs'].append({'text': mutation[2] + str(mutation[0]) + sdrm_aas})
@@ -604,31 +601,6 @@ class JSONWriter():
                         if aa in key:
                             return self.primary_type_dic[gene][position][key]
         return "Other"
-
-    def is_capsid_resistance(self, gene, position, AA):
-        """
-        Check if a specific amino acid mutation is a capsid resistance mutation
-        (i.e., CA gene mutation with CAI drug class that confers lenacapavir resistance)
-        @param gene: str, RT, IN, PR, CA
-        @param position: int, position of mutation relative to gene
-        @param AA: new amino acid
-        @return: bool
-        """
-        # Only CA gene can have capsid resistance mutations
-        if gene != "CA":
-            return False
-
-        position = str(position)
-        if gene in self.primary_type_dic:
-            if position in self.primary_type_dic[gene]:
-                for aa in AA:
-                    for key in self.primary_type_dic[gene][position].keys():
-                        if aa in key:
-                            # Check if the mutation type is CAI (Capsid Inhibitor)
-                            mutation_type = self.primary_type_dic[gene][position][key]
-                            if mutation_type in ["Major", "Accessory", "CAI"]:
-                                return True
-        return False
 
 
 if __name__ == "__main__":
