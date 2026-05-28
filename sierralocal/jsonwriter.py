@@ -434,12 +434,12 @@ class JSONWriter():
             json.dump(out, outfile, indent=2)
             print("Writing JSON to file {}".format(filename))
 
-    def validate_sequence(self, genes, lengths, seq_trims, mutation_lists=None,
+    def validate_sequence(self, gene_infos, lengths, seq_trims, mutation_lists=None,
                           sequence_name=None, ambiguous=None):
         """
         Function to validate a sequence and return a
         list of validation results
-        @param genes: list, list of single genes in queries
+        @param gene_infos: list, list of tuples (gene, first_aa, last_aa, first_na, last_na) or gene names
         @param lengths: list, list of lists of ints denoting
         sequence lengths
         @param seq_trims: list, list of lists of tuples of ints
@@ -451,7 +451,7 @@ class JSONWriter():
         """
         validation_results = []
 
-        for index, gene_info in enumerate(genes):
+        for index, gene_info in enumerate(gene_infos):
             gene = gene_info[0] if isinstance(gene_info, tuple) else gene_info
             length = lengths[index]
             seq_trim = seq_trims[index]
@@ -514,6 +514,8 @@ class JSONWriter():
                         unusual_indels.append(f"{mutation[2]}{position}{text}")
 
                 # Add warnings for ambiguous positions at DRPs
+                # Threshold logic (> 5 for SEVERE WARNING) matches Stanford HIVdb Sierra
+                # See: sierra-core/.../DefaultSequenceValidator.java:122 (numMissingDRPs > 5)
                 num_amb_drps = len(ambiguous_drp_positions)
                 if num_amb_drps > 1:
                     level = 'SEVERE WARNING' if num_amb_drps > 5 else 'WARNING'
