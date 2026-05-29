@@ -452,7 +452,12 @@ class JSONWriter():
         validation_results = []
 
         for index, gene_info in enumerate(gene_infos):
-            gene = gene_info[0] if isinstance(gene_info, tuple) else gene_info
+            # gene_info is always a tuple (gene, first_aa, last_aa, first_na, last_na)
+            # Handle empty tuple case explicitly for error reporting
+            if len(gene_info) > 0:
+                gene = gene_info[0]
+            else:
+                gene = ""  # Empty tuple triggers CRITICAL error below
             length = lengths[index]
             seq_trim = seq_trims[index]
 
