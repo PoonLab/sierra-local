@@ -299,14 +299,11 @@ class NucAminoAligner():
                                                     mutation['AminoAcidText'] = '_' + mutation['AminoAcidText']
                                                 mutation['ReferenceText'] = mutation['RefAminoAcidText']
                                                 mutation.pop('RefAminoAcidText')
-                                                mutation['Position'] += 1
                                             result['Mutations'] += info
 
                                         elif key == 'FrameShifts':
-                                            # TODO: Why do FrameShifts need +1 adjustment when Mutations don't?
-                                            # This might be for 0-based vs 1-based indexing or a different coordinate system
-                                            for shift in result['FrameShifts']:
-                                                shift['Position'] += 1
+                                            # No position adjustment needed - pol_start=2088 matches alignment config
+                                            pass
 
                                         else:
                                             result.update({key: info})
