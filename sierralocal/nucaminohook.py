@@ -72,7 +72,7 @@ class NucAminoAligner():
 
         # initialize gene map
         self.gag_start = 790  # Gag gene start position in HXB2
-        self.pol_start = 2088  # Pol gene start position in HXB2 (matches alignment-config_hiv1.json)
+        self.pol_start = 2085  # Pol gene start position in HXB2 (biological start, matches alignment-config_hiv1.json)
         self.gene_nuc_map = {
             'CA': (1186, 1878),  # Capsid (CA) is within Gag
             'PR': (2253, 2549),
