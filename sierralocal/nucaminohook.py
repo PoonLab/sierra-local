@@ -72,7 +72,7 @@ class NucAminoAligner():
 
         # initialize gene map
         self.gag_start = 790  # Gag gene start position in HXB2
-        self.pol_start = 2085  # Pol gene start position in HXB2
+        self.pol_start = 2088  # Pol gene start position in HXB2 (matches alignment-config_hiv1.json)
         self.gene_nuc_map = {
             'CA': (1186, 1878),  # Capsid (CA) is within Gag
             'PR': (2253, 2549),
@@ -299,12 +299,14 @@ class NucAminoAligner():
                                                     mutation['AminoAcidText'] = '_' + mutation['AminoAcidText']
                                                 mutation['ReferenceText'] = mutation['RefAminoAcidText']
                                                 mutation.pop('RefAminoAcidText')
-                                                # Add +1 for pol genes only, not gag (gag already uses correct indexing)
-                                                if 'pol' in gene_lower:
-                                                    mutation['Position'] += 1
+                                                # No adjustment needed - post-align outputs 1-based positions for both pol and gag
+                                                # when using the coordinate system defined in alignment-config_hiv1.json
+
                                             result['Mutations'] += info
 
                                         elif key == 'FrameShifts':
+                                            # TODO: Why do FrameShifts need +1 adjustment when Mutations don't?
+                                            # This might be for 0-based vs 1-based indexing or a different coordinate system
                                             for shift in result['FrameShifts']:
                                                 shift['Position'] += 1
 
