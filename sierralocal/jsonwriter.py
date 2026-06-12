@@ -10,6 +10,12 @@ import hashlib
 
 
 class JSONWriter():
+    """
+    Define a class for handling the formatting for the final JSON output of
+    mutations and validation results. The main write function is in 
+    write_to_json. Generally, @param algorithm will be an instance of the 
+    HIVdb class.
+    """
     def __init__(self, algorithm, apobec_csv, unusual_csv, sdrms_csv, mutation_csv):
         # possible alternative drug abbrvs
         self.names = {'3TC': 'LMV'}

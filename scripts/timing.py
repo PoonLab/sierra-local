@@ -1,3 +1,7 @@
+"""
+Script to compare sierralocal and sierrapy runtimes on a sample of 10 files.
+"""
+
 import subprocess
 from sierralocal import main
 import os
