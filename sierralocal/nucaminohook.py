@@ -299,9 +299,7 @@ class NucAminoAligner():
                                                     mutation['AminoAcidText'] = '_' + mutation['AminoAcidText']
                                                 mutation['ReferenceText'] = mutation['RefAminoAcidText']
                                                 mutation.pop('RefAminoAcidText')
-                                                # No adjustment needed - post-align outputs 1-based positions for both pol and gag
-                                                # when using the coordinate system defined in alignment-config_hiv1.json
-
+                                                mutation['Position'] += 1
                                             result['Mutations'] += info
 
                                         elif key == 'FrameShifts':
