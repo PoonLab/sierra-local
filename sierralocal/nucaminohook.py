@@ -23,7 +23,7 @@ class NucAminoAligner():
 
         if program == 'post':
             print('Aligning using post-align')
-            pass  # TODO include post align as a sub                                                                            module: I'm here now!
+            pass  # TODO include post align as a submodule: I'm here now!
         else:  # get necessary binaries for nucAmino
             if binary is None:
                 target = 'nucamino-{}-{}'.format(
