@@ -120,16 +120,24 @@ class JSONWriter():
         with open(dest, 'r', encoding='utf-8-sig') as mut_type_pairs1_files:
             mut_type_pairs1_files = csv.DictReader(mut_type_pairs1_files)
             self.primary_type_dic = {}
+            self.drug_resistance_positions = {}  # NEW: Track drug resistance positions
             for row in mut_type_pairs1_files:
                 gene = row['gene']
                 pos = row['position']
                 aa = row['aas']
                 mut = row['mutationType']
+                drug_class = row['drugClass']
                 if gene not in self.primary_type_dic:
                     self.primary_type_dic.update({gene: {}})
                 if pos not in self.primary_type_dic[gene]:
                     self.primary_type_dic[gene].update({pos: {}})
                 self.primary_type_dic[gene][pos].update({aa: mut})
+
+                # NEW: Track positions where drugClass is not "Other" as drug resistance positions
+                if drug_class != 'Other':
+                    if gene not in self.drug_resistance_positions:
+                        self.drug_resistance_positions[gene] = set()
+                    self.drug_resistance_positions[gene].add(pos)
 
         # make dictionary for apobec mutations
         if apobec_csv is None:
@@ -396,7 +404,10 @@ class JSONWriter():
 
             validation = self.validate_sequence(genes,
                                                 file_sequence_lengths[index],
-                                                file_trims[index])
+                                                file_trims[index],
+                                                file_mutation_lists[index],
+                                                file_headers[index],
+                                                ambiguous)
             data['validationResults'] = self.format_validation_results(validation)
 
             data['alignedGeneSequences'] = []
@@ -423,20 +434,30 @@ class JSONWriter():
             json.dump(out, outfile, indent=2)
             print("Writing JSON to file {}".format(filename))
 
-    def validate_sequence(self, genes, lengths, seq_trims):
+    def validate_sequence(self, gene_infos, lengths, seq_trims, mutation_lists=None,
+                          sequence_name=None, ambiguous=None):
         """
         Function to validate a sequence and return a
         list of validation results
-        @param genes: list, list of single genes in queries
+        @param gene_infos: list, list of tuples (gene, first_aa, last_aa, first_na, last_na) or gene names
         @param lengths: list, list of lists of ints denoting
         sequence lengths
         @param seq_trims: list, list of lists of tuples of ints
-        @return validation_results: list, lsit of either warning 
+        @param mutation_lists: list, list of mutation lists per gene (optional)
+        @param sequence_name: str, name of the sequence (optional)
+        @param ambiguous: dict, {sequence name: {gene: [positions]}} of ambiguous positions (optional)
+        @return validation_results: list, list of either warning
         or critical error messages
         """
         validation_results = []
 
-        for index, gene in enumerate(genes):
+        for index, gene_info in enumerate(gene_infos):
+            # gene_info is always a tuple (gene, first_aa, last_aa, first_na, last_na)
+            # Handle empty tuple case explicitly for error reporting
+            if len(gene_info) > 0:
+                gene = gene_info[0]
+            else:
+                gene = ""  # Empty tuple triggers CRITICAL error below
             length = lengths[index]
             seq_trim = seq_trims[index]
 
@@ -473,6 +494,52 @@ class JSONWriter():
                      "The {} sequence had {} amino acid{} trimmed from its 3\u2032-end "
                      "due to poor quality.".format(gene, seq_trim[1], "s" if seq_trim[1] > 1 else ""))
                 )
+
+            # NEW: Validate unusual mutations and ambiguous positions at DRPs (similar to sierra)
+            if mutation_lists is not None and index < len(mutation_lists):
+                mutation_list = mutation_lists[index]
+                unusual_indels = []
+                ambiguous_drp_positions = []
+
+                for mutation in mutation_list:
+                    # mutation format: (position, AA, consensus, text)
+                    position = mutation[0]
+                    aa = mutation[1]
+                    text = mutation[3] if len(mutation) > 3 else ''
+
+                    # Check for X at drug resistance positions
+                    if (text == 'X' or 'X' in aa) and self.is_drug_resistance_position(gene, position):
+                        if str(position) not in ambiguous_drp_positions:
+                            ambiguous_drp_positions.append(str(position))
+
+                    # Check for unusual INDELS only (matching Stanford's behavior)
+                    is_deletion = (aa == '-')
+                    is_insertion = (aa.startswith('_'))
+                    if (is_deletion or is_insertion) and self.is_unusual(gene, position, aa, text):
+                        unusual_indels.append(f"{mutation[2]}{position}{text}")
+
+                # Add warnings for ambiguous positions at DRPs
+                # Threshold logic (> 5 for SEVERE WARNING) matches Stanford HIVdb Sierra
+                # See: sierra-core/.../DefaultSequenceValidator.java:122 (numMissingDRPs > 5)
+                num_amb_drps = len(ambiguous_drp_positions)
+                if num_amb_drps > 1:
+                    level = 'SEVERE WARNING' if num_amb_drps > 5 else 'WARNING'
+                    validation_results.append(
+                        (level,
+                         f"{num_amb_drps} drug-resistance positions were not sequenced or are ambiguous in {gene}: {', '.join(sorted(ambiguous_drp_positions))}.")
+                    )
+                elif num_amb_drps == 1:
+                    validation_results.append(
+                        ('NOTE',
+                         f"One drug-resistance position was not sequenced or is ambiguous in {gene}: {ambiguous_drp_positions[0]}.")
+                    )
+
+                # Add warnings for unusual INDELS (not all unusual mutations)
+                if len(unusual_indels) > 0:
+                    validation_results.append(
+                        ('WARNING',
+                         f"The {gene} gene has {len(unusual_indels)} unusual indel{'s' if len(unusual_indels) > 1 else ''}: {', '.join(unusual_indels)}.")
+                    )
 
         return validation_results
 
@@ -568,6 +635,7 @@ class JSONWriter():
         @param gene: str, RT, IN, PR
         @param position: int, position of mutation relative to POL
         @param AA: new amino acid
+        @param text: str, translated amino acid text
         @return: bool
         """
         position = str(position)
@@ -601,6 +669,18 @@ class JSONWriter():
                         if aa in key:
                             return self.primary_type_dic[gene][position][key]
         return "Other"
+
+    def is_drug_resistance_position(self, gene, position):
+        """
+        Check if a position is a drug resistance position
+        @param gene: str, RT, IN, PR
+        @param position: int, position of mutation relative to POL
+        @return: bool
+        """
+        position = str(position)
+        if gene in self.drug_resistance_positions:
+            return position in self.drug_resistance_positions[gene]
+        return False
 
 
 if __name__ == "__main__":
