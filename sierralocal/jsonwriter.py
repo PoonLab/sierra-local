@@ -587,7 +587,7 @@ class JSONWriter():
     def primary_type(self, gene, position, AA):
         """
         see if specific amino acid's primary type through checking hivbd facts
-        @param gene: str, RT, IN, PR
+        @param gene: str, RT, IN, PR, CA
         @param position: int, position of mutation relative to POL
         @param AA: new amino acid
         @return: bool

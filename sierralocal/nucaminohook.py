@@ -71,8 +71,10 @@ class NucAminoAligner():
         self.ini_dict = self.prevalence_parser('INIPrevalences.tsv')
 
         # initialize gene map
-        self.pol_start = 2085
-        self.pol_nuc_map = {
+        self.gag_start = 790  # Gag gene start position in HXB2
+        self.pol_start = 2085  # Pol gene start position in HXB2 (biological start, matches alignment-config_hiv1.json)
+        self.gene_nuc_map = {
+            'CA': (1186, 1878),  # Capsid (CA) is within Gag
             'PR': (2253, 2549),
             'RT': (2550, 4229),  # incorrectly includes RNAse, emulating sierrapy
             'IN': (4230, 5096)
@@ -276,8 +278,9 @@ class NucAminoAligner():
                             for protein in data:
 
                                 # sequenced if the report field is not empty
-                                # NucAmino is positioned on POL
-                                if not protein['Error'] and protein['Report'] and 'pol' in protein['Gene']:
+                                # NucAmino is positioned on POL, but we also want GAG for CA
+                                gene_lower = protein['Gene'].lower() if protein.get('Gene') else ''
+                                if not protein['Error'] and protein['Report'] and ('pol' in gene_lower or 'gag' in gene_lower):
                                     for key, info in protein['Report'].items():
                                         if key == 'AlignedSites':
                                             valid = []
@@ -293,15 +296,14 @@ class NucAminoAligner():
                                         elif key == 'Mutations':
                                             for mutation in info:
                                                 if mutation['IsInsertion'] is True:
-                                                    mutation['AminoAcidText'] = '_' + mutation['AminoAcidText'] 
+                                                    mutation['AminoAcidText'] = '_' + mutation['AminoAcidText']
                                                 mutation['ReferenceText'] = mutation['RefAminoAcidText']
                                                 mutation.pop('RefAminoAcidText')
-                                                mutation['Position'] += 1
                                             result['Mutations'] += info
 
                                         elif key == 'FrameShifts':
-                                            for shift in result['FrameShifts']:
-                                                shift['Position'] += 1
+                                            # No position adjustment needed - pol_start=2088 matches alignment config
+                                            pass
 
                                         else:
                                             result.update({key: info})
@@ -366,15 +368,20 @@ class NucAminoAligner():
     def create_gene_map(self):
         """
         Returns a dictionary with the AMINO ACID position bounds
-        for each gene in Pol, based on the HXB2 reference annotations.
-        @return pol_aa_map: dict
+        for each gene, based on the HXB2 reference annotations.
+        @return gene_aa_map: dict
         """
-        # start and end nucleotide coordinates in HXB2 pol
-        convert = lambda x: int((x - self.pol_start) / 3)
-        pol_aa_map = {}
-        for key, val in self.pol_nuc_map.items():
-            pol_aa_map[key] = (convert(val[0]), convert(val[1]))
-        return pol_aa_map
+        gene_aa_map = {}
+        for key, val in self.gene_nuc_map.items():
+            # CA is in Gag, others (PR, RT, IN) are in Pol
+            if key == 'CA':
+                # CA uses Gag as reference point
+                convert = lambda x: int((x - self.gag_start) / 3)
+            else:
+                # PR, RT, IN use Pol as reference point
+                convert = lambda x: int((x - self.pol_start) / 3)
+            gene_aa_map[key] = (convert(val[0]), convert(val[1]))
+        return gene_aa_map
 
     def get_genes(self, pol_aligned_sites, pol_first_aa, pol_last_aa):
         """
@@ -391,7 +398,7 @@ class NucAminoAligner():
          first na position in pol, last na position in pol]
         """
         # good here
-        min_overlap = {'PR': 40, 'RT': 60, 'IN': 30}
+        min_overlap = {'PR': 40, 'RT': 60, 'IN': 30, 'CA': 23}
         genes = []
         for gene, bounds in self.gene_map.items():
             aa_start, aa_end = bounds
@@ -479,11 +486,12 @@ class NucAminoAligner():
                     if position < left or right < position:
                         continue  # mutation in other gene
                     codon = mut['CodonText']
+                    adj_pos = position - left
                     gene_muts.update(
-                        {position - left: (mut['ReferenceText'],  # consensus
-                                           mut['AminoAcidText'],  # AAs line in output
-                                           self.translate_na_triplet(codon)  # Text line in the output
-                                           )}
+                        {adj_pos: (mut['ReferenceText'],  # consensus
+                                   mut['AminoAcidText'],  # AAs line in output
+                                   self.translate_na_triplet(codon)  # Text line in the output
+                                   )}
                     )
                     codon_list.append(codon)
 

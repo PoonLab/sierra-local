@@ -29,7 +29,7 @@ We tried to minimize dependencies:
 ## Installation
 
 ### Setting up Sierra-Local
-On a Linux system, you can install *sierra-local* as follows:
+On a Linux system with x86_64 architecture, you can install *sierra-local* as follows:
 ```
 git clone http://github.com/PoonLab/sierra-local
 cd sierra-local
@@ -98,7 +98,7 @@ Writing JSON to file RT_results.json
 Time elapsed: 19.796 seconds (5.1555 it/s)
 ```
 To swap between running Post-Align (default) and NucAmnio, you can specify using `-alignment`, where inputting `nuc` will result in NucAmino being called
-```
+```console
 will@Jesry:~/sierra-local# sierralocal RT.fa -alignment nuc
 searching path /root/miniconda3/envs/py395/lib/python3.10/site-packages/sierralocal/data/HIVDB*.xml
 searching path /root/miniconda3/envs/py395/lib/python3.10/site-packages/sierralocal/data/apobec*.json
@@ -165,7 +165,7 @@ art@Jesry:~/git/sierra-local$ R
 ```
 
 To specify your own JSON file for APOBEC DRMS, you can call `-json` followed by your file:
-```
+```console
 (sierra) will@dyn172-30-75-11 sierra-local % sierralocal RT.fa -json sierralocal/data/apobec_drms.c9583ac2.json
 searching path /Users/will/miniconda3/envs/sierra/lib/python3.9/site-packages/sierralocal/data/HIVDB*.xml
 HIVdb version 9.4

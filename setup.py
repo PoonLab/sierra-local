@@ -42,7 +42,7 @@ setup(
     'orjson>=3.9.1',
     'types-setuptools>=67.8.0.0'
     ],
-    version='0.4.3',
+    version='0.4.4',
     author=['Jasper Ho', 'Garway Ng', 'Gopi Gugan', 'Mathias Renaud', 'William Wang', 'Art Poon'],
     author_email=['jasperchho@gmail.com', 'apoon42@uwo.ca'],
     url='https://github.com/PoonLab/sierra-local',
