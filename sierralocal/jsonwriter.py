@@ -205,7 +205,7 @@ class JSONWriter():
             new1 = [i for i in new if i] # New list of mutations that doesn't result in X AA
             # if the drug score in info[1] index is in inds, it is amb position, so exclude
             new2 = [score for index, score in enumerate(muts_scores) if index not in inds]
-                        
+
             scores[drug] = [sum(new2), new2, new1]
         drug_resistance = {}
         drug_resistance['version'] = {}
@@ -266,17 +266,20 @@ class JSONWriter():
                             muts = re.search(r'\d([A-Za-z]+)', combination).group(1)
                             if gene == 'IN':
                                 for key in self.insti_comments:
-                                    if pos in key and any(c in key for c in muts):
+                                    match = re.match(r'(\d+)', key)
+                                    if match and pos == match.group(1) and any(c in key for c in muts):
                                         type_ = self.insti_comments[key]
                                         break
                             elif gene == 'PR':
                                 for key in self.pi_comments:
-                                    if pos in key and any(c in key for c in muts):
+                                    match = re.match(r'(\d+)', key)
+                                    if match and pos == match.group(1) and any(c in key for c in muts):
                                         type_ = self.pi_comments[key]
                                         break
                             elif gene == 'RT':
                                 for key in self.rt_comments:
-                                    if pos in key and any(c in key for c in muts):
+                                    match = re.match(r'(\d+)', key)
+                                    if match and pos == match.group(1) and any(c in key for c in muts):
                                         type_ = self.rt_comments[key]
                                         break
                             mut = {}
@@ -346,7 +349,7 @@ class JSONWriter():
                                              mutation[3])
             mutdict['isSDRM'] = check_sdrm
 
-            if check_sdrm: 
+            if check_sdrm:
                 dic['SDRMs'].append({'text': mutation[2] + str(mutation[0]) + sdrm_aas})
 
             mutdict['hasStop'] = self.has_stop(mutation, mutation[3])
@@ -358,12 +361,12 @@ class JSONWriter():
                 mutdict['text'] = con_pos + 'del'
                 curr_mut[con_pos] = 'del'
             else:
-               
+
                 mutdict['text'] = con_pos + mutation[3]
                 curr_mut[con_pos] =  mutation[3]
             if int(first_last_aa[0]) <= int(mutation[0]) <= int(first_last_aa[1]):
                 mutation_line[int(mutation[0]) - int(first_last_aa[1]) - 1] = f"{''.join(sorted(mutation[1])):^3}"
-            
+
             dic['mutations'].append(mutdict)
         return dic, curr_mut
 
@@ -384,11 +387,11 @@ class JSONWriter():
         @param file_scores: list, list of single genes in queries
         list of sequence scores
         @param file_genes: list, list of single genes in queries
-        @param file_mutation_lists: ordered list of mutations 
+        @param file_mutation_lists: ordered list of mutations
         in the query sequence relative to reference
         @param file_sequence_lengths: list, list of lists of ints denoting
         sequence lengths
-        @param file_trims: list, list of lists of tuples of ints 
+        @param file_trims: list, list of lists of tuples of ints
         @param file_subtypes: list, list of subtype strings
         @param na_sequence: dict, {sequence name: associated NA sequence}
         @param ambiguous: dict, {sequence name: positions of NNN triplet NA}
@@ -548,7 +551,7 @@ class JSONWriter():
         @param gene: str, genes found in the query sequence
         @param mutation: str, TODO: incomplete
         @param comments: dict, value in comments attribute of HIVdb object
-        @param details: dict, value of HIVdb object's definitions 
+        @param details: dict, value of HIVdb object's definitions
         attribute's "comment" key
         @return: str, TODO: incomplete
         """
@@ -557,7 +560,8 @@ class JSONWriter():
         muts = re.findall(u'(?<=[0-9])([A-Za-z])+', trunc_mut)[0]
         for g, mutationdict in comments.items():
             for item in mutationdict.keys():
-                if pos in item and muts in item:
+                match = re.match(r'(\d+)', item)
+                if match and pos == match.group(1) and muts in item:
                     full_mut = mutationdict[item]
                     if full_mut in details and g == gene:
                         return details[full_mut]['1']
