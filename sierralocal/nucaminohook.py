@@ -155,6 +155,13 @@ class NucAminoAligner():
         return aligned
 
     def makeReferenceFASTA(self, fragmentName, refSeq):
+        """
+        Makes a temporary FASTA file for the reference sequence of a given fragment.
+        @param fragmentName: str, name of fragment
+        @param refSeq: str, reference sequence for a given fragment
+        @return: str, path to temporary FASTA file
+        """
+
         tempFasta = tempfile.NamedTemporaryFile('w', prefix='postalign-ref-', suffix='.fas', delete=False)
         tempFasta.write(">Ref_{}\n".format(fragmentName))
         tempFasta.write("{}\n".format(refSeq))
@@ -162,6 +169,17 @@ class NucAminoAligner():
         return os.path.abspath(tempFasta.name)
 
     def getConfigField(self, config, field):
+        """
+        Retrieves entry information from each fragmentConfig entry in the alignment 
+        config JSON file, and depending on whether the field is refSequence or not, 
+        stores the corresponding FASTA file path or the field value in a dictionary
+        that is mapping fragmentName to field value.
+        @param config: dict, JSON configuration for post-align
+        @param field: str, field to retrieve from config
+        @return: dict, dictionary of fragmentName to a path to a corresponding 
+        temporary FASTA filed and/or field value.
+        """
+
         resultmap = {}
         for entry in config['fragmentConfig']:
             if field == 'refSequence':
@@ -703,6 +721,11 @@ class NucAminoAligner():
         return (triplet.replace("-", "N").count("N") > 1)  # TODO: incorporate !isInsertion &&
 
     def is_stop_codon(self, triplet):
+        """Determines whether a nucleotide triplet encodes a stop codon. ("*" is 
+        present in the translated triplet)
+        @param triplet: str, nucleotide triplet as a string
+        @return: bool, True when it is a stop codon
+        """
         return ("*" in self.translate_na_triplet(triplet))
 
     def is_apobec_drm(self, gene, consensus, position, AA):
@@ -747,7 +770,13 @@ class NucAminoAligner():
 
     def get_mut_prevalence(self, position, cons, aa, gene, subtype):
         """
-        ???
+        Determines prevalence of a specific mutation in the subtype alignment, by looking up the position, consensus amino acid, mutant amino acid, gene and subtype in the prevalence dictionaries.
+        @param position: int, position of mutation relative to POL
+        @param cons: str, consensus amino acid at this position
+        @param aa: str, mutant amino acid at this position
+        @param gene: str, PR, RT, or INT
+        @param subtype: str, predicted from Subtyper.get_closest_subtype()
+        @return: float, prevalence of the mutation in the subtype alignment
         """
         key2 = str(position) + str(cons) + str(aa) + subtype
 

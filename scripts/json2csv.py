@@ -1,3 +1,8 @@
+"""
+Convert JSON generated from Sierra processor into CSV format, retaining 
+only drug-specific resistance scores.
+"""
+
 import json
 import csv
 import argparse
