@@ -301,6 +301,38 @@ class JSONWriter():
         drug_resistance['drugScores'] = drug_scores
         return drug_resistance
 
+    def mutation_comments(self, gene, position, amino_acids, comment_type):
+        """
+        Return mutation comments regardless of resistance score.
+        @param gene: str, gene name
+        @param position: int, mutation position within the gene
+        @param amino_acids: str, observed amino acids
+        @param comment_type: str, mutation classification
+        @return: list, matching comment dictionaries
+        """
+        if amino_acids == '-':
+            amino_acids = 'd'
+        elif amino_acids.startswith('_'):
+            amino_acids = 'i'
+
+        position = int(position)
+        observed = set(amino_acids) - {'X', '*'}
+        refs = {}  # Preserve rule order and remove duplicate references.
+
+        for condition, ref in self.comments.get(gene, {}).items():
+            for pos, aas in re.findall(r'(\d+)([A-Za-z]+)', condition):
+                if int(pos) == position and observed.intersection(aas):
+                    refs[ref] = None
+
+        comments = []
+        for ref in refs:
+            definitions = self.definitions['comment'].get(ref, {})
+            for text in definitions.values():
+                if text:
+                    comments.append({'type': comment_type, 'text': text})
+
+        return comments
+
     def format_aligned_gene_sequences(self, ordered_mutation_list,
                                       gene, first_last_aa):
         """
@@ -356,6 +388,10 @@ class JSONWriter():
             mutdict['primaryType'] = self.primary_type(gene,
                                                        mutation[0],
                                                        mutation[1])
+            mutdict['comments'] = self.mutation_comments(gene,
+                                                       mutation[0],
+                                                       mutation[1],
+                                                       mutdict['primaryType'])
             con_pos = mutation[2] + str(mutation[0]) # M184 in M184MIV
             if mutdict['AAs'] == '-':
                 mutdict['text'] = con_pos + 'del'
