@@ -307,19 +307,21 @@ class JSONWriter():
         @param comment_type: str, mutation classification
         @return: list, matching comment dictionaries
         """
+        # Assume a deletion is '-' on its own, never mixed with amino acids.
         if amino_acids == '-':
-            amino_acids = 'd'
+            amino_acids = 'd'  # deletion
         elif amino_acids.startswith('_'):
-            amino_acids = 'i'
+            amino_acids = 'i'  # insertion
 
         position = int(position)
         observed = set(amino_acids) - {'X', '*'}
-        refs = {}  # Preserve rule order and remove duplicate references.
+        # Keep each matching comment reference once, in the order the rules appear.
+        refs = []
 
         for condition, ref in self.comments.get(gene, {}).items():
             for pos, aas in re.findall(r'(\d+)([A-Za-z]+)', condition):
-                if int(pos) == position and observed.intersection(aas):
-                    refs[ref] = None
+                if int(pos) == position and observed.intersection(aas) and ref not in refs:
+                    refs.append(ref)
 
         comments = []
         for ref in refs:
