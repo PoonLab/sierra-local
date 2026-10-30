@@ -10,6 +10,12 @@ import hashlib
 
 
 class JSONWriter():
+    """
+    Define a class for handling the formatting for the final JSON output of
+    mutations and validation results. The main write function is in 
+    write_to_json. Generally, @param algorithm will be an instance of the 
+    HIVdb class.
+    """
     def __init__(self, algorithm, apobec_csv, unusual_csv, sdrms_csv, mutation_csv):
         # possible alternative drug abbrvs
         self.names = {'3TC': 'LMV'}
@@ -120,16 +126,24 @@ class JSONWriter():
         with open(dest, 'r', encoding='utf-8-sig') as mut_type_pairs1_files:
             mut_type_pairs1_files = csv.DictReader(mut_type_pairs1_files)
             self.primary_type_dic = {}
+            self.drug_resistance_positions = {}  # NEW: Track drug resistance positions
             for row in mut_type_pairs1_files:
                 gene = row['gene']
                 pos = row['position']
                 aa = row['aas']
                 mut = row['mutationType']
+                drug_class = row['drugClass']
                 if gene not in self.primary_type_dic:
                     self.primary_type_dic.update({gene: {}})
                 if pos not in self.primary_type_dic[gene]:
                     self.primary_type_dic[gene].update({pos: {}})
                 self.primary_type_dic[gene][pos].update({aa: mut})
+
+                # NEW: Track positions where drugClass is not "Other" as drug resistance positions
+                if drug_class != 'Other':
+                    if gene not in self.drug_resistance_positions:
+                        self.drug_resistance_positions[gene] = set()
+                    self.drug_resistance_positions[gene].add(pos)
 
         # make dictionary for apobec mutations
         if apobec_csv is None:
@@ -197,7 +211,7 @@ class JSONWriter():
             new1 = [i for i in new if i] # New list of mutations that doesn't result in X AA
             # if the drug score in info[1] index is in inds, it is amb position, so exclude
             new2 = [score for index, score in enumerate(muts_scores) if index not in inds]
-                        
+
             scores[drug] = [sum(new2), new2, new1]
         drug_resistance = {}
         drug_resistance['version'] = {}
@@ -258,17 +272,20 @@ class JSONWriter():
                             muts = re.search(r'\d([A-Za-z]+)', combination).group(1)
                             if gene == 'IN':
                                 for key in self.insti_comments:
-                                    if pos in key and any(c in key for c in muts):
+                                    match = re.match(r'(\d+)', key)
+                                    if match and pos == match.group(1) and any(c in key for c in muts):
                                         type_ = self.insti_comments[key]
                                         break
                             elif gene == 'PR':
                                 for key in self.pi_comments:
-                                    if pos in key and any(c in key for c in muts):
+                                    match = re.match(r'(\d+)', key)
+                                    if match and pos == match.group(1) and any(c in key for c in muts):
                                         type_ = self.pi_comments[key]
                                         break
                             elif gene == 'RT':
                                 for key in self.rt_comments:
-                                    if pos in key and any(c in key for c in muts):
+                                    match = re.match(r'(\d+)', key)
+                                    if match and pos == match.group(1) and any(c in key for c in muts):
                                         type_ = self.rt_comments[key]
                                         break
                             mut = {}
@@ -289,6 +306,40 @@ class JSONWriter():
                 drug_scores.append(drug_score)
         drug_resistance['drugScores'] = drug_scores
         return drug_resistance
+
+    def mutation_comments(self, gene, position, amino_acids, comment_type):
+        """
+        Return mutation comments regardless of resistance score.
+        @param gene: str, gene name
+        @param position: int, mutation position within the gene
+        @param amino_acids: str, observed amino acids
+        @param comment_type: str, mutation classification
+        @return: list, matching comment dictionaries
+        """
+        # Assume a deletion is '-' on its own, never mixed with amino acids.
+        if amino_acids == '-':
+            amino_acids = 'd'  # deletion
+        elif amino_acids.startswith('_'):
+            amino_acids = 'i'  # insertion
+
+        position = int(position)
+        observed = set(amino_acids) - {'X', '*'}
+        # Keep each matching comment reference once, in the order the rules appear.
+        refs = []
+
+        for condition, ref in self.comments.get(gene, {}).items():
+            for pos, aas in re.findall(r'(\d+)([A-Za-z]+)', condition):
+                if int(pos) == position and observed.intersection(aas) and ref not in refs:
+                    refs.append(ref)
+
+        comments = []
+        for ref in refs:
+            definitions = self.definitions['comment'].get(ref, {})
+            for text in definitions.values():
+                if text:
+                    comments.append({'type': comment_type, 'text': text})
+
+        return comments
 
     def format_aligned_gene_sequences(self, ordered_mutation_list,
                                       gene, first_last_aa):
@@ -338,24 +389,28 @@ class JSONWriter():
                                              mutation[3])
             mutdict['isSDRM'] = check_sdrm
 
-            if check_sdrm: 
+            if check_sdrm:
                 dic['SDRMs'].append({'text': mutation[2] + str(mutation[0]) + sdrm_aas})
 
             mutdict['hasStop'] = self.has_stop(mutation, mutation[3])
             mutdict['primaryType'] = self.primary_type(gene,
                                                        mutation[0],
                                                        mutation[1])
+            mutdict['comments'] = self.mutation_comments(gene,
+                                                       mutation[0],
+                                                       mutation[1],
+                                                       mutdict['primaryType'])
             con_pos = mutation[2] + str(mutation[0]) # M184 in M184MIV
             if mutdict['AAs'] == '-':
                 mutdict['text'] = con_pos + 'del'
                 curr_mut[con_pos] = 'del'
             else:
-               
+
                 mutdict['text'] = con_pos + mutation[3]
                 curr_mut[con_pos] =  mutation[3]
             if int(first_last_aa[0]) <= int(mutation[0]) <= int(first_last_aa[1]):
                 mutation_line[int(mutation[0]) - int(first_last_aa[1]) - 1] = f"{''.join(sorted(mutation[1])):^3}"
-            
+
             dic['mutations'].append(mutdict)
         return dic, curr_mut
 
@@ -376,11 +431,11 @@ class JSONWriter():
         @param file_scores: list, list of single genes in queries
         list of sequence scores
         @param file_genes: list, list of single genes in queries
-        @param file_mutation_lists: ordered list of mutations 
+        @param file_mutation_lists: ordered list of mutations
         in the query sequence relative to reference
         @param file_sequence_lengths: list, list of lists of ints denoting
         sequence lengths
-        @param file_trims: list, list of lists of tuples of ints 
+        @param file_trims: list, list of lists of tuples of ints
         @param file_subtypes: list, list of subtype strings
         @param na_sequence: dict, {sequence name: associated NA sequence}
         @param ambiguous: dict, {sequence name: positions of NNN triplet NA}
@@ -396,7 +451,10 @@ class JSONWriter():
 
             validation = self.validate_sequence(genes,
                                                 file_sequence_lengths[index],
-                                                file_trims[index])
+                                                file_trims[index],
+                                                file_mutation_lists[index],
+                                                file_headers[index],
+                                                ambiguous)
             data['validationResults'] = self.format_validation_results(validation)
 
             data['alignedGeneSequences'] = []
@@ -423,20 +481,30 @@ class JSONWriter():
             json.dump(out, outfile, indent=2)
             print("Writing JSON to file {}".format(filename))
 
-    def validate_sequence(self, genes, lengths, seq_trims):
+    def validate_sequence(self, gene_infos, lengths, seq_trims, mutation_lists=None,
+                          sequence_name=None, ambiguous=None):
         """
         Function to validate a sequence and return a
         list of validation results
-        @param genes: list, list of single genes in queries
+        @param gene_infos: list, list of tuples (gene, first_aa, last_aa, first_na, last_na) or gene names
         @param lengths: list, list of lists of ints denoting
         sequence lengths
         @param seq_trims: list, list of lists of tuples of ints
-        @return validation_results: list, lsit of either warning 
+        @param mutation_lists: list, list of mutation lists per gene (optional)
+        @param sequence_name: str, name of the sequence (optional)
+        @param ambiguous: dict, {sequence name: {gene: [positions]}} of ambiguous positions (optional)
+        @return validation_results: list, list of either warning
         or critical error messages
         """
         validation_results = []
 
-        for index, gene in enumerate(genes):
+        for index, gene_info in enumerate(gene_infos):
+            # gene_info is always a tuple (gene, first_aa, last_aa, first_na, last_na)
+            # Handle empty tuple case explicitly for error reporting
+            if len(gene_info) > 0:
+                gene = gene_info[0]
+            else:
+                gene = ""  # Empty tuple triggers CRITICAL error below
             length = lengths[index]
             seq_trim = seq_trims[index]
 
@@ -474,6 +542,52 @@ class JSONWriter():
                      "due to poor quality.".format(gene, seq_trim[1], "s" if seq_trim[1] > 1 else ""))
                 )
 
+            # NEW: Validate unusual mutations and ambiguous positions at DRPs (similar to sierra)
+            if mutation_lists is not None and index < len(mutation_lists):
+                mutation_list = mutation_lists[index]
+                unusual_indels = []
+                ambiguous_drp_positions = []
+
+                for mutation in mutation_list:
+                    # mutation format: (position, AA, consensus, text)
+                    position = mutation[0]
+                    aa = mutation[1]
+                    text = mutation[3] if len(mutation) > 3 else ''
+
+                    # Check for X at drug resistance positions
+                    if (text == 'X' or 'X' in aa) and self.is_drug_resistance_position(gene, position):
+                        if str(position) not in ambiguous_drp_positions:
+                            ambiguous_drp_positions.append(str(position))
+
+                    # Check for unusual INDELS only (matching Stanford's behavior)
+                    is_deletion = (aa == '-')
+                    is_insertion = (aa.startswith('_'))
+                    if (is_deletion or is_insertion) and self.is_unusual(gene, position, aa, text):
+                        unusual_indels.append(f"{mutation[2]}{position}{text}")
+
+                # Add warnings for ambiguous positions at DRPs
+                # Threshold logic (> 5 for SEVERE WARNING) matches Stanford HIVdb Sierra
+                # See: sierra-core/.../DefaultSequenceValidator.java:122 (numMissingDRPs > 5)
+                num_amb_drps = len(ambiguous_drp_positions)
+                if num_amb_drps > 1:
+                    level = 'SEVERE WARNING' if num_amb_drps > 5 else 'WARNING'
+                    validation_results.append(
+                        (level,
+                         f"{num_amb_drps} drug-resistance positions were not sequenced or are ambiguous in {gene}: {', '.join(sorted(ambiguous_drp_positions))}.")
+                    )
+                elif num_amb_drps == 1:
+                    validation_results.append(
+                        ('NOTE',
+                         f"One drug-resistance position was not sequenced or is ambiguous in {gene}: {ambiguous_drp_positions[0]}.")
+                    )
+
+                # Add warnings for unusual INDELS (not all unusual mutations)
+                if len(unusual_indels) > 0:
+                    validation_results.append(
+                        ('WARNING',
+                         f"The {gene} gene has {len(unusual_indels)} unusual indel{'s' if len(unusual_indels) > 1 else ''}: {', '.join(unusual_indels)}.")
+                    )
+
         return validation_results
 
     def find_comment(self, gene, mutation, comments, details):
@@ -481,7 +595,7 @@ class JSONWriter():
         @param gene: str, genes found in the query sequence
         @param mutation: str, TODO: incomplete
         @param comments: dict, value in comments attribute of HIVdb object
-        @param details: dict, value of HIVdb object's definitions 
+        @param details: dict, value of HIVdb object's definitions
         attribute's "comment" key
         @return: str, TODO: incomplete
         """
@@ -490,7 +604,8 @@ class JSONWriter():
         muts = re.findall(u'(?<=[0-9])([A-Za-z])+', trunc_mut)[0]
         for g, mutationdict in comments.items():
             for item in mutationdict.keys():
-                if pos in item and muts in item:
+                match = re.match(r'(\d+)', item)
+                if match and pos == match.group(1) and muts in item:
                     full_mut = mutationdict[item]
                     if full_mut in details and g == gene:
                         return details[full_mut]['1']
@@ -568,6 +683,7 @@ class JSONWriter():
         @param gene: str, RT, IN, PR
         @param position: int, position of mutation relative to POL
         @param AA: new amino acid
+        @param text: str, translated amino acid text
         @return: bool
         """
         position = str(position)
@@ -587,7 +703,7 @@ class JSONWriter():
     def primary_type(self, gene, position, AA):
         """
         see if specific amino acid's primary type through checking hivbd facts
-        @param gene: str, RT, IN, PR
+        @param gene: str, RT, IN, PR, CA
         @param position: int, position of mutation relative to POL
         @param AA: new amino acid
         @return: bool
@@ -601,6 +717,18 @@ class JSONWriter():
                         if aa in key:
                             return self.primary_type_dic[gene][position][key]
         return "Other"
+
+    def is_drug_resistance_position(self, gene, position):
+        """
+        Check if a position is a drug resistance position
+        @param gene: str, RT, IN, PR
+        @param position: int, position of mutation relative to POL
+        @return: bool
+        """
+        position = str(position)
+        if gene in self.drug_resistance_positions:
+            return position in self.drug_resistance_positions[gene]
+        return False
 
 
 if __name__ == "__main__":

@@ -163,6 +163,9 @@ def update_genotype_properties(target_dir=None):
         print("Couldn't update subtyper genotype property file, please get manually at: https://hivdb.stanford.edu/page/hiv-subtyper/")
     
 def main(updater_outdir=None): # pragma: no cover
+    """
+    Main function called when running updater.py directly.
+    """
     update_hivdb(updater_outdir)
     update_apobec(updater_outdir)
     update_is_unusual(updater_outdir)
