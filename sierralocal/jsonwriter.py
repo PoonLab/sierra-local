@@ -289,7 +289,11 @@ class JSONWriter():
                                         type_ = self.rt_comments[key]
                                         break
                             mut = {}
-                            mut['text'] = combination[0] + pos + mut_dic[combination[0] + pos]
+
+                            # AAs are alphabetical with consensus first
+                            aas = mut_dic[combination[0] + pos]
+                            aa_text = ''.join(sorted(aas, key=lambda aa: (aa != combination[0], aa)))
+                            mut['text'] = combination[0] + pos + aa_text
                             mut['primaryType'] = type_
                             mut['triggeredAAs'] = muts
                             mut['comments'] = [{
@@ -405,8 +409,9 @@ class JSONWriter():
                 mutdict['text'] = con_pos + 'del'
                 curr_mut[con_pos] = 'del'
             else:
-
-                mutdict['text'] = con_pos + mutation[3]
+                # AAs are alphabetical with consensus first
+                aa_text = ''.join(sorted(mutation[3], key=lambda aa: (aa != mutation[2], aa)))
+                mutdict['text'] = con_pos + aa_text
                 curr_mut[con_pos] =  mutation[3]
             if int(first_last_aa[0]) <= int(mutation[0]) <= int(first_last_aa[1]):
                 mutation_line[int(mutation[0]) - int(first_last_aa[1]) - 1] = f"{''.join(sorted(mutation[1])):^3}"

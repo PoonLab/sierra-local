@@ -589,7 +589,7 @@ class NucAminoAligner():
                         c = codon_to_aminoacid_map[codon]
                         if c not in unique_aas:
                             unique_aas.append(c)
-                    if len(unique_aas) > 4:
+                    if len(unique_aas) > 6:
                         aas = "X"
                     else:
                         aas = ''.join(unique_aas)
