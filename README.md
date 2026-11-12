@@ -2,6 +2,7 @@
 [![DOI](http://joss.theoj.org/papers/10.21105/joss.01186/status.svg)](https://doi.org/10.21105/joss.01186)
 
 # sierra-local
+
 sierra-local is a Python 3 implementation of the [Stanford University HIV Drug Resistance Database](https://hivdb.stanford.edu/) (HIVdb) [Sierra web service](https://hivdb.stanford.edu/page/webservice/) for generating drug resistance predictions from HIV-1 sequence data. This Python package enables laboratories to run this prediction algorithm without needing to transmit patient data over the network, and confers full control over [data provenance](https://en.wikipedia.org/wiki/Data_lineage#Data_Provenance) and security.
 
 ## Rationale
@@ -14,6 +15,7 @@ Our objective was to build a lightweight, open-source Python implementation of t
 
 
 ## Dependencies
+
 We tried to minimize dependencies:
 - Python 3 (tested on [Python 3.9.0](https://www.python.org/downloads/release/python-390/) and [Python 3.10.9](https://www.python.org/downloads/release/python-3109/))
 - Python modules (used by `updater.py` script):
@@ -30,15 +32,18 @@ We tried to minimize dependencies:
 
 ### Setting up Sierra-Local
 On a Linux system with x86_64 architecture, you can install *sierra-local* as follows:
+
 ```
 git clone http://github.com/PoonLab/sierra-local
 cd sierra-local
 sudo python3 setup.py install
 ```
+
 Note that you need super-user privileges to install the package by this method.  For more detailed instructions, please refer to the document [INSTALL.md](INSTALL.md) that should be located in the root directory of this Python package.
 
 Alternatively, you can install with pip, which doesn't need sudo.
-```
+
+```bash
 git clone http://github.com/PoonLab/sierra-local
 cd sierra-local
 pip install --user .
@@ -64,8 +69,9 @@ After activation, the sierralocal command will be available for use.
 
 ### Command-line interface (CLI)
 Before running, we recommend using the `sierralocal/updater.py` script to update the data files associated with this repository to the most updated versions available from [hivfacts](https://github.com/hivdb/hivfacts/tree/main/data). Please note that you do need the requests package stated above for the following command to run. More information regarding this script is detailed below. An alternative to running this script through the main function is also provided below.
+
 ```console
-(sierra) will@dyn172-30-75-11 sierra-local % python3 sierralocal/updater.py 
+(sierra) will@dyn172-30-75-11 sierra-local % python3 sierralocal/updater.py
 Downloading the latest HIVDB XML File
 Updated HIVDB XML into /Users/will/projects/sierra-local/sierralocal/data/HIVDB_9.8.xml
 Downloading the latest file to determine apobec
@@ -82,9 +88,12 @@ Downloading the latest subtype genotype property File
 Updated reference fasta to /Users/will/projects/sierra-local/sierralocal/data/genotype-properties.csv
 Downloading the latest subtype reference fasta file
 Updated reference fasta to /Users/will/projects/sierra-local/sierralocal/data/genotype-references.fasta
+Parsing mutation-type-pairs_hiv1.csv for comments
+Updated comments files to //Users/will/projects/sierra-local/sierralocal/data
 ```
 
 To run a quick example, use the following sequence of commands:
+
 ```console
 art@Jesry:~/git/sierra-local$ python3 scripts/retrieve_hivdb_data.py RT RT.fa
 art@Jesry:~/git/sierra-local$ sierralocal RT.fa
@@ -97,7 +106,9 @@ Aligned RT.fax
 Writing JSON to file RT_results.json
 Time elapsed: 19.796 seconds (5.1555 it/s)
 ```
-To swap between running Post-Align (default) and NucAmnio, you can specify using `-alignment`, where inputting `nuc` will result in NucAmino being called
+
+To swap between running Post-Align (default) and NucAmnio, you can specify using `-alignment`, where inputting `nuc` will result in NucAmino being called:
+
 ```console
 will@Jesry:~/sierra-local# sierralocal RT.fa -alignment nuc
 searching path /root/miniconda3/envs/py395/lib/python3.10/site-packages/sierralocal/data/HIVDB*.xml
@@ -111,8 +122,9 @@ Time elapsed: 4.1417 seconds (25.45 it/s)
 ```
 
 `retrieve_hivdb_data.py` is a Python script that we provided to download small samples of HIV-1 sequence data from the Stanford HIVdb database.  In this case, we have retrieved 100 reverse transcriptase (RT) sequences and processsed them with the *sierra-local* pipeline.  By default, the results are written to the file `[FASTA basename]_results.json`:
+
 ```console
-art@Jesry:~/git/sierra-local$ head RT_results.json 
+art@Jesry:~/git/sierra-local$ head RT_results.json
 [
   {
     "inputSequence": {
@@ -126,6 +138,7 @@ art@Jesry:~/git/sierra-local$ head RT_results.json
 ```
 
 We can also specify a different ASI (XML) file representing an earlier version of the HIVdb algorithm to reprocess the same data, and save the output to another file:
+
 ```console
 (sierra) will@dyn172-30-75-11 sierra-local % sierralocal -xml sierralocal/data/HIVDB_9.8.xml RT.fa -o RT-v9.8.json
 searching path /Users/will/miniconda3/envs/sierra/lib/python3.9/site-packages/sierralocal/data/apobec_drms.json
@@ -138,11 +151,13 @@ Time elapsed: 9.3831 seconds (10.709 it/s)
 ```
 
 We find that switching versions of the algorithm from 8.5 to 8.7 results in substantial changes in resistance scores for these data with the introduction of a new drug [doravirine](https://aidsinfo.nih.gov/drugs/546/doravirine/0/patient) (DOR).  In addition, two of 100 cases were scored differently:
+
 ```console
 art@Jesry:~/git/sierra-local$ python3 scripts/json2csv.py RT_results.json RT-v8.7.json.csv
 art@Jesry:~/git/sierra-local$ python3 scripts/json2csv.py RT-v8.5.json RT-v8.5.json.csv
 art@Jesry:~/git/sierra-local$ R
 ```
+
 ```R
 > v5 <- read.csv('RT-v8.5.json.csv')
 > v7 <- read.csv('RT-v8.7.json.csv')
@@ -165,6 +180,7 @@ art@Jesry:~/git/sierra-local$ R
 ```
 
 To specify your own JSON file for APOBEC DRMS, you can call `-json` followed by your file:
+
 ```console
 (sierra) will@dyn172-30-75-11 sierra-local % sierralocal RT.fa -json sierralocal/data/apobec_drms.c9583ac2.json
 searching path /Users/will/miniconda3/envs/sierra/lib/python3.9/site-packages/sierralocal/data/HIVDB*.xml
@@ -176,12 +192,16 @@ Writing JSON to file RT_results.json
 Time elapsed: 9.3442 seconds (10.751 it/s)
 ```
 
-To specify other files for detecting the parameters, `isApobecMutation`, `isUnusual`, `isSDRM`, `primaryType`, you can use the following arguments: `-apobec_csv`, `-unusual_csv`, `-sdrms_csv`, `-mutation_csv`, respectively
+To specify other files for detecting the parameters, `isApobecMutation`, `isUnusual`, `isSDRM`, `primaryType`, you can use the following arguments: `-apobec_csv`, `-unusual_csv`, `-sdrms_csv`, `-mutation_csv`, respectively. To use custom comment files, pass any of `-insti_comments_csv`, `-pi_comments_csv`, and `-rt_comments_csv`.
+
 ```console
-(sierra) will@Williams-MacBook-Pro sierra-local % sierralocal -apobec_csv apobecs.csv -unusual_csv rx-all_subtype-all.csv -sdrms_csv sdrms_hiv1.csv -mutation_csv mutation-type-pairs_hiv1.csv RT.fa
+(sierra) will@Williams-MacBook-Pro sierra-local % sierralocal -apobec_csv apobecs.csv -unusual_csv rx-all_subtype-all.csv -sdrms_csv sdrms_hiv1.csv -mutation_csv mutation-type-pairs_hiv1.csv -insti_comments_csv INSTI-comments.csv -pi_comments_csv PI-comments.csv -rt_comments_csv RT-comments.csv RT.fa
 searching path /Users/will/miniconda3/envs/sierra/lib/python3.9/site-packages/sierralocal/data/HIVDB*.xml
 searching path /Users/will/miniconda3/envs/sierra/lib/python3.9/site-packages/sierralocal/data/apobec_drms.json
 HIVdb version 9.8
+Using INSTI comments file: INSTI-comments.csv
+Using PI comments file: PI-comments.csv
+Using RT comments file: RT-comments.csv
 Using unusual file: rx-all_subtype-all.csv
 Using SDRM mutations file: sdrms_hiv1.csv
 Using mutation type file: mutation-type-pairs_hiv1.csv
@@ -194,8 +214,9 @@ Time elapsed: 9.5917 seconds (10.481 it/s)
 ```
 
 To update these files while running the script, and subsequently specify an output directory, you can use the args `-forceupdate` followed by `-output_dir` and the new file path. Please note, if you run with `-forceupdate`, you must rerun the installation steps to apply the changes. If you do choose to a different output directory, you must always specifiy the new file locations for these files, otherwise they will default to the ones found in the `sierralocal/data` folder.
+
 ```console
-(sierra) will@Williams-MacBook-Pro sierra-local % sierralocal --forceupdate -updater_outdir . RT.fa        
+(sierra) will@Williams-MacBook-Pro sierra-local % sierralocal --forceupdate -updater_outdir . RT.fa
 Downloading the latest HIVDB XML File
 Updated HIVDB XML into ./HIVDB_9.8.xml
 Downloading the latest APOBEC DRMS File
@@ -209,6 +230,9 @@ Updated SDRM mutations file to ./sdrms_hiv1.csv
 Downloading the latest file to determine mutation type
 Updated mutation type file to ./mutation-type-pairs_hiv1.csv
 HIVdb version 9.8
+Using INSTI comments file: /Users/will/miniconda3/envs/sierra/lib/python3.9/site-packages/sierralocal/data/INSTI-comments.csv
+Using PI comments file: /Users/will/miniconda3/envs/sierra/lib/python3.9/site-packages/sierralocal/data/PI-comments.csv
+Using RT comments file: /Users/will/miniconda3/envs/sierra/lib/python3.9/site-packages/sierralocal/data/RT-comments.csv
 Using unusual file: /Users/will/miniconda3/envs/sierra/lib/python3.9/site-packages/sierralocal/data/rx-all_subtype-all.csv
 Using SDRM mutations file: /Users/will/miniconda3/envs/sierra/lib/python3.9/site-packages/sierralocal/data/sdrms_hiv1.csv
 Using mutation type file: /Users/will/miniconda3/envs/sierra/lib/python3.9/site-packages/sierralocal/data/mutation-type-pairs_hiv1.csv
@@ -221,12 +245,14 @@ Time elapsed: 9.9952 seconds (10.846 it/s)
 ```
 
 ### As a Python module
+
 If you have downloaded the package source to your computer, you can also run *sierra-local* as a Python module from the root directory of the package.  In the following example, we are calling the main function of *sierra-local* from an interactive Python session:
+
 ```console
 (sierra) will@dyn172-30-75-11 sierra-local % git clone http://github.com/PoonLab/sierra-local
 (sierra) will@dyn172-30-75-11 sierra-local % cd sierra-local
 (sierra) will@dyn172-30-75-11 sierra-local % python3
-Python 3.9.18 | packaged by conda-forge | (main, Dec 23 2023, 16:35:41) 
+Python 3.9.18 | packaged by conda-forge | (main, Dec 23 2023, 16:35:41)
 [Clang 16.0.6 ] on darwin
 Type "help", "copyright", "credits" or "license" for more information.
 >>> from sierralocal.main import sierralocal
@@ -240,6 +266,7 @@ Aligned RT.fa
 Writing JSON to file RT.json
 (100, 0.0769047737121582)
 ```
+
 Note that this doesn't require any `sudo` privileges.
 
 ### Subtyping
@@ -256,11 +283,12 @@ Now of course, it would be much simpler to manually download these files yoursel
 
 
 ## About Us
+
 This project was developed at the [Poon lab](http://github.com/PoonLab) within the [Department of Pathology and Laboratory Medicine](https://www.schulich.uwo.ca/pathol/), Schulich School of Medicine and Dentistry, [Western University](http://uwo.ca), London, Ontario.  Development of *sierra-local* was supported in part by a grant from the [Canadian Institutes of Health Research](http://www.cihr-irsc.gc.ca/e/193.html) (PJT-156178).
 
 If you use *sierra-local* for your work, please cite the following paper:
 * **sierra-local: A lightweight standalone application for drug resistance prediction.**
-  Jasper C Ho, Garway T Ng, Mathias Renaud, Art FY Poon, (2019). 
+  Jasper C Ho, Garway T Ng, Mathias Renaud, Art FY Poon, (2019).
   *Journal of Open Source Software*, 4(33), 1186, https://doi.org/10.21105/joss.01186
 
 If you want to reference the validation of *sierra-local* on HIV-1 *pol* data, please cite the following preprint:
