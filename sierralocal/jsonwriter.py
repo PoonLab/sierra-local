@@ -12,11 +12,12 @@ import hashlib
 class JSONWriter():
     """
     Define a class for handling the formatting for the final JSON output of
-    mutations and validation results. The main write function is in 
-    write_to_json. Generally, @param algorithm will be an instance of the 
+    mutations and validation results. The main write function is in
+    write_to_json. Generally, @param algorithm will be an instance of the
     HIVdb class.
     """
-    def __init__(self, algorithm, apobec_csv, unusual_csv, sdrms_csv, mutation_csv):
+    def __init__(self, algorithm, apobec_csv, unusual_csv, sdrms_csv, mutation_csv,
+                 insti_comments_csv, pi_comments_csv, rt_comments_csv):
         # possible alternative drug abbrvs
         self.names = {'3TC': 'LMV'}
 
@@ -31,16 +32,44 @@ class JSONWriter():
         self.database = self.algorithm.parse_drugs(self.algorithm.root)
         self.comments = self.algorithm.parse_comments(self.algorithm.root)
 
-        # Load comments files stored locally. These are distributed in the repo for now.
-        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'INSTI-comments.csv')
+        # Load comments files
+        ## INSTI-comments.csv
+        if insti_comments_csv is None:
+            dest = str(Path(os.path.dirname(__file__)) / 'data' / 'INSTI-comments.csv')
+        else:
+            if os.path.isfile(insti_comments_csv):
+                dest = insti_comments_csv
+            else:
+                raise FileNotFoundError (
+                    "Path to INSTI comments file cannot be found at user specified "
+                    "path {}".format(insti_comments_csv))
+        print("Using INSTI comments file: "+dest)
         with open(dest, 'r') as insti_file:
             self.insti_comments = dict(csv.reader(insti_file, delimiter='\t'))
-
-        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'PI-comments.csv')
+        ## PI-comments.csv
+        if pi_comments_csv is None:
+            dest = str(Path(os.path.dirname(__file__)) / 'data' / 'PI-comments.csv')
+        else:
+            if os.path.isfile(pi_comments_csv):    # Ensure is a file
+                dest = pi_comments_csv
+            else:
+                raise FileNotFoundError(
+                        "Path to PI comments file cannot be found at user specified "
+                        "path {}".format(pi_comments_csv))
+        print("Using PI comments file: "+dest)
         with open(dest, 'r') as pi_file:
             self.pi_comments = dict(csv.reader(pi_file, delimiter='\t'))
-
-        dest = str(Path(os.path.dirname(__file__)) / 'data' / 'RT-comments.csv')
+        ## RT-comments.csv
+        if rt_comments_csv is None:
+            dest = str(Path(os.path.dirname(__file__)) / 'data' / 'RT-comments.csv')
+        else:
+            if os.path.isfile(rt_comments_csv):
+                dest = rt_comments_csv
+            else:
+                raise FileNotFoundError(
+                        "Path to RT comments file cannot be found at user specified "
+                        "path {}".format(rt_comments_csv))
+        print("Using RT comments file: "+dest)
         with open(dest, 'r') as rt_file:
             self.rt_comments = dict(csv.reader(rt_file, delimiter='\t'))
 
