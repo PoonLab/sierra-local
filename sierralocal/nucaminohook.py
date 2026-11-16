@@ -307,7 +307,6 @@ class NucAminoAligner():
                                                 if i['LengthNA'] == 3:
                                                     i['PosNA'] = i['PosNAs'][0]
                                                     i.pop('PosNAs')
-                                                    i['PosAA'] = i['PosAA'] + 1
                                                     valid.append(i)
                                             result['AlignedSites'] += valid
 
