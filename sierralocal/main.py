@@ -66,7 +66,7 @@ def scorefile(input_file, algorithm, do_subtype=False, program='post'):
     for ind, gene in enumerate(file_genes):
         seq_n = sequence_headers[ind]
         gene_order[seq_n] = []
-        
+
         for ind2, protein in enumerate(gene):
             gene_order[seq_n].append(protein[0])
 
@@ -125,7 +125,8 @@ def scorefile(input_file, algorithm, do_subtype=False, program='post'):
 
 def sierralocal(fasta, outfile, xml=None, json=None, cleanup=False, forceupdate=False,
                 apobec_csv=None, unusual_csv=None, sdrms_csv=None, mutation_csv=None,
-                updater_outdir=None, program='post', do_subtype=False): # pragma: no cover
+                updater_outdir=None, program='post', do_subtype=False,
+                insti_comments_csv=None, pi_comments_csv=None, rt_comments_csv=None): # pragma: no cover
     """
     Contains all initializing and processing calls.
 
@@ -140,13 +141,17 @@ def sierralocal(fasta, outfile, xml=None, json=None, cleanup=False, forceupdate=
     @param unusual_csv: str <optional>, Path to CSV file to determine if is unusual (default: rx-all_subtype-all.csv)
     @param sdrms_csv: str <optional>, Path to CSV file to determine SDRM mutations (default: sdrms_hiv1.csv)
     @param mutation_csv: str <optional>, Path to CSV file to determine mutation type (default: mutation-type-pairs_hiv1.csv)
+    @param insti_comments_csv: str <optional>, Path to CSV INSTI comments file (default: INSTI-comments.csv)
+    @param pi_comments_csv: str <optional>, Path to CSV PI comments file (default: PI-comments.csv)
+    @param rt_comments_csv: str <optional>, Path to CSV RT comments file (default: RT-comments.csv)
     @return: tuple, a tuple of (number of records processed, time elapsed initializing algorithm)
     """
 
     # initialize algorithm and jsonwriter
     time0 = time.time()
     algorithm = HIVdb(asi2=xml, apobec=json, forceupdate=forceupdate, updater_outdir=updater_outdir)
-    writer = JSONWriter(algorithm, apobec_csv, unusual_csv, sdrms_csv, mutation_csv)
+    writer = JSONWriter(algorithm, apobec_csv, unusual_csv, sdrms_csv, mutation_csv,
+                        insti_comments_csv, pi_comments_csv, rt_comments_csv)
     time_elapsed = time.time() - time0
 
     # accommodate single file path argument
@@ -211,6 +216,12 @@ def parse_args(): # pragma: no cover
                         help='<optional> Path to CSV file to determine SDRM mutations (default: sdrms_hiv1.csv)')
     parser.add_argument('-mutation_csv', default=None,
                         help='<optional> Path to CSV file to determine mutation type (default: mutation-type-pairs_hiv1.csv)')
+    parser.add_argument('-insti_comments_csv', default=None,
+                        help='<optional> Path to CSV INSTI comments file (default: INSTI-comments.csv)')
+    parser.add_argument('-pi_comments_csv', default=None,
+                        help='<optional> Path to CSV PI comments file (default: PI-comments.csv)')
+    parser.add_argument('-rt_comments_csv', default=None,
+                        help='<optional> Path to CSV RT comments file (default: RT-comments.csv)')
     parser.add_argument('-updater_outdir', default=None,
                         help='<optional> Path to folder to store updated files from updater (default: sierralocal/data folder))')
 
@@ -273,7 +284,7 @@ def main(): # pragma: no cover
         target_dir = args.updater_outdir
     else:
         target_dir = os.path.join(mod_path, "data")
-    
+
     # Create directory if it doesn't exist
     os.makedirs(target_dir, exist_ok=True)
 
@@ -286,9 +297,10 @@ def main(): # pragma: no cover
     time_start = time.time()
     count, time_elapsed = sierralocal(args.fasta, args.outfile, xml=args.xml,
                                       json=args.json, cleanup=args.cleanup, forceupdate=args.forceupdate,
-                                      apobec_csv=args.apobec_csv, unusual_csv=args.unusual_csv, 
+                                      apobec_csv=args.apobec_csv, unusual_csv=args.unusual_csv,
                                       sdrms_csv=args.sdrms_csv, mutation_csv=args.mutation_csv, updater_outdir=target_dir,
-                                      program=args.alignment)
+                                      program=args.alignment, insti_comments_csv=args.insti_comments_csv,
+                                      pi_comments_csv=args.pi_comments_csv, rt_comments_csv=args.rt_comments_csv)
     time_diff = time.time() - time_start
 
     print("Time elapsed: {:{prec}} seconds ({:{prec}} it/s)".format(

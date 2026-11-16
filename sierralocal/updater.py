@@ -1,6 +1,7 @@
 import requests
 from pathlib import Path
 import os
+import csv
 import argparse
 
 mod_path = Path(os.path.dirname(__file__))
@@ -161,11 +162,37 @@ def update_genotype_properties(target_dir=None):
         print(f'Updated reference fasta to {filepath}')
     except:
         print("Couldn't update subtyper genotype property file, please get manually at: https://hivdb.stanford.edu/page/hiv-subtyper/")
-    
+
+def update_comment_files(target_dir=None):
+    """
+    build the comment files from mutpairs
+    """
+    print('Parsing mutation-type-pairs_hiv1.csv for comments')
+    gene_to_file = {'PR': 'PI', 'RT': 'RT', 'IN': 'INSTI'}  # CA has no comment file
+    try:
+        filepath_mut_pairs = os.path.join(target_dir, 'mutation-type-pairs_hiv1.csv')
+        comments = {name: [] for name in gene_to_file.values()}
+
+        with open(filepath_mut_pairs, encoding='utf-8-sig') as mut_pairs:
+            for row in csv.DictReader(mut_pairs):
+                if row['gene'] not in gene_to_file:
+                    continue
+                if row['isUnusual'].strip().lower() == 'true':
+                    continue
+                aas = row['aas'].replace('-', 'Deletion').replace('_', 'Insertion')
+                comments[gene_to_file[row['gene']]].append(
+                    f"{row['position']}{aas}\t{row['mutationType']}")
+
+        for name, items in comments.items():
+            with open(os.path.join(target_dir, f'{name}-comments.csv'), 'w') as f:
+                f.write('\n'.join(items) + '\n')
+        print(f'Updated comments files to {target_dir}')
+        return target_dir
+
+    except:
+        print("Couldn't update comment files. Please parse manually if the mutation-type-pairs_hiv1.csv is updated")
+
 def main(updater_outdir=None): # pragma: no cover
-    """
-    Main function called when running updater.py directly.
-    """
     update_hivdb(updater_outdir)
     update_apobec(updater_outdir)
     update_is_unusual(updater_outdir)
@@ -174,6 +201,7 @@ def main(updater_outdir=None): # pragma: no cover
     update_apobec_mutation(updater_outdir)
     update_genotype_properties(updater_outdir)
     update_reference_fasta(updater_outdir)
+    update_comment_files(updater_outdir)
 
 if __name__ == '__main__':
     # Add argument parsing for when running updater.py directly
